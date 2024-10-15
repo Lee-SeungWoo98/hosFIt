@@ -1,0 +1,115 @@
+.room-view {
+    background-color: white;
+    padding: 50px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .room-view h2 {
+    text-align: center;  /* 병실 현황 텍스트 중앙 정렬 */
+    margin-bottom: 28px;  /* 아래 여백 추가 */
+  }
+
+  .back-button {
+    position: absolute;  /* 절대 위치 설정 */
+    top: 121px;  /* 상단에서 20px 떨어짐 */
+    left: 289px;  /* 왼쪽에서 20px 떨어짐 */
+    padding: 7px 12px;
+    font-size: 16px;
+    color: #fff;
+    background: #cecece;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(177, 209, 255, 0.3);  /* 부드러운 그림자 */
+  }
+  
+  .back-button:hover {
+    background: linear-gradient(145deg, #3a6073, #3a7bd5);  /* hover 시 그라데이션 반전 */
+    box-shadow: 0 4px 15px rgba(58, 123, 213, 0.4);  /* hover 시 그림자 강화 */
+    transform: translateY(-2px);  /* hover 시 살짝 위로 이동 */
+  }
+  
+  
+  .bed-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 66px;
+    margin-top: 39x;
+  }
+  
+  .bed {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 134px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .bed.occupied {
+    background-color: #45B7D1;
+    color: white;
+  }
+  
+  .bed.available {
+    background-color: #cccccc;
+    color: #666666;
+  }
+  
+  .bed:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .bed-number {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+  }
+  
+  .patient-name {
+    font-size: 0.9em;
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .patient-modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+  }
+  
+  @media (max-width: 1200px) {
+    .bed-container {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .bed-container {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .bed-container {
+      grid-template-columns: 1fr;
+    }
+  }
