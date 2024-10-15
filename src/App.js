@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import PP from './pp';
 import './App.css';
+import Records from './Records'; // 진료기록 컴포넌트
+import SeverityRecord from './SeverityRecord'; // 중증도 조회 컴포넌트
 
 function App() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showReport, setShowReport] = useState(false);
 
-  const rooms = ['버튼 1', '버튼 2'];
-  
+  // 사이드바에서 선택할 수 있는 옵션들
+  const rooms = ['진료기록', '중증도 조회']; // '진료기록'과 '중증도 조회' 버튼 추가
+
   const icuData = [
     { name: '사용 중', value: 40, color: '#FF6B6B' },
     { name: '사용 가능', value: 10, color: '#4ECDC4' },
@@ -21,10 +24,11 @@ function App() {
 
   const renderCustomizedLabel = () => null;
 
+ // 사이드바에서 특정 버튼 클릭 시 발생하는 이벤트 핸들러
   const handleRoomClick = (room) => {
-    setSelectedRoom(room);
-    setShowReport(false);
-  };
+  setSelectedRoom(room);
+  setShowReport(false);
+};
 
   const handleConfirmClick = () => {
     setShowReport(true);
@@ -55,15 +59,16 @@ function App() {
         </div>
 
         <div className="content-area">
-          {selectedRoom ? (
-            <PP selectedRoom={selectedRoom} onBack={() => setSelectedRoom(null)} />
-          ) : showReport ? (
-            <div className="report-screen">
-              <h2>보고서 화면을 넣어보자</h2>
-              {/* 여기에 보고서 내용을 추가하세요 */}
-            </div>
+           {/* 선택된 방에 따라 다르게 렌더링 */}
+           {selectedRoom === '진료기록' ? (
+            // 진료 기록 컴포넌트 렌더링
+            <Records />
+          ) : selectedRoom === '중증도 조회' ? (
+            // 중증도 조회 컴포넌트 렌더링
+            <SeverityRecord />
           ) : (
             <>
+              {/* 초기 화면 또는 아무 것도 선택되지 않은 경우 */}
               <h2 className="section-title">병상 현황 및 환자 중증도</h2>
               <div className="dashboard-content">
                 <div className="charts-container">
