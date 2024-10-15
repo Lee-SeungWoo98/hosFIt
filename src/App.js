@@ -24,7 +24,7 @@ function App() {
 
   const renderCustomizedLabel = () => null;
 
- // 사이드바에서 특정 버튼 클릭 시 발생하는 이벤트 핸들러
+ // 사이드바에서 특정 버튼 클릭 시 발생하는 이벤트 핸들러 #
   const handleRoomClick = (room) => {
   setSelectedRoom(room);
   setShowReport(false);
