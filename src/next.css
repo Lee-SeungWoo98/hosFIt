@@ -1,0 +1,103 @@
+.next-screen {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    background-color: #f0f0f0;
+    padding-top: 5vh;
+  }
+  
+  .content-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 76%;
+    max-width: 1400px;
+    margin-top: 0;
+    padding: 80px;
+    padding-bottom: 100px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  h2 {
+    margin-bottom: 40px;
+    text-align: center;
+    color: #333;
+    font-size: 29px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .doctor-note-container {
+    position: relative;
+    width: 97%;
+    margin-bottom: 26px;
+  }
+  
+  .doctor-note {
+    width: 100%;
+    height: 380px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    background-color: #f9f9f9;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .emergency-level {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 35px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    font-size: 16px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .back-button, .decision-button {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+  }
+  
+  .back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 8px 12px;
+    background-color: #ffcece;
+    color: #333;
+    z-index: 10;
+  }
+  
+  .decision-button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+  }
+  
+  .back-button:hover {
+    background-color: #d0d0d0;
+  }
+  
+  .decision-button:hover {
+    background-color: #45a049;
+  }
