@@ -44,10 +44,13 @@ function List() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const patientsPerPage = 5;
+  const pageNumbersToShow = 5;
 
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = patients.slice(indexOfFirstPatient, indexOfLastPatient);
+
+  const totalPages = Math.ceil(patients.length / patientsPerPage);
 
   const showPatientDetails = (patient) => {
     setSelectedPatient(patient);
@@ -55,6 +58,21 @@ function List() {
 
   const handleBackToList = () => {
     setSelectedPatient(null);
+  };
+
+  const changePage = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const getPageNumbers = () => {
+    let startPage = Math.max(1, currentPage - Math.floor(pageNumbersToShow / 2));
+    let endPage = Math.min(totalPages, startPage + pageNumbersToShow - 1);
+
+    if (endPage - startPage + 1 < pageNumbersToShow) {
+      startPage = Math.max(1, endPage - pageNumbersToShow + 1);
+    }
+
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
   if (selectedPatient) {
@@ -96,9 +114,43 @@ function List() {
           </tbody>
         </table>
         <div className="pagination">
-          <button className="page-button" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>&lt;</button>
-          <button className="page-button active">{currentPage}</button>
-          <button className="page-button" onClick={() => setCurrentPage(prev => prev + 1)}>&gt;</button>
+          <button 
+            className="page-button" 
+            onClick={() => changePage(Math.max(1, currentPage - pageNumbersToShow))}
+            disabled={currentPage === 1}
+          >
+            &lt;&lt;
+          </button>
+          <button 
+            className="page-button" 
+            onClick={() => changePage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            &lt;
+          </button>
+          {getPageNumbers().map((number) => (
+            <button
+              key={number}
+              className={`page-button ${currentPage === number ? 'active' : ''}`}
+              onClick={() => changePage(number)}
+            >
+              {number}
+            </button>
+          ))}
+          <button 
+            className="page-button" 
+            onClick={() => changePage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            &gt;
+          </button>
+          <button 
+            className="page-button" 
+            onClick={() => changePage(Math.min(totalPages, currentPage + pageNumbersToShow))}
+            disabled={currentPage === totalPages}
+          >
+            &gt;&gt;
+          </button>
         </div>
       </div>
     </div>
