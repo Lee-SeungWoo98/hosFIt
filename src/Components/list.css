@@ -55,6 +55,64 @@
     cursor: pointer;
     margin-bottom: 20px;
   }
+
+.table-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+  }
+  
+  th, td {
+    text-align: left;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .status-dot.응급 { background-color: #ff4444; }
+  .status-dot.관찰 { background-color: #ffbb33; }
+  .status-dot.안정 { background-color: #00C851; }
+  
+  .detail-button {
+    padding: 5px 10px;
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .back-button {
+    padding: 6px 12px;
+    font-size: 1em;
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
   
   .patient-details {
     background-color: white;
@@ -328,4 +386,3 @@
   .pagination .page-button:last-child {
    font-weight: bold;
   }
-  
