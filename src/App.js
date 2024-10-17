@@ -14,10 +14,6 @@ function App() {
           <div className="content">
             <List /> {/* List 컴포넌트 추가 */}
           </div>
-          <br/>
-          <div className="content">
-           일단 만들어둔 컨텐츠 영역
-          </div>
         </div>
       </div>
     </div>
