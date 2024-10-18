@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { ArrowLeft } from 'lucide-react';
 import './Patient.css';
 
 function Patient({ patient, onBack }) {
@@ -14,13 +15,13 @@ function Patient({ patient, onBack }) {
 
   useEffect(() => {
     fetchPatientData();
-  }, [patient.subject_id]);
+  }, [patient.patientId]);
 
   const fetchPatientData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/selectPatient?subject_id=${patient.subject_id}`);
+      const response = await axios.get(`/selectPatient?patientId=${patient.patientId}`);
       if (response.data && response.data.patient) {
         setPatientInfo(response.data.patient);
         setPatientHistory(response.data.medicalRecords || []);
@@ -91,10 +92,11 @@ function Patient({ patient, onBack }) {
     // 예: fetchDataForDate(date);
   };
 
-  const renderChart = (title, chart) => (
+  const renderChart = (title, chart, description) => (
     <div className="chart-item">
       <h4>{title}</h4>
       {chart}
+      <p className="chart-description">그래프에 대한 설명을 적어주세요. {description}</p>
     </div>
   );
 
@@ -183,7 +185,9 @@ function Patient({ patient, onBack }) {
 
   return (
     <div className="patient-details">
-      <button onClick={onBack} className="back-button">목록으로 돌아가기</button>
+      <button onClick={onBack} className="back-button">
+        <ArrowLeft size={24} />
+      </button>
       <PatientInfoBanner patientInfo={patientInfo} error={error} />
       <div className="data-header">
         <h3>{patientInfo?.name || '환자'}의 생체 데이터</h3>
@@ -193,10 +197,10 @@ function Patient({ patient, onBack }) {
       </div>
       <div className={`data-container ${showBloodTest ? 'show-blood-test' : ''}`}>
         <div className="charts-container">
-          {renderChart("체온 변화", temperatureChart)}
-          {renderChart("심박수 및 혈압", heartRateBloodPressureChart)}
-          {renderChart("산소포화도 분포", oxygenSaturationChart)}
-          {renderChart("호흡수 변화", respirationRateChart)}
+          {renderChart("체온 변화", temperatureChart, "체온 변화에 대한 AI 소견")}
+          {renderChart("심박수 및 혈압", heartRateBloodPressureChart, "심박수 및 혈압에 대한 AI 소견")}
+          {renderChart("산소포화도 분포", oxygenSaturationChart, "산소포화도 분포에 대한 AI 소견")}
+          {renderChart("호흡수 변화", respirationRateChart, "호흡수 변화에 대한 AI 소견")}
         </div>
         {showBloodTest && (
           <div className="blood-test-data">
@@ -209,7 +213,7 @@ function Patient({ patient, onBack }) {
       <h3>응급실 내원 기록</h3>
       <div className="history-table-container">
         {patientHistory.length === 0 ? (
-          <p>내원 기록 데이터가 없다.</p>
+          <p>내원 기록 데이터가 없습니다.</p>
         ) : (
           <table className="history-table">
             <thead>
