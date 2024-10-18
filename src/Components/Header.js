@@ -99,21 +99,9 @@ function Header() {
     <>
       <div className="top-bar">
         <div className="logo-container">
-          <div className="logo-space">hosPit</div>
+          <div className="logo-space">hosFit</div>
         </div>
         <div className="search-container">
-          <select className="dropdown" onChange={handleCategoryChange} value={selectedCategory}>
-            <option value="">필터</option>
-            {Object.keys(categoryOptions).map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <select className="dropdown" onChange={handleProductChange} value={selectedProduct} disabled={!selectedCategory}>
-            <option value="">카테고리</option>
-            {productOptions.map((product) => (
-              <option key={product} value={product}>{product}</option>
-            ))}
-          </select>
           <div className="search-bar">
             <Search size={20} />
             <input type="text" placeholder="검색어를 입력하세요" />
