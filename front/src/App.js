@@ -4,6 +4,8 @@ import Header from "./Components/Header";
 import List from "./Components/list"; // List 컴포넌트 import
 import "./Components/list.css";
 import "./Components/Header.css";
+import "./Components/Ktas.css";
+import "./Components/SearchBar.css";
 import axios from "axios";
 
 function App() {
@@ -22,9 +24,13 @@ function App() {
     fetchData();
   }, []);
 
+  const handleSearch = (term) => {
+    setSearchTerm(term); // 검색어 상태 업데이트
+  };
+
   return (
     <div className="app">
-      <Header onSearch={setSearchTerm} /> {/* 검색어 상태 전달 */}
+      <Header onSearch={handleSearch} /> {/* 검색어 상태 전달 */}
       <div className="main-content">
         <div className="content-wrapper">
           <div className="content">
