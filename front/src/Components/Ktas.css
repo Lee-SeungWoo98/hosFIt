@@ -1,0 +1,31 @@
+/* 차트 디자인 */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 중앙 정렬 */
+    justify-content: center; /* 중앙 정렬 */
+    padding: 10px;
+    width: 100%; /* 전체 폭 사용 */
+    height: auto; /* 반응형 레이아웃 */
+  }
+  
+  .label-container {
+    margin-top: 176px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .label-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 10px;
+  }
+  
+  .label-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
