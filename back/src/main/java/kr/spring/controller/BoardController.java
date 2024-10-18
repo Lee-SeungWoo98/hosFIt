@@ -20,6 +20,9 @@ public class BoardController {
 	@RequestMapping("/list")
 	public String list(Model model) {
 		service.list(model);
+		
+		
+		
 		return "list";
 	}
 	
