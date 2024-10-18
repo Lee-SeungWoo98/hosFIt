@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Patient from "./Patient";
 
-function List() {
+function List({ searchTerm, patients }) {
   // 검색어가 있을 경우, 검색어에 맞는 환자 필터링
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -14,12 +14,12 @@ function List() {
 
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
-  const currentPatients = patients.slice(
+  const currentPatients = filteredPatients.slice(
     indexOfFirstPatient,
     indexOfLastPatient
   );
 
-  const totalPages = Math.ceil(patients.length / patientsPerPage);
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
 
   const showPatientDetails = (patient) => {
     setSelectedPatient(patient);
@@ -58,7 +58,7 @@ function List() {
     <div className="content-area">
       <div className="table-container">
         <h2>
-          응급실 환자 리스트 <span>(총 {patients.length}명)</span>
+          응급실 환자 리스트 <span>(총 {filteredPatients.length}명)</span>
         </h2>
         <table>
           <thead>
@@ -74,13 +74,13 @@ function List() {
             </tr>
           </thead>
           <tbody>
-            {filteredPatients.map((patient) => (
+            {currentPatients.map((patient, index) => (
               <tr key={patient.id}>
-                <td>{index + 1}</td> {/* 번호 */}
+                <td>{indexOfFirstPatient + index + 1}</td> {/* 번호 */}
                 <td>{patient.name}</td> {/* 이름 */}
                 <td>{patient.age}</td> {/* 나이 */}
                 <td>{patient.gender}</td> {/* 성별 */}
-                <td>{patient.isPregnant ? "예" : "아니오"}</td>{" "}{/* 임신 여부 */}
+                <td>{patient.isPregnant ? "예" : "아니오"}</td> {/* 임신 여부 */}
                 <td>{patient.ktas}</td> {/* KTAS 레벨 */}
                 <td>{patient.stayDuration}시간</td> {/* 병원 체류 시간 */}
                 <td>
@@ -91,7 +91,6 @@ function List() {
                     상세정보
                   </button>
                 </td>
-                <td>{patient.emergencyLevel}</td>
               </tr>
             ))}
           </tbody>
