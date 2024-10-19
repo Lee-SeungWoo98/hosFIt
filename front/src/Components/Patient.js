@@ -183,6 +183,23 @@ function Patient({ patient, onBack }) {
     </ResponsiveContainer>
   );
 
+  const bloodTestChart = (
+    <ResponsiveContainer width="100%" height={300}>
+      {patientInfo?.bloodTestData ? (
+        <BarChart data={patientInfo.bloodTestData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="value" fill="#8884d8" />
+        </BarChart>
+      ) : (
+        <div className="no-data-message">피검사 데이터가 없습니다.</div>
+      )}
+    </ResponsiveContainer>
+  );
+
   return (
     <div className="patient-details">
       <button onClick={onBack} className="back-button">
@@ -205,7 +222,11 @@ function Patient({ patient, onBack }) {
         {showBloodTest && (
           <div className="blood-test-data">
             <h4>피검사 데이터</h4>
-            <pre>{patientInfo?.bloodTestData || '피검사 데이터가 없습니다.'}</pre>
+            {bloodTestChart}
+            <div className="ai-opinion">
+              <h5>AI 소견</h5>
+              <p>AI소견이 들어갈 곳입니다.</p>
+            </div>
           </div>
         )}
       </div>
