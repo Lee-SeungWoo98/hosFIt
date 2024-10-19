@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import axios from "axios";
 
 const Ktas = () => {
   const totalBeds = 100; // 총 병상 수
@@ -28,6 +29,8 @@ const Ktas = () => {
     ...tasData, // 사용 중인 병상에 KTAS 레벨 데이터 추가
     { name: "미사용", value: unusedBeds, color: "#DDDDDD" }, // 미사용 병상 (회색)
   ];
+
+  
 
   return (
     <aside className="sidebar">
@@ -104,7 +107,19 @@ const Ktas = () => {
               style={{ backgroundColor: entry.color }}
               className="label-dot"
             ></span>
-            {entry.name}: {entry.value} Beds ({entry.percentage}%)
+            <div className="tas-per">
+              <span onClick={() => {
+                axios.get("http://localhost:8082/boot/patients/details")
+                .then((result)=>{
+                  console.log("result");
+                })
+                .catch(()=>{
+                  console.log("fail");
+                })
+              }}>
+                {entry.name}: {entry.value} Beds ({entry.percentage}%)
+              </span>
+            </div>
           </div>
         ))}
       </div>
