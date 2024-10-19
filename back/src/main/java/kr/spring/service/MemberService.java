@@ -1,6 +1,6 @@
 package kr.spring.service;
 
-import kr.spring.entity.Board;
+
 import kr.spring.entity.Member;
 import kr.spring.repository.MemberRepository;
 

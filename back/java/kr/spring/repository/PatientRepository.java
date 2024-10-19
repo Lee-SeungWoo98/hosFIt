@@ -12,5 +12,5 @@ import kr.spring.entity.Patient;
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     List<Patient> findByNameContainingIgnoreCase(String name);
 
-    Patient findByPatientid(Long patientid);
+    Patient findBySubjectId(Long subjectId);
 }

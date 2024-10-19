@@ -1,9 +1,6 @@
-// PatientController.java
 package kr.spring.controller;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,39 +9,35 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import kr.spring.entity.MedicalRecord;
 import kr.spring.entity.Patient;
+import kr.spring.entity.Visit;
 import kr.spring.service.PatientService;
 
 @RestController
+@RequestMapping("/patients")
 public class PatientController {
 
     @Autowired
     private PatientService patientService;
 
-    @GetMapping("/PatientList")
+    @GetMapping("/list")
     public @ResponseBody List<Patient> getAllPatients() {
+        System.out.println("[PatientController - getAllPatients] Calling PatientService to get all patients");
         return patientService.getAllPatients();
     }
 
-    @GetMapping("/searchPatients")
+    @GetMapping("/search")
     public @ResponseBody List<Patient> getPatients(@RequestParam(required = false) String name) {
+        System.out.println("[PatientController - getPatients] Calling PatientService to search patients with name: " + name);
         return patientService.getPatients(name);
     }
 
-    @GetMapping("/selectPatient")
-    public @ResponseBody Map<String, Object> selectPatient(@RequestParam Long patientid) {
-        // 환자 정보를 조회
-        Patient patient = patientService.getPatientById(patientid);
-
-        // 환자의 이전 기록을 조회
-        
-
-        // 결과를 Map으로 반환하여 JSON 형태로 전송
-        Map<String, Object> response = new HashMap<>();
-        response.put("patient", patient);
-        
-
-        return response;
+    // 환자 상세조회 + 이전 기록들
+    @GetMapping("/details")
+    public @ResponseBody List<Visit> getMedicalRecord(@RequestParam Long subjectId) {
+        System.out.println("[PatientController - getMedicalRecord] Calling PatientService to get visits for subjectId: " + subjectId);
+        List<Visit> visits = patientService.getVisitsRecordBySubjectId(subjectId);
+        System.out.println("[PatientController - getMedicalRecord] Result: " + visits);
+        return visits;
     }
 }

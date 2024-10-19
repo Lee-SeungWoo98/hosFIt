@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import kr.spring.entity.Member;
-import kr.spring.entity.ServerityLevel;
+
 
 import kr.spring.service.MemberService;
 
