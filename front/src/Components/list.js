@@ -70,6 +70,7 @@ function List({ searchTerm, patients }) {
               <th>임신</th>
               <th>KTAS</th>
               <th>병원 체류 시간</th>
+              <th>배치 추천</th>
               <th>상세 정보</th>
             </tr>
           </thead>
@@ -80,8 +81,9 @@ function List({ searchTerm, patients }) {
                 <td>{patient.name}</td> {/* 이름 */}
                 <td>{patient.age}</td> {/* 나이 */}
                 <td>{patient.gender}</td> {/* 성별 */}
-                <td>{patient.isPregnant ? "예" : "아니오"}</td> {/* 임신 여부 */}
+                <td>{patient.isPregnant ? "y" : "n"}</td> {/* 임신 여부 */}
                 <td>{patient.ktas}</td> {/* KTAS 레벨 */}
+                <td>{patient.prediction}</td> {/* hosFit AI 배치 추천 */}
                 <td>{patient.stayDuration}시간</td> {/* 병원 체류 시간 */}
                 <td>
                   <button
