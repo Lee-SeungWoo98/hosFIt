@@ -32,9 +32,9 @@ public class PatientService {
         return patientRepository.findByNameContainingIgnoreCase(name);
     }
 
-    public List<Visit> getVisitsRecordBySubjectId(Long subjectId) {
+    public Visit getVisitsRecordBySubjectId(Long subjectId) {
         System.out.println("[PatientService - getVisitsRecordBySubjectId] Fetching visits for subjectId: " + subjectId);
-        List<Visit> visits = visitRepository.findByPatient_SubjectId(subjectId);
+        Visit visits = visitRepository.findByPatient_SubjectId(subjectId);
         System.out.println("[PatientService - getVisitsRecordBySubjectId] Result: " + visits);
         return visits;
     }
