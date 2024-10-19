@@ -21,7 +21,7 @@ public class PatientController {
 
     @Autowired
     private PatientService patientService;
-    
+
     @GetMapping("/PatientList")
     public @ResponseBody List<Patient> getAllPatients() {
         return patientService.getAllPatients();
@@ -31,7 +31,7 @@ public class PatientController {
     public @ResponseBody List<Patient> getPatients(@RequestParam(required = false) String name) {
         return patientService.getPatients(name);
     }
-    
+
     @GetMapping("/selectPatient")
     public @ResponseBody Map<String, Object> selectPatient(@RequestParam Long patientid) {
         // 환자 정보를 조회
