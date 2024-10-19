@@ -36,8 +36,10 @@ public class PatientController {
     @GetMapping("/details")
     public @ResponseBody List<Visit> getMedicalRecord(@RequestParam Long subjectId) {
         System.out.println("[PatientController - getMedicalRecord] Calling PatientService to get visits for subjectId: " + subjectId);
-        List<Visit> visits = patientService.getVisitsRecordBySubjectId(subjectId);
+        Visit visits = patientService.getVisitsRecordBySubjectId(subjectId);
         System.out.println("[PatientController - getMedicalRecord] Result: " + visits);
         return visits;
     }
+    
+    ///새로운 글을 추가해봤습니다 하니가 뉴진스에서 제일 잘 하니?
 }
