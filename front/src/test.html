@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hosPit Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+        }
+        .sidebar {
+            width: 20%;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .content {
+            width: 80%;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .chart-container {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>KTAS 병상 점유율</h2>
+            <canvas id="ktasChart" width="200" height="200"></canvas>
+            <ul>
+                <li>KTAS 1: 30 Beds (%)</li>
+                <li>KTAS 2: 20 Beds (%)</li>
+                <li>KTAS 3: 10 Beds (%)</li>
+                <li>KTAS 4: 10 Beds (%)</li>
+                <li>KTAS 5: 8 Beds (%)</li>
+                <li>잔여병상: 22 Beds (%)</li>
+            </ul>
+        </div>
+        <div class="content">
+            <h2>환자 생체 데이터</h2>
+            <div class="chart-container">
+                <h3>체온 변화</h3>
+                <canvas id="temperatureChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>심박수 및 혈압</h3>
+                <canvas id="heartrateBloodpressureChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>피검사 결과</h3>
+                <canvas id="bloodTestChart"></canvas>
+                <p>정상 범위: 125 - 200 mg/dL</p>
+                <p>환자 콜레스테롤 수치: 220 mg/dL (비정상)</p>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script>
+        // KTAS 점유율 차트
+        const ctx1 = document.getElementById('ktasChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['KTAS 1', 'KTAS 2', 'KTAS 3', 'KTAS 4', 'KTAS 5', '미지수'],
+                datasets: [{
+                    data: [30, 20, 10, 10, 8, 22],
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#c9cbcf']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 체온 변화 차트
+        const ctx2 = document.getElementById('temperatureChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: ['09:00', '10:00', '11:00', '12:00'],
+                datasets: [{
+                    label: '체온(°C)',
+                    data: [36.5, 36.7, 36.8, 36.6],
+                    borderColor: '#ff6384',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 심박수 및 혈압 차트
+        const ctx3 = document.getElementById('heartrateBloodpressureChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: ['09:00', '10:00', '11:00', '12:00'],
+                datasets: [
+                    {
+                        label: '심박수(bpm)',
+                        data: [80, 82, 78, 79],
+                        borderColor: '#36a2eb',
+                        fill: false
+                    },
+                    {
+                        label: '혈압(mmHg)',
+                        data: [120, 125, 119, 121],
+                        borderColor: '#ffce56',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 피검사 결과 차트
+        const ctx4 = document.getElementById('bloodTestChart').getContext('2d');
+        new Chart(ctx4, {
+            type: 'line',
+            data: {
+                labels: ['Hour 1', 'Hour 3', 'Hour 5', 'Hour 7', 'Hour 9'],
+                datasets: [
+                    {
+                        label: 'Cholesterol',
+                        data: [220, 220, 220, 220, 220],
+                        borderColor: '#ff0000',
+                        fill: false
+                    },
+                    {
+                        label: '정상 범위 (125-200 mg/dL)',
+                        data: [200, 200, 200, 200, 200],
+                        borderColor: '#00ff00',
+                        borderDash: [5, 5],
+                        fill: false
+                    },
+                    {
+                        label: '정상 범위 하한 (125 mg/dL)',
+                        data: [125, 125, 125, 125, 125],
+                        borderColor: '#00ff00',
+                        borderDash: [5, 5],
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
