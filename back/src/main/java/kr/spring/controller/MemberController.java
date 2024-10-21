@@ -48,25 +48,30 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
     }
+    @GetMapping("/checkSession")
+    public ResponseEntity<?> checkSession(HttpSession session) {
+        // 세션에서 로그인된 사용자 정보 가져오기
+        Member loggedInUser = (Member) session.getAttribute("loggedInUser");
+
+        if (loggedInUser != null) {
+            // 로그인된 상태면 true와 사용자 정보를 반환
+            return ResponseEntity.ok().body(Map.of(
+                "isAuthenticated", true,
+                "user", loggedInUser  // 필요에 따라 사용자 정보를 보낼 수 있음
+            ));
+        } else {
+            // 세션에 로그인 정보가 없으면 인증되지 않은 상태
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "isAuthenticated", false,
+                "message", "로그인되지 않음"
+            ));
+        }
+    }
+    
     @GetMapping("/memberList")
     public @ResponseBody List<Member> memberList() {
     	System.out.println(service.getAllMembers().toString());
         return service.getAllMembers();
-    }
-    
-    @GetMapping("/login")
-    public @ResponseBody Member memberLogin(@RequestParam String username, @RequestParam String password) {
-        // authenticate 메서드 호출로 인증 처리
-        Member member = service.authenticate(username, password);
-
-        // 인증 결과에 따른 로그 출력
-        if (member != null) {
-            System.out.println("Authenticated Member: " + member.toString());
-        } else {
-            System.out.println("Invalid credentials");
-        }
-
-        return member;
     }
 
 }
