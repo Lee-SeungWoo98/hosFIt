@@ -5,8 +5,13 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import lombok.Data;
+import lombok.ToString;
+
 @Entity
 @Table(name = "patient")
+@ToString
+@Data
 public class Patient {
     @Id
     @Column(name = "subjectid")
@@ -26,11 +31,19 @@ public class Patient {
 
     @Column(name = "address")
     private String address;
+    
+    @Column(name = "pregnancystatus")
+    private String pregnancystatus;
+    
+    
+    @Column(name = "phonenumber")
+    private Long PhoneNumber;
+    
+    
+    @Column(name = "residentnum")
+    private Long ResidentNum;
+    
 
-	public void setSubjectId(Long patient) {
-		// TODO Auto-generated method stub
-		
-	}
 
     // Getters and Setters
 }
