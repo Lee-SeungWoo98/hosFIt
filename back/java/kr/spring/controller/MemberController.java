@@ -2,6 +2,7 @@ package kr.spring.controller;
 
 
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +53,28 @@ public class MemberController {
     
     
     
-    
+    @GetMapping("/checkSession")
+    public ResponseEntity<Map<String, Object>> checkSession(HttpSession session) {
+        // 세션에서 로그인된 사용자 정보 가져오기
+        Member loggedInUser = (Member) session.getAttribute("loggedInUser");
+
+        if (loggedInUser != null) {
+            // 로그인된 상태면 true와 사용자 정보를 반환
+            Map<String, Object> response = new HashMap<>();
+            response.put("isAuthenticated", true);
+            response.put("user", loggedInUser); // 필요에 따라 사용자 정보를 보낼 수 있음
+
+            return ResponseEntity.ok(response);
+        } else {
+            // 세션에 로그인 정보가 없으면 인증되지 않은 상태
+            Map<String, Object> response = new HashMap<>();
+            response.put("isAuthenticated", false);
+            response.put("message", "로그인되지 않음");
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+    }
+
     
     
     
