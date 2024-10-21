@@ -30,12 +30,12 @@ public class MemberController {
     private MemberService service;
 
    
-    //@PostMapping("/login")
-    //public @ResponseBody Member memberLogin(@RequestBody Map<String, String> loginData) {
-       // String username = loginData.get("username");
-        //String password = loginData.get("password");
-        //return service.authenticate(username, password);
-    //}
+    @PostMapping("/login")
+    public @ResponseBody Member memberLogin(@RequestBody Map<String, String> loginData) {
+        String username = loginData.get("username");
+        String password = loginData.get("password");
+        return service.authenticate(username, password);
+    }
 
     @GetMapping("/memberList")
     public @ResponseBody List<Member> memberList() {
