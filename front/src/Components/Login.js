@@ -11,20 +11,16 @@ function Login({ onLogin }) {
   const handleLogin = async () => {
     try {
       // 서버에 로그인 요청
-      const response = await axios.post('http://localhost:8082/boot/login', {
+      await axios.post('http://localhost:8082/boot/login', {
         username,
         password,
-      });
+      }, { withCredentials: true });  // 세션 쿠키 허용
 
-      if (response.data.success) {
-        onLogin(true);  // 로그인 성공 시 상태 업데이트
-        sessionStorage.setItem('isAuthenticated', 'true');  // 세션 저장
-        navigate('/');  // 메인 페이지로 이동
-      } else {
-        setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.');
-      }
+      // 로그인 성공 후 세션 체크
+      await onLogin();  // 세션 확인을 위해 App.js의 checkSession 실행
+      navigate('/');    // 메인 페이지로 이동
     } catch (err) {
-      setError('서버와 통신에 문제가 발생했습니다.');
+      setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.');
     }
   };
 
