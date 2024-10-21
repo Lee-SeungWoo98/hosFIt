@@ -7,6 +7,7 @@
     padding: 10px;
     width: 100%; /* 전체 폭 사용 */
     height: auto; /* 반응형 레이아웃 */
+    margin-bottom: 20px; /* 차트 아래 간격 추가 */
   }
   
   .label-container {

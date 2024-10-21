@@ -68,7 +68,7 @@
   .main-content {
     display: flex;
     flex-grow: 1;
-    margin-top: 70px; /* 상단바 높이만큼 여백 추가 */
+    margin-top: 10vh; /* 상단바 높이만큼 여백 추가 */
   }
   
   .sidebar {

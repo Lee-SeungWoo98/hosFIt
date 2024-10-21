@@ -33,6 +33,7 @@ public class MemberController {
     @Autowired
     private MemberService service;
 
+    @PostMapping("/login")
     public ResponseEntity<?> memberLogin(@RequestBody Map<String, String> loginData, HttpSession session) {
         String username = loginData.get("username");
         String password = loginData.get("password");
@@ -67,11 +68,4 @@ public class MemberController {
             ));
         }
     }
-    
-    @GetMapping("/memberList")
-    public @ResponseBody List<Member> memberList() {
-    	System.out.println(service.getAllMembers().toString());
-        return service.getAllMembers();
-    }
 
-}

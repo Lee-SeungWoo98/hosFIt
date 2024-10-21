@@ -5,8 +5,9 @@ function SearchBar({ onSearch }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    onSearch(e.target.value); // 검색어를 부모 컴포넌트로 전달
+    const term = e.target.value;
+    setSearchTerm(term);
+    onSearch(term); // 검색어를 App.js로 전달
   };
 
   return (

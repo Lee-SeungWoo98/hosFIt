@@ -1,57 +1,32 @@
 import React from "react";
 import "../Components/Ktas.css";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-const Ktas = () => {
-  const totalBeds = 100; // 총 병상 수
-  const usedBeds = 78; // 사용 중인 병상 수
-  const unusedBeds = totalBeds - usedBeds; // 미사용 병상 수
+const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
+  const totalBeds = ktasData?.totalBeds || 0;
+  const usedBeds = ktasData?.usedBeds || 0;
+  const unusedBeds = totalBeds - usedBeds;
 
-  // 사용 중인 병상의 KTAS 레벨 비율
-  const tasData = [
-    { name: "KTAS 1", value: 30, color: "#0000FF" }, // 파란색 (KTAS 1)
-    { name: "KTAS 2", value: 20, color: "#FF0000" }, // 빨간색 (KTAS 2)
-    { name: "KTAS 3", value: 10, color: "#FFFF00" }, // 노란색 (KTAS 3)
-    { name: "KTAS 4", value: 10, color: "#00FF00" }, // 초록색 (KTAS 4)
-    { name: "KTAS 5", value: 8, color: "#FFFFFF" }, // 흰색 (KTAS 5)
-  ];
+  const tasData = ktasData?.ktasRatios?.map((ratio, index) => {
+    const level = index + 1;
+    const colors = ["#0000FF", "#FF0000", "#FFFF00", "#00FF00", "#FFFFFF"]; // 각 레벨에 맞는 색상
+    return {
+      name: `KTAS ${level}`,
+      value: ratio,
+      color: colors[index] || "#DDDDDD", // 색상 지정
+    };
+  }) || [];
 
-  // 사용 중 vs 미사용 병상을 포함한 데이터
   const fullData = [
-    ...tasData, // 사용 중인 병상에 KTAS 레벨 데이터 추가
+    ...tasData, 
     { name: "미사용", value: unusedBeds, color: "#DDDDDD" }, // 미사용 병상 (회색)
   ];
 
   return (
     <aside className="sidebar">
-      <nav>
-        {/* <ul>  그래프에 밀려 잠정 폐기
-        <li className={activeMenu === 'main' ? 'active' : ''} onClick={() => handleMenuClick('main')}>
-          <MainIcon size={20} /> Main
-        </li>
-        <li className={activeMenu === 'patientManagement' ? 'active' : ''} onClick={() => handleMenuClick('patientManagement')}>
-          <PatientIcon size={20} /> 환자 관리
-        </li>
-        <li className={activeMenu === 'medicalRecords' ? 'active' : ''} onClick={() => handleMenuClick('medicalRecords')}>
-          <MedicalRecordIcon size={20} /> 진료 기록
-        </li>
-        <li className={activeMenu === 'statistics' ? 'active' : ''} onClick={() => handleMenuClick('statistics')}>
-          <StatisticsIcon size={20} /> 통계
-        </li>
-      </ul> */}
-      </nav>
       <div className="chart-container">
         <h3>KTAS 병상 점유율</h3>
         <ResponsiveContainer width="100%" height={200}>
-          {" "}
-          {/* 반응형으로 차트 크기 조정 */}
           <PieChart>
             <Pie
               data={fullData}
@@ -62,15 +37,7 @@ const Ktas = () => {
               innerRadius={50}
               outerRadius={80}
               labelLine={false}
-              label={({
-                name,
-                value,
-                cx,
-                cy,
-                midAngle,
-                innerRadius,
-                outerRadius,
-              }) => {
+              label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius }) => {
                 const RADIAN = Math.PI / 180;
                 const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -80,8 +47,8 @@ const Ktas = () => {
                   <text
                     x={x}
                     y={y}
-                    fill="black" // 글씨 색상을 차트 안에서 보이도록 설정
-                    textAnchor="middle" // 텍스트를 중앙에 정렬
+                    fill="black" 
+                    textAnchor="middle"
                     dominantBaseline="central"
                   >
                     {`${value}`}
@@ -104,7 +71,11 @@ const Ktas = () => {
               style={{ backgroundColor: entry.color }}
               className="label-dot"
             ></span>
-            {entry.name}: {entry.value} Beds ({entry.percentage}%)
+            <div className="tas-per">
+              <span>
+                {entry.name}: {entry.value} Beds
+              </span>
+            </div>
           </div>
         ))}
       </div>

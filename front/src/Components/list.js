@@ -1,148 +1,53 @@
-import React, { useState } from "react";
-import Patient from "./Patient";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-function List({ searchTerm, patients }) {
-  // 검색어가 있을 경우, 검색어에 맞는 환자 필터링
-  const filteredPatients = patients.filter((patient) =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+function Login({ onLogin }) {
+  const [username, setUsername] = useState(''); // 사용자 입력 아이디
+  const [password, setPassword] = useState(''); // 사용자 입력 비밀번호
+  const [error, setError] = useState(null); // 에러 상태 관리
+  const navigate = useNavigate();
 
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const patientsPerPage = 5;
-  const pageNumbersToShow = 5;
+  // 로그인 처리 함수
+  const handleLogin = async () => {
+    try {
+      // 서버에 로그인 요청
+      const response = await axios.post(
+        'http://localhost:8082/boot/login', 
+        { username, password },
+        { withCredentials: true } // 세션 쿠키를 받아오기 위해 필요
+      );
 
-  const indexOfLastPatient = currentPage * patientsPerPage;
-  const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
-  const currentPatients = filteredPatients.slice(
-    indexOfFirstPatient,
-    indexOfLastPatient
-  );
-
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
-
-  const showPatientDetails = (patient) => {
-    setSelectedPatient(patient);
-  };
-
-  const handleBackToList = () => {
-    setSelectedPatient(null);
-  };
-
-  const changePage = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const getPageNumbers = () => {
-    let startPage = Math.max(
-      1,
-      currentPage - Math.floor(pageNumbersToShow / 2)
-    );
-    let endPage = Math.min(totalPages, startPage + pageNumbersToShow - 1);
-
-    if (endPage - startPage + 1 < pageNumbersToShow) {
-      startPage = Math.max(1, endPage - pageNumbersToShow + 1);
+      if (response.data.success) {
+        onLogin(true);  // 로그인 성공 시 상태 업데이트
+        navigate('/');  // 메인 페이지로 이동
+      } else {
+        setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.'); // 로그인 실패 시 에러 메시지 표시
+      }
+    } catch (err) {
+      setError('서버와 통신에 문제가 발생했습니다.'); // 서버와의 통신 오류 발생 시
     }
-
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
-    );
   };
-
-  if (selectedPatient) {
-    return <Patient patient={selectedPatient} onBack={handleBackToList} />;
-  }
 
   return (
-    <div className="content-area">
-      <div className="table-container">
-        <h2>
-          응급실 환자 리스트 <span>(총 {filteredPatients.length}명)</span>
-        </h2>
-        <table>
-          <thead>
-            <tr>
-              <th>번호</th>
-              <th>이름</th>
-              <th>나이</th>
-              <th>성별</th>
-              <th>임신</th>
-              <th>KTAS</th>
-              <th>병원 체류 시간</th>
-              <th>상세 정보</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentPatients.map((patient, index) => (
-              <tr key={patient.id}>
-                <td>{indexOfFirstPatient + index + 1}</td> {/* 번호 */}
-                <td>{patient.name}</td> {/* 이름 */}
-                <td>{patient.age}</td> {/* 나이 */}
-                <td>{patient.gender}</td> {/* 성별 */}
-                <td>{patient.isPregnant ? "예" : "아니오"}</td> {/* 임신 여부 */}
-                <td>{patient.ktas}</td> {/* KTAS 레벨 */}
-                <td>{patient.stayDuration}시간</td> {/* 병원 체류 시간 */}
-                <td>
-                  <button
-                    onClick={() => showPatientDetails(patient)}
-                    className="detail-button"
-                  >
-                    상세정보
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="pagination">
-          <button
-            className="page-button"
-            onClick={() =>
-              changePage(Math.max(1, currentPage - pageNumbersToShow))
-            }
-            disabled={currentPage === 1}
-          >
-            &lt;&lt;
-          </button>
-          <button
-            className="page-button"
-            onClick={() => changePage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            &lt;
-          </button>
-          {getPageNumbers().map((number) => (
-            <button
-              key={number}
-              className={`page-button ${
-                currentPage === number ? "active" : ""
-              }`}
-              onClick={() => changePage(number)}
-            >
-              {number}
-            </button>
-          ))}
-          <button
-            className="page-button"
-            onClick={() => changePage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            &gt;
-          </button>
-          <button
-            className="page-button"
-            onClick={() =>
-              changePage(Math.min(totalPages, currentPage + pageNumbersToShow))
-            }
-            disabled={currentPage === totalPages}
-          >
-            &gt;&gt;
-          </button>
-        </div>
-      </div>
+    <div className="login-container">
+      <h2>로그인</h2>
+      {error && <p style={{ color: 'red' }}>{error}</p>} {/* 에러 메시지 표시 */}
+      <input
+        type="text"
+        placeholder="아이디"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)} // 사용자 아이디 입력
+      />
+      <input
+        type="password"
+        placeholder="비밀번호"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)} // 사용자 비밀번호 입력
+      />
+      <button onClick={handleLogin}>로그인</button> {/* 로그인 버튼 클릭 시 handleLogin 호출 */}
     </div>
   );
 }
 
-export default List;
+export default Login;

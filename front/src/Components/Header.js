@@ -46,7 +46,7 @@ const MainIcon = ({ size = 20 }) => (
   </svg>
 );
 
-function Header({ onSearch }) {  // 부모로부터 onSearch 함수를 전달받음
+function Header({ onSearch, ktasData  }) {  // 부모로부터 onSearch 함수를 전달받음
   const [searchTerm, setSearchTerm] = useState("");
   const [loggedInUser, setLoggedInUser] = useState("김철수");
 
@@ -68,7 +68,10 @@ function Header({ onSearch }) {  // 부모로부터 onSearch 함수를 전달받
         </div>
       </div>
       <div className="main-content">
-        <Ktas/>
+        <Ktas ktasData={ktasData}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
+        <div>
+          가나다라마바사아
+        </div>
       </div>
     </>
   );
