@@ -167,19 +167,21 @@ function List({ searchTerm, patients }) {
               <th>임신</th>
               <th>KTAS</th>
               <th>병원 체류 시간</th>
+              <th>배치 추천</th>
               <th>상세 정보</th>
             </tr>
           </thead>
           <tbody>
             {currentPatients.map((patient) => (
               <tr key={patient.id}>
-                <td>{patient.id}</td>
-                <td>{patient.name}</td>
-                <td>{patient.age}</td>
-                <td>{patient.gender}</td>
-                <td>{patient.isPregnant ? "예" : "아니오"}</td>
-                <td>{patient.ktas}</td>
-                <td>{patient.stayDuration}시간</td>
+                <td>{indexOfFirstPatient + index + 1}</td> {/* 번호 */}
+                <td>{patient.name}</td> {/* 이름 */}
+                <td>{patient.age}</td> {/* 나이 */}
+                <td>{patient.gender}</td> {/* 성별 */}
+                <td>{patient.isPregnant ? "y" : "n"}</td> {/* 임신 여부 */}
+                <td>{patient.ktas}</td> {/* KTAS 레벨 */}
+                <td>{patient.prediction}</td> {/* hosFit AI 배치 추천 */}
+                <td>{patient.stayDuration}시간</td> {/* 병원 체류 시간 */}
                 <td>
                   <button
                     onClick={() => showPatientDetails(patient)}

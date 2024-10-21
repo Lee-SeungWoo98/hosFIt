@@ -8,8 +8,6 @@ import org.springframework.stereotype.Repository;
 
 import kr.spring.entity.Patient;
 
-
-
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     List<Patient> findByNameContainingIgnoreCase(String name);
