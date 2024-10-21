@@ -83,8 +83,8 @@ function List({ searchTerm, patients }) {
                 <td>{patient.gender}</td> {/* 성별 */}
                 <td>{patient.isPregnant ? "y" : "n"}</td> {/* 임신 여부 */}
                 <td>{patient.ktas}</td> {/* KTAS 레벨 */}
-                <td>{patient.prediction}</td> {/* hosFit AI 배치 추천 */}
                 <td>{patient.stayDuration}시간</td> {/* 병원 체류 시간 */}
+                <td>{patient.prediction}</td> {/* hosFit AI 배치 추천 */}
                 <td>
                   <button
                     onClick={() => showPatientDetails(patient)}

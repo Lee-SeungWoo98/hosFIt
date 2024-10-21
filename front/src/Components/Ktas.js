@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../Components/Ktas.css";
 import {
   PieChart,
@@ -11,18 +11,37 @@ import {
 import axios from "axios";
 
 const Ktas = () => {
-  const totalBeds = 100; // 총 병상 수
-  const usedBeds = 78; // 사용 중인 병상 수
-  const unusedBeds = totalBeds - usedBeds; // 미사용 병상 수
+  // 서버에서 받아올 상태 초기화
+  const [totalBeds, setTotalBeds] = useState(0); // 총 병상 수
+  const [usedBeds, setUsedBeds] = useState(0); // 사용 중인 병상 수
+  const unusedBeds = totalBeds - usedBeds; // 미사용
+  const [ktasData, setKtasData] = useState([]); // KTAS 비율 데이터
 
-  // 사용 중인 병상의 KTAS 레벨 비율
-  const tasData = [
-    { name: "KTAS 1", value: 30, color: "#0000FF" }, // 파란색 (KTAS 1)
-    { name: "KTAS 2", value: 20, color: "#FF0000" }, // 빨간색 (KTAS 2)
-    { name: "KTAS 3", value: 10, color: "#FFFF00" }, // 노란색 (KTAS 3)
-    { name: "KTAS 4", value: 10, color: "#00FF00" }, // 초록색 (KTAS 4)
-    { name: "KTAS 5", value: 8, color: "#FFFFFF" }, // 흰색 (KTAS 5)
-  ];
+  useEffect(() => {
+    // 서버에서 병상 정보와 KTAS 비율을 받아옴
+    axios
+      .get("http://localhost:8082/boot/beds")
+      .then((response) => {
+        const data = response.data;
+        setTotalBeds(data.totalBeds); // 총 병상 수
+        setUsedBeds(data.usedBeds); // 사용 중인 병상 수
+        setKtasData(data.ktasRatios); // KTAS 비율 (리스트 형식)
+      })
+      .catch(() => {
+        console.log("데이터를 불러오는 데 실패했습니다.");
+      });
+  }, []);
+
+  // 사용 중인 병상의 KTAS 레벨 비율 데이터 가공
+  const tasData = ktasData.map((ratio, index) => {
+    const level = index + 1;
+    const colors = ["#0000FF", "#FF0000", "#FFFF00", "#00FF00", "#FFFFFF"]; // 각 레벨에 맞는 색상
+    return {
+      name: `KTAS ${level}`,
+      value: ratio,
+      color: colors[index] || "#DDDDDD", // 색상 지정
+    };
+  });
 
   // 사용 중 vs 미사용 병상을 포함한 데이터
   const fullData = [
@@ -30,26 +49,8 @@ const Ktas = () => {
     { name: "미사용", value: unusedBeds, color: "#DDDDDD" }, // 미사용 병상 (회색)
   ];
 
-  
-
   return (
     <aside className="sidebar">
-      <nav>
-        {/* <ul>  그래프에 밀려 잠정 폐기
-        <li className={activeMenu === 'main' ? 'active' : ''} onClick={() => handleMenuClick('main')}>
-          <MainIcon size={20} /> Main
-        </li>
-        <li className={activeMenu === 'patientManagement' ? 'active' : ''} onClick={() => handleMenuClick('patientManagement')}>
-          <PatientIcon size={20} /> 환자 관리
-        </li>
-        <li className={activeMenu === 'medicalRecords' ? 'active' : ''} onClick={() => handleMenuClick('medicalRecords')}>
-          <MedicalRecordIcon size={20} /> 진료 기록
-        </li>
-        <li className={activeMenu === 'statistics' ? 'active' : ''} onClick={() => handleMenuClick('statistics')}>
-          <StatisticsIcon size={20} /> 통계
-        </li>
-      </ul> */}
-      </nav>
       <div className="chart-container">
         <h3>KTAS 병상 점유율</h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -92,6 +93,8 @@ const Ktas = () => {
                 );
               }}
             >
+              {" "}
+              // 파이 차트 조각 그리기
               {fullData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
@@ -100,6 +103,7 @@ const Ktas = () => {
           </PieChart>
         </ResponsiveContainer>
       </div>
+      {/* 라벨 */}
       <div className="label-container">
         {fullData.map((entry, index) => (
           <div key={index} className="label-item">
@@ -108,15 +112,19 @@ const Ktas = () => {
               className="label-dot"
             ></span>
             <div className="tas-per">
-              <span onClick={() => {
-                axios.get("http://localhost:8082/boot/patients/details")
-                .then((result)=>{
-                  console.log("result");
-                })
-                .catch(()=>{
-                  console.log("fail");
-                })
-              }}>
+              {/* 서버에 클릭한 tas 검색 */}
+              <span
+                onClick={() => {
+                  axios
+                    .get("http://localhost:8082/boot/patients/details?")
+                    .then((result) => {
+                      console.log("result");
+                    })
+                    .catch(() => {
+                      console.log("fail");
+                    });
+                }}
+              >
                 {entry.name}: {entry.value} Beds ({entry.percentage}%)
               </span>
             </div>
