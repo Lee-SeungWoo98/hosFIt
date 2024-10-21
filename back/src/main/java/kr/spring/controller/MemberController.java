@@ -33,6 +33,7 @@ public class MemberController {
     @Autowired
     private MemberService service;
 
+    @PostMapping("/login")
     public ResponseEntity<?> memberLogin(@RequestBody Map<String, String> loginData, HttpSession session) {
         String username = loginData.get("username");
         String password = loginData.get("password");
@@ -48,6 +49,7 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
     }
+
     @GetMapping("/memberList")
     public @ResponseBody List<Member> memberList() {
     	System.out.println(service.getAllMembers().toString());
