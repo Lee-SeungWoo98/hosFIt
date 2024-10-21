@@ -1,5 +1,7 @@
 package kr.spring.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -37,5 +39,9 @@ public class Visit {
 
     @Column(name = "label")
     private Long label;
+    
+    @Column(name = "visitdate")
+    private LocalDateTime  VisitDate;
+
 
 }

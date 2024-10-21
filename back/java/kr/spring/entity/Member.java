@@ -17,4 +17,14 @@ public class Member {
 
     @Column(name = "name")
     private String name;
+    
+    @Column(name = "position")
+    private String position;
+    
+    @Column(name = "department")
+    private String department;
+    
+    @Column(name = "major")
+    private String major;
+    
 }

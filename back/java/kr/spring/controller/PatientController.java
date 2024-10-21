@@ -3,6 +3,7 @@ package kr.spring.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,10 +20,12 @@ public class PatientController {
 
     @Autowired
     private PatientService patientService;
-
+    
+   // @CrossOrigin
     @GetMapping("/list")
-    public @ResponseBody List<Patient> getAllPatients() {
+    public List<Patient> getAllPatients() {
         System.out.println("[PatientController - getAllPatients] Calling PatientService to get all patients");
+        System.out.println(patientService.getAllPatients().toString());
         return patientService.getAllPatients();
     }
 

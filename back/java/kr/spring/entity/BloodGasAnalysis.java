@@ -2,6 +2,7 @@ package kr.spring.entity;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,9 +33,9 @@ public class BloodGasAnalysis {
     private String pO2;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", referencedColumnName = "bloodidx", insertable = false, updatable = false)
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 }
