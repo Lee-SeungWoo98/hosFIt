@@ -2,6 +2,7 @@ package kr.spring.entity;
 
 import java.security.Timestamp;
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,8 +13,8 @@ import javax.persistence.Table;
 
 
 @Entity
-@Table(name = "charts")
-public class Charts {
+@Table(name = "vitalsigns")
+public class VitalSigns {
     @Id
     @Column(name = "chartnum")
     private String chartNum;
@@ -44,7 +45,7 @@ public class Charts {
     private String temperature;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     // Getters and Sette
 }

@@ -36,6 +36,10 @@ public class PatientBedUse {
 
     @Column(name = "endtimestamp")
     private String endTimestamp;
+    
+    @Column(name = "aitasid")
+    private Long AiTasId;
+    
 
     // Getters and Setters
 }

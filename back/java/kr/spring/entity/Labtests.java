@@ -2,6 +2,7 @@ package kr.spring.entity;
 
 import java.security.Timestamp;
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,8 +14,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "bloodcheck")
-public class BloodCheck {
+@Table(name = "labtests")
+public class Labtests {
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
@@ -42,7 +43,7 @@ public class BloodCheck {
     private String diagnosisCode;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     // Getters and Setters
 }
