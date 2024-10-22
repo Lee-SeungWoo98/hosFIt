@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom"; // Router 추가
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import axios from "axios";
+import Login from "./Components/Login";
+import MainPage from "./Components/MainPage";  // MainPage로 분리하여 임포트
+
 import "./App.css";
-import Header from "./Components/Header";
-import List from "./Components/list"; // List 컴포넌트 import
-import Login from "./Components/Login"; // 로그인 컴포넌트 추가
 import "./Components/list.css";
 import "./Components/Header.css";
 import "./Components/Ktas.css";
 import "./Components/SearchBar.css";
-import axios from "axios";
 
 function App() {
   const [searchTerm, setSearchTerm] = useState(""); // 검색어 상태
@@ -21,7 +21,7 @@ function App() {
   // 서버에서 세션 정보를 통해 로그인 상태를 확인하는 함수
   const checkSession = async () => {
     try {
-      const result = await axios.get("http://localhost:8082/boot/checkSession", { withCredentials: true }); 
+      const result = await axios.get("http://localhost:8082/boot/checkSession", { withCredentials: true });
       setIsAuthenticated(result.data.isAuthenticated); // 서버로부터 로그인 상태 확인
     } catch (error) {
       setIsAuthenticated(false); // 에러 발생 시 로그인 상태를 false로 설정
@@ -39,9 +39,7 @@ function App() {
     setError(null);
     try {
       // 검색어가 있을 경우 필터링된 데이터를 요청
-      const result = await axios.get(
-        `http://localhost:8082/boot/patients/search?name=${term}`
-      );
+      const result = await axios.get(`http://localhost:8082/boot/patients/search?name=${term}`);
       setPatients(result.data);
     } catch (error) {
       setError("App.js_데이터 로드 실패:", error);
@@ -112,14 +110,14 @@ function App() {
           path="/"
           element={
             isAuthenticated ? (
-              <div className="app">
-                <Header onSearch={handleSearch} ktasData={ktasData} />
-                <div className="main-content">
-                  {loading && <p>로딩 중...</p>}
-                  {error && <p>{error}</p>}
-                  <List searchTerm={searchTerm} patients={patients} />
-                </div>
-              </div>
+              <MainPage
+                searchTerm={searchTerm}
+                patients={patients}
+                ktasData={ktasData}
+                loading={loading}
+                error={error}
+                handleSearch={handleSearch}
+              />
             ) : (
               <Navigate to="/login" /> // 로그인되지 않은 경우 로그인 페이지로 리디렉션
             )

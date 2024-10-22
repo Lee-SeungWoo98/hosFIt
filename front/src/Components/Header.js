@@ -46,9 +46,8 @@ const MainIcon = ({ size = 20 }) => (
   </svg>
 );
 
-function Header({ onSearch, ktasData  }) {  // 부모로부터 onSearch 함수를 전달받음
+function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearch 함수를 전달받음
   const [searchTerm, setSearchTerm] = useState("");
-  const [loggedInUser, setLoggedInUser] = useState("김철수");
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -64,7 +63,7 @@ function Header({ onSearch, ktasData  }) {  // 부모로부터 onSearch 함수�
         <SearchBar onSearch={onSearch}/> 
         <div className="user-info">
           <ProfileIcon size={29} />
-          <span className="user-name">{loggedInUser} 환영합니다.</span>
+          <span className="user-name">{username}님 환영합니다.</span>
         </div>
       </div>
       <div className="main-content">
