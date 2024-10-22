@@ -326,4 +326,4 @@ function List({ searchTerm }) {
   );
 }
 
-export default Login;
+export default List;
