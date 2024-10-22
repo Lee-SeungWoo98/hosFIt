@@ -4,12 +4,15 @@ package kr.spring.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import kr.spring.dto.PatientDTO;
 import kr.spring.entity.Patient;
 import kr.spring.entity.Visit;
 import kr.spring.repository.PatientRepository;
@@ -23,12 +26,22 @@ public class PatientService {
 
     @Autowired
     private VisitRepository visitRepository;
+    @Autowired
+    private ModelMapper modelMapper;
 
-    public List<Patient> getAllPatients() {
-        System.out.println("[PatientService - getAllPatients] Fetching all patients from repository");
-        return patientRepository.findAll();
+ // 모든 환자 조회 (환자 정보만 반환)
+    public List<PatientDTO> getAllPatients() {
+        List<Patient> patients = patientRepository.findAll();
+
+        // 환자 정보만 반환 (방문 기록은 제외)
+        return patients.stream()
+                .map(patient -> {
+                    PatientDTO dto = modelMapper.map(patient, PatientDTO.class);
+                    dto.setVisits(Collections.emptyList()); // 방문 기록을 빈 리스트로 설정
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
-
     public List<Patient> getPatients(String name) {
         System.out.println("[PatientService - getPatients] Searching patients with name containing: " + name);
         return patientRepository.findByNameContainingIgnoreCase(name);
