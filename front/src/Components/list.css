@@ -8,9 +8,10 @@
   border-radius: 8px;
   border: 2px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: calc(98% - 230px); /* 사이드바의 너비를 고려한 최대 너비 */
+  width: calc(100% - 240px); /* 사이드바의 너비를 고려하여 전체 너비 설정 */
   margin-left: 240px; /* 사이드바와의 간격 조절 */
-  margin-top: -20px; /* 필요에 따라 적절히 조정 */
+  margin-top: -20px; /* 필요에 따라 조정 */
+  box-sizing: border-box; /* 패딩과 보더를 포함하여 전체 너비 조정 */
 }
 
 /* 페이지 헤더 스타일 */
