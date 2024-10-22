@@ -10,6 +10,7 @@ import "./Components/Header.css";
 import "./Components/Ktas.css";
 import "./Components/SearchBar.css";
 
+
 function App() {
   const [searchTerm, setSearchTerm] = useState(""); // 검색어 상태
   const [patients, setPatients] = useState([]); // 서버에서 받아온 환자 목록

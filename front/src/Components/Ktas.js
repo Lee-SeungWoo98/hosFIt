@@ -2,6 +2,7 @@ import React from "react";
 import "../Components/Ktas.css";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
+
 const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
   const totalBeds = ktasData?.totalBeds || 0;
   const usedBeds = ktasData?.usedBeds || 0;

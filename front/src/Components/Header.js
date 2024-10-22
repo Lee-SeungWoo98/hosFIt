@@ -52,6 +52,7 @@ function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearc
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     onSearch(e.target.value); // 검색어를 부모 컴포넌트로 전달
+    
   };
 
   return (
