@@ -29,11 +29,6 @@ function App() {
     }
   };
 
-  // 임시로 로그인 상태 설정
-  // const checkSession = () => {
-  //   setIsAuthenticated(true); // 임시로 로그인 상태를 true로 설정
-  // };
-
   // 페이지가 로드될 때 세션 상태 확인
   useEffect(() => {
     checkSession(); // 처음 로딩 시 세션 확인
@@ -74,37 +69,39 @@ function App() {
       const result = await axios.get("http://localhost:8082/boot/beds"); // KTAS 관련 데이터 요청
       setKtasData(result.data); // KTAS 데이터 저장
     } catch (error) {
-      setError("KTAS 데이터 로드 실패: " + error.message);
+      console.error("KTAS 데이터 로드 실패:", error);
+      // KTAS 데이터를 가져오지 못했을 때에도 기본값을 설정
+      setKtasData({ totalBeds: 0, usedBeds: 0, ktasRatios: [] });
     }
   };
 
-  // 임시 KTAS 데이터 설정
-  const tempKtasData = {
-    totalBeds: 100,
-    usedBeds: 60,
-    ktasRatios: [10, 20, 15, 10, 5], // 각 KTAS 레벨에 대한 임시 비율
-  };
-
-  // 페이지 로드 시 전체 데이터를 가져오고, 검색어에 맞춰 서버에서 필터링된 데이터 가져오기
+  // 리스트 데이터 요청
   useEffect(() => {
     if (searchTerm) {
       fetchFilteredPatients(searchTerm); // 검색어가 있으면 필터링된 데이터 요청
     } else {
       fetchData(); // 검색어가 없으면 전체 데이터를 요청
     }
-    // KTAS 데이터를 서버에서 받아오지 못하는 경우 임시 데이터 사용
-    // fetchKtasData(); // 원래 서버로부터 KTAS 데이터를 요청하는 코드
-    setKtasData(tempKtasData); // 임시 데이터 설정
 
-    // 주기적으로 전체 데이터를 불러오기 (1분 마다)
+    // 주기적으로 리스트 데이터를 불러오기 (1분 마다)
     const intervalId = setInterval(() => {
-      fetchData();
-      fetchKtasData();
+      fetchData(); // 리스트 데이터만 주기적으로 요청
     }, 60000);
 
     // 컴포넌트가 언마운트될 때 인터벌 제거
     return () => clearInterval(intervalId);
   }, [searchTerm]);
+
+  // KTAS 데이터는 별도의 useEffect로 관리
+  useEffect(() => {
+    fetchKtasData(); // KTAS 데이터를 별도로 주기적으로 요청
+
+    const intervalId = setInterval(() => {
+      fetchKtasData();
+    }, 60000); // 1분마다 KTAS 데이터 요청
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleSearch = (term) => {
     setSearchTerm(term); // 검색어 상태 업데이트
