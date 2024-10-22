@@ -21,7 +21,7 @@ function App() {
   // 서버에서 세션 정보를 통해 로그인 상태를 확인하는 함수
   const checkSession = async () => {
     try {
-      const result = await axios.get("http://localhost:8082/checkSession", { withCredentials: true }); 
+      const result = await axios.get("http://localhost:8082/boot/checkSession", { withCredentials: true }); 
       setIsAuthenticated(result.data.isAuthenticated); // 서버로부터 로그인 상태 확인
     } catch (error) {
       setIsAuthenticated(false); // 에러 발생 시 로그인 상태를 false로 설정
