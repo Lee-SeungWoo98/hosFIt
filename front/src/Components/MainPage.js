@@ -11,6 +11,8 @@ function MainPage({ searchTerm, patients, ktasData, loading, error, handleSearch
     return (
       <div className="app">
         <Header onSearch={handleSearch} ktasData={ktasData} username={username} />
+        
+        {/* KTAS 데이터가 없어도 리스트는 그대로 보이게 렌더링 분리 */}
         <div className="main-content">
           {loading ? (
             <p>로딩 중...</p>
