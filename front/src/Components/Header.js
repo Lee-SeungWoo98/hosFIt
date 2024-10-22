@@ -52,7 +52,7 @@ function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearc
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     onSearch(e.target.value); // 검색어를 부모 컴포넌트로 전달
-    
+
   };
 
   return (
@@ -67,11 +67,8 @@ function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearc
           <span className="user-name">{username}님 환영합니다.</span>
         </div>
       </div>
-      <div className="main-content">
+      <div className="header-content">
         <Ktas ktasData={ktasData}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
-        <div>
-          가나다라마바사아
-        </div>
       </div>
     </>
   );

@@ -29,6 +29,11 @@ function App() {
     }
   };
 
+  // 임시로 로그인 상태 설정
+  // const checkSession = () => {
+  //   setIsAuthenticated(true); // 임시로 로그인 상태를 true로 설정
+  // };
+
   // 페이지가 로드될 때 세션 상태 확인
   useEffect(() => {
     checkSession(); // 처음 로딩 시 세션 확인
@@ -40,7 +45,7 @@ function App() {
     setError(null);
     try {
       // 검색어가 있을 경우 필터링된 데이터를 요청
-      const result = await axios.get(`http://localhost:8082/boot/patients/search?name=${term}`);
+      const result = await axios.get(`http://localhost:8082/boot/patients/=${term}`);
       setPatients(result.data);
     } catch (error) {
       setError("App.js_데이터 로드 실패:", error);

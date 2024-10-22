@@ -9,6 +9,7 @@ function Login({ onLogin }) {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    // 실제 서버 로그인 로직 주석 처리
     try {
       // 서버에 로그인 요청
       await axios.post('http://localhost:8082/boot/login', {
@@ -22,8 +23,11 @@ function Login({ onLogin }) {
     } catch (err) {
       setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.');
     }
+    
+    // 임시로 "홍길동"으로 로그인 처리
+    // const username = "홍길동";
+    // navigate('/', { state: { username } });  // 메인 페이지로 이동
   };
-
   return (
     <div className="login-container">
       <h2>로그인</h2>
