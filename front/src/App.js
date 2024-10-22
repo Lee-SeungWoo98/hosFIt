@@ -59,7 +59,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const result = await axios.get("http://localhost:8082/boot/patients/list");
+      const result = await axios.get("http://localhost:8082/boot/patients/5/visits");
       setPatients(result.data);
     } catch (error) {
       setError("App.js_데이터 로드 실패:", error);
