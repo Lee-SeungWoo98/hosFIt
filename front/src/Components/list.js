@@ -108,10 +108,6 @@ function List({ searchTerm }) {
     setSelectedPatient(null);
   };
 
-  if (selectedPatient) {
-    return <Patient patient={selectedPatient} onBack={handleBackToList} />;
-  }
-
   return (
     <>
       <div className="page-header">
@@ -330,4 +326,4 @@ function List({ searchTerm }) {
   );
 }
 
-export default List;
+export default Login;

@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,15 +34,17 @@ public class PatientService {
         return patientRepository.findByNameContainingIgnoreCase(name);
     }
 
-    public Visit getVisitsRecordBySubjectId(Long subjectId) {
-        System.out.println("[PatientService - getVisitsRecordBySubjectId] Fetching visits for subjectId: " + subjectId);
-        Visit visits = visitRepository.findByPatient_SubjectId(subjectId);
-        System.out.println("[PatientService - getVisitsRecordBySubjectId] Result: " + visits);
-        return visits;
+    public PatientService(PatientRepository patientRepository, VisitRepository visitRepository) {
+        this.patientRepository = patientRepository;
+        this.visitRepository = visitRepository;
     }
 
-    public List<Visit> getVisitsRecordByPatient(Patient patient) {
-        System.out.println("[PatientService - getVisitsRecordByPatient] Fetching visits for patient: " + patient);
-        return visitRepository.findByPatient(patient);
+    public Patient getPatientWithVisits(Long subjectId) {
+        Patient patient = patientRepository.findById(subjectId)
+                                           .orElseThrow(() -> new EntityNotFoundException("환자를 찾을 수 없습니다."));
+        List<Visit> visits = visitRepository.findByPatient(patient);
+        patient.setVisits(visits); // 방문 기록 설정
+        return patient;
     }
+
 }

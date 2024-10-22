@@ -1,5 +1,7 @@
 package kr.spring.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -7,8 +9,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "electrolytelevel")
+@Data
 public class ElectrolyteLevel {
     
     @Id
@@ -17,7 +22,7 @@ public class ElectrolyteLevel {
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false) // 중복 매핑 방지
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 
     @Column(name = "sodium")
     private Long sodium;
@@ -29,7 +34,7 @@ public class ElectrolyteLevel {
     private Long chloride;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     // Getters and Setters
 }

@@ -1,9 +1,14 @@
 package kr.spring.entity;
 import javax.persistence.*;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
 @Table(name = "EnzymesMetabolism")
+@Data
 public class EnzymesMetabolism {
 
     @Id
@@ -47,12 +52,12 @@ public class EnzymesMetabolism {
     private Integer ntproBNP;
 
     @Column(name = "regdate")
-    private Date regdate;
+    private LocalDateTime  regdate;
 
     // 외래키 관계 설정
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 
     // getter, setter 생략
 }

@@ -1,6 +1,7 @@
 package kr.spring.entity;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,8 +11,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "Chemicalexaminationsenzymes")
+@Data
 public class ChemicalExaminationsEnzymes {
 
     @Id
@@ -27,7 +31,7 @@ public class ChemicalExaminationsEnzymes {
     @Column(name = "Albumin")
     private Float albumin;
 
-    @Column(name = "Alkaline_Phosphatase")
+    @Column(name = "alkalinephosphatase")
     private Integer alkalinePhosphatase;
 
     @Column(name = "Ammonia")
@@ -39,7 +43,7 @@ public class ChemicalExaminationsEnzymes {
     @Column(name = "AST")
     private Integer ast;
 
-    @Column(name = "Beta_Hydroxybutyrate")
+    @Column(name = "betahydroxybutyrate")
     private Float betaHydroxybutyrate;
 
     @Column(name = "Bicarbonate")
@@ -61,12 +65,12 @@ public class ChemicalExaminationsEnzymes {
     private Integer chloride;
 
     @Column(name = "regdate")
-    private Date regdate;
+    private LocalDateTime  regdate;
 
     // 외래키 관계 설정
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 
     // getter, setter 생략
 }

@@ -1,6 +1,7 @@
 package kr.spring.entity;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,8 +12,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "bloodlevels")
+@Data
 public class BloodLevels {
     @Id
     @Column(name = "bloodidx")
@@ -20,7 +24,7 @@ public class BloodLevels {
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", referencedColumnName = "bloodidx", insertable = false, updatable = false)
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 
     @Column(name = "hemoglobin")
     private String hemoglobin;
@@ -38,7 +42,7 @@ public class BloodLevels {
     private Long sedimentationRate;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     // Getters and Setters
 }

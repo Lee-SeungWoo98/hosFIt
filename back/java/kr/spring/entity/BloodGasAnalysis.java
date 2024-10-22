@@ -2,6 +2,7 @@ package kr.spring.entity;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,9 +13,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 
 @Entity
 @Table(name = "bloodgas_analysis")
+@Data
 public class BloodGasAnalysis {
 
     @Id
@@ -32,9 +36,9 @@ public class BloodGasAnalysis {
     private String pO2;
 
     @Column(name = "regdate")
-    private String regDate;
+    private LocalDateTime  regDate;
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", referencedColumnName = "bloodidx", insertable = false, updatable = false)
-    private BloodCheck bloodCheck;
+    private Labtests labtest;
 }

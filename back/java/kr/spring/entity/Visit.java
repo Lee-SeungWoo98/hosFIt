@@ -1,5 +1,7 @@
 package kr.spring.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,8 +13,11 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "visit")
+@Data
 public class Visit {
     @Id
     @Column(name = "stayid")
@@ -37,5 +42,9 @@ public class Visit {
 
     @Column(name = "label")
     private Long label;
+    
+    @Column(name = "visitdate")
+    private LocalDateTime  VisitDate;
+
 
 }

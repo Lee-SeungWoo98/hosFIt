@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom"; // Router 추가
 import "./App.css";
 import Header from "./Components/Header";
 import List from "./Components/list"; // List 컴포넌트 import
+import Login from "./Components/Login"; // 로그인 컴포넌트 추가
 import "./Components/list.css";
 import "./Components/Header.css";
 import "./Components/Ktas.css";
@@ -11,9 +13,25 @@ import axios from "axios";
 function App() {
   const [searchTerm, setSearchTerm] = useState(""); // 검색어 상태
   const [patients, setPatients] = useState([]); // 서버에서 받아온 환자 목록
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // 서버에서 받아온 로그인 상태
   const [loading, setLoading] = useState(false); // 로딩 상태 관리
   const [error, setError] = useState(null); // 에러 상태 관리
   const [ktasData, setKtasData] = useState(null); // KTAS 데이터
+
+  // 서버에서 세션 정보를 통해 로그인 상태를 확인하는 함수
+  const checkSession = async () => {
+    try {
+      const result = await axios.get("http://localhost:8082/boot/checkSession", { withCredentials: true }); 
+      setIsAuthenticated(result.data.isAuthenticated); // 서버로부터 로그인 상태 확인
+    } catch (error) {
+      setIsAuthenticated(false); // 에러 발생 시 로그인 상태를 false로 설정
+    }
+  };
+
+  // 페이지가 로드될 때 세션 상태 확인
+  useEffect(() => {
+    checkSession(); // 처음 로딩 시 세션 확인
+  }, []);
 
   // 서버로부터 필터링된 데이터를 가져오는 함수
   const fetchFilteredPatients = async (term) => {
@@ -22,7 +40,7 @@ function App() {
     try {
       // 검색어가 있을 경우 필터링된 데이터를 요청
       const result = await axios.get(
-        `http://localhost:8082/boot/patients?name=${term}`
+        `http://localhost:8082/boot/patients/search?name=${term}`
       );
       setPatients(result.data);
     } catch (error) {
@@ -37,7 +55,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const result = await axios.get("http://localhost:8082/boot/patients");
+      const result = await axios.get("http://localhost:8082/boot/patients/list");
       setPatients(result.data);
     } catch (error) {
       setError("App.js_데이터 로드 실패:", error);
@@ -70,29 +88,45 @@ function App() {
       fetchData();
       fetchKtasData();
     }, 60000);
-    
 
     // 컴포넌트가 언마운트될 때 인터벌 제거
     return () => clearInterval(intervalId);
-  }, [searchTerm]); // searchTerm이 변경될 때마다 요청
+  }, [searchTerm]);
 
   const handleSearch = (term) => {
     setSearchTerm(term); // 검색어 상태 업데이트
   };
 
+  const handleLogin = () => {
+    checkSession(); // 로그인 성공 시 세션 상태 확인
+  };
+
   return (
-    <div className="app">
-      <Header onSearch={handleSearch} ktasData={ktasData} /> {/* 검색어 상태 전달 , KTAS 데이터 전달*/}
-      <div className="main-content">
-        <div className="content-wrapper">
-          <div className="content">
-            {loading && <p>로딩 중...</p>}
-            {error && <p>{error}</p>}
-            <List searchTerm={searchTerm} patients={patients} /> {/* 검색어와 환자 데이터 전달 */}
-          </div>
-        </div>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        {/* 로그인 페이지 */}
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+
+        {/* 메인 화면: 로그인된 경우에만 접근 가능 */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <div className="app">
+                <Header onSearch={handleSearch} ktasData={ktasData} />
+                <div className="main-content">
+                  {loading && <p>로딩 중...</p>}
+                  {error && <p>{error}</p>}
+                  <List searchTerm={searchTerm} patients={patients} />
+                </div>
+              </div>
+            ) : (
+              <Navigate to="/login" /> // 로그인되지 않은 경우 로그인 페이지로 리디렉션
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
