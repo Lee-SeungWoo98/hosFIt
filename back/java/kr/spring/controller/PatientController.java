@@ -35,6 +35,8 @@ public class PatientController {
     public @ResponseBody List<Patient> getPatients(@RequestParam(required = false) String name) {
         System.out.println("[PatientController - getPatients] Calling PatientService to search patients with name: " + name);
         return patientService.getPatients(name);
+        
+        
     }
 
     // 환자 상세조회 + 이전 기록들
