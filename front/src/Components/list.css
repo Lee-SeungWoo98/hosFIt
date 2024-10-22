@@ -1,5 +1,16 @@
 .content {
-  margin-top: -167px;
+  margin-top: 0; /* 불필요한 음수 마진 제거 */
+}
+
+.table-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: calc(98% - 230px); /* 사이드바의 너비를 고려한 최대 너비 */
+  margin-left: 240px; /* 사이드바와의 간격 조절 */
+  margin-top: -20px; /* 필요에 따라 적절히 조정 */
 }
 
 /* 페이지 헤더 스타일 */
@@ -8,6 +19,8 @@
   align-items: center;
   margin-bottom: 20px;
   padding: 0 20px;
+  max-width: calc(98% - 230px); /* 사이드바의 너비를 고려한 최대 너비 */
+  margin-left: 240px; /* 사이드바와의 간격 조절 */
 }
 
 .breadcrumb {
