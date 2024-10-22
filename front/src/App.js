@@ -78,6 +78,13 @@ function App() {
     }
   };
 
+  // 임시 KTAS 데이터 설정
+  const tempKtasData = {
+    totalBeds: 100,
+    usedBeds: 60,
+    ktasRatios: [10, 20, 15, 10, 5], // 각 KTAS 레벨에 대한 임시 비율
+  };
+
   // 페이지 로드 시 전체 데이터를 가져오고, 검색어에 맞춰 서버에서 필터링된 데이터 가져오기
   useEffect(() => {
     if (searchTerm) {
@@ -85,7 +92,9 @@ function App() {
     } else {
       fetchData(); // 검색어가 없으면 전체 데이터를 요청
     }
-    fetchKtasData(); // KTAS 데이터를 함께 요청
+    // KTAS 데이터를 서버에서 받아오지 못하는 경우 임시 데이터 사용
+    // fetchKtasData(); // 원래 서버로부터 KTAS 데이터를 요청하는 코드
+    setKtasData(tempKtasData); // 임시 데이터 설정
 
     // 주기적으로 전체 데이터를 불러오기 (1분 마다)
     const intervalId = setInterval(() => {
