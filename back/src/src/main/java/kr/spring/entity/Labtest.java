@@ -1,5 +1,6 @@
 package kr.spring.entity;
 
+import java.security.Timestamp;
 import java.sql.Date;
 import java.time.LocalDateTime;
 
@@ -15,31 +16,34 @@ import javax.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "bloodlevels")
+@Table(name = "labtest")
 @Data
-public class BloodLevels {
+public class Labtest {
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
 
     @ManyToOne
-    @JoinColumn(name = "bloodidx", referencedColumnName = "bloodidx", insertable = false, updatable = false)
-    private Labtest labtest;
+    @JoinColumn(name = "stayid")
+    private Visit visit;
 
-    @Column(name = "hemoglobin")
-    private String hemoglobin;
+    @Column(name = "testname")
+    private String testName;
 
-    @Column(name = "plateletcount")
-    private Long plateletCount;
+    @Column(name = "testresult")
+    private String testResult;
 
-    @Column(name = "wbc")
-    private String wbc;
+    @Column(name = "testunit")
+    private String testUnit;
 
-    @Column(name = "rbc")
-    private String rbc;
+    @Column(name = "testtime")
+    private String testTime;
 
-    @Column(name = "sedimentationrate")
-    private Long sedimentationRate;
+    @Column(name = "diagnosis")
+    private String diagnosis;
+
+    @Column(name = "diagnosiscode")
+    private String diagnosisCode;
 
     @Column(name = "regdate")
     private LocalDateTime  regDate;
