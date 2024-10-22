@@ -43,7 +43,7 @@ function Login({ onLogin }) {
       <button onClick={handleLogin}>로그인</button>
       
     </div>
-
+    
   );
 }
 
