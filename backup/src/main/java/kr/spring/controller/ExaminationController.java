@@ -15,6 +15,16 @@ public class ExaminationController {
 	    @GetMapping("/labtests")
 	    public LabTestResponse getLabTestsAndResults(@RequestParam Long stayId) {
 	        return ExaminationService.getLabTestsAndResults(stayId);
+	    
+	    
+	    
+	        
+	        
+	        
+	        
+	    
+	    
+	    
 	    }
 	}
 	
