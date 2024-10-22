@@ -14,7 +14,9 @@ import "./Components/SearchBar.css";
 function App() {
   const [searchTerm, setSearchTerm] = useState(""); // 검색어 상태
   const [patients, setPatients] = useState([]); // 서버에서 받아온 환자 목록
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // 서버에서 받아온 로그인 상태
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    localStorage.getItem('isAuthenticated') === 'true'
+  ); // 로컬 스토리지로 로그인 상태 관리
   const [loading, setLoading] = useState(false); // 로딩 상태 관리
   const [error, setError] = useState(null); // 에러 상태 관리
   const [ktasData, setKtasData] = useState(null); // KTAS 데이터
@@ -23,9 +25,16 @@ function App() {
   const checkSession = async () => {
     try {
       const result = await axios.get("http://localhost:8082/boot/checkSession", { withCredentials: true });
-      setIsAuthenticated(result.data.isAuthenticated); // 서버로부터 로그인 상태 확인
+      if (result.data.isAuthenticated) {
+        setIsAuthenticated(true); // 서버로부터 로그인 상태 확인
+        localStorage.setItem('isAuthenticated', 'true'); // 로컬 스토리지에 저장
+      } else {
+        setIsAuthenticated(false);
+        localStorage.removeItem('isAuthenticated'); // 로그인 안 된 경우 로컬 스토리지에서 제거
+      }
     } catch (error) {
       setIsAuthenticated(false); // 에러 발생 시 로그인 상태를 false로 설정
+      localStorage.removeItem('isAuthenticated'); // 에러 발생 시 로컬 스토리지에서 제거
     }
   };
 
