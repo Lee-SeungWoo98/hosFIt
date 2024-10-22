@@ -1,9 +1,164 @@
+.content {
+  margin-top: -167px;
+}
+
+/* 페이지 헤더 스타일 */
+.page-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 20px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb a {
+  color: #3f51b5;
+  text-decoration: none;
+}
+
+.breadcrumb span {
+  margin: 0 8px;
+}
+
+.breadcrumb .current {
+  color: #666;
+}
+
+.page-title {
+  margin-left: 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+/* 필터 영역 스타일 */
+.filter-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-button {
+  padding: 8px 16px;
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-options-panel {
+  margin-top: 15px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f8f8f8;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.filter-option {
+  margin-bottom: 10px;
+  padding-left: 10px;
+}
+
+.filter-option label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-option input[type="checkbox"],
+.filter-option input[type="radio"] {
+  margin-right: 8px;
+}
+
+.direction-options,
+.value-options {
+  margin-left: 25px;
+  margin-top: 5px;
+}
+
+.direction-options label,
+.value-options label {
+  margin-right: 15px;
+  font-size: 14px;
+}
+
+/* 선택된 필터 태그 스타일 */
+.selected-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.filter-tag {
+  display: flex;
+  align-items: center;
+  background-color: #f0f0f0;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.filter-tag .filter-value {
+  background-color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-tag button {
+  background: none;
+  border: none;
+  color: #999;
+  margin-left: 5px;
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: 16px;
+}
+
+.filter-tag button:hover {
+  color: #666;
+}
+
+/* 테이블 스타일 */
 .table-container {
   background-color: white;
   padding: 20px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  margin-bottom: 15px;
+}
+
+.table-header span {
+  color: #666;
+  font-size: 14px;
 }
 
 table {
@@ -16,7 +171,6 @@ th, td {
   text-align: left;
   padding: 15px;
   border-bottom: 1px solid #e0e0e0;
-  position: relative;
 }
 
 th {
@@ -25,71 +179,82 @@ th {
   color: #333;
 }
 
-.status-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 5px;
+/* 컬럼 너비 설정 */
+table th:nth-child(1),
+table td:nth-child(1) { /* 환자번호 */
+  width: 8%;
+  text-align: center;
 }
 
-.status-dot.응급 { background-color: #ff4444; }
-.status-dot.관찰 { background-color: #ffbb33; }
-.status-dot.안정 { background-color: #00C851; }
-
-.detail-button {
-  padding: 5px 10px;
-  background-color: #3f51b5;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+table th:nth-child(2),
+table td:nth-child(2) { /* 병명 코드 */
+  width: 8%;
+  text-align: center;
 }
 
-.back-button {
+table th:nth-child(3),
+table td:nth-child(3) { /* 이름 */
+  width: 8%;
+}
+
+table th:nth-child(4),
+table td:nth-child(4) { /* 나이 */
+  width: 7%;
+  text-align: center;
+}
+
+table th:nth-child(5),
+table td:nth-child(5) { /* 성별 */
+  width: 8%;
+  text-align: center;
+}
+
+table th:nth-child(6),
+table td:nth-child(6) { /* 임신 여부 */
+  width: 8%;
+  text-align: center;
+}
+
+table th:nth-child(7),
+table td:nth-child(7) { /* KTAS */
+  width: 8%;
+  text-align: center;
+}
+
+table th:nth-child(8),
+table td:nth-child(8) { /* 병원 체류 시간 */
+  width: 12%;
+  text-align: center;
+}
+
+table th:nth-child(9),
+table td:nth-child(9) { /* 배치 추천 */
+  width: 15%;
+  text-align: center;
+}
+
+table th:nth-child(10),
+table td:nth-child(10) { /* 상세 정보 */
+  width: 8%;
+  text-align: center;
+}
+
+/* 상세보기 버튼 스타일 */
+.details-button {
   padding: 6px 12px;
-  font-size: 1em;
   background-color: #3f51b5;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 20px;
+  font-size: 14px;
 }
 
-.patient-details {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  margin-top: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.details-button:hover {
+  background-color: #303f9f;
 }
 
-.patient-details h3 {
-  margin-bottom: 20px;
-}
-
-.charts-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.chart-item {
-  background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.chart-item h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #333;
-}
-
+/* 페이지네이션 스타일 */
 .pagination {
   display: flex;
   justify-content: center;
@@ -97,363 +262,21 @@ th {
   margin-top: 20px;
 }
 
-.page-button {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  color: #333333;
+.pagination button {
   padding: 8px 12px;
-  margin: 0 2px;
+  margin: 0 4px;
+  border: 1px solid #e0e0e0;
+  background-color: white;
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
+  transition: all 0.3s;
 }
 
-.page-button:hover:not(:disabled) {
-  background-color: #f0f0f0;
-}
-
-.page-button.active {
+.pagination button.active {
   background-color: #3f51b5;
   color: white;
   border-color: #3f51b5;
 }
 
-.page-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination .page-button:first-child,
-.pagination .page-button:last-child {
- font-weight: bold;
-}
-
-.sort-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding-left: 10px;
-}
-
-.sort-arrows {
-  display: flex;
-  flex-direction: column;
-  margin-left: 11px;
-  position: relative;
-  top: 2px;
-}
-
-.sort-arrow {
-  font-size: 0.6em;
-  line-height: 0.5;
-  color: #ccc;
-}
-
-.sort-arrow.active {
-  color: #333;
-}
-
-.sort-arrow.up {
-  margin-bottom: 3px;
-}
-
-.sort-arrow.down {
-  margin-top: 3px;
-}
-
-table th:nth-child(1), table td:nth-child(1) { /* 번호 */
-  width: 5%;
-  padding-left: 26.5px;
-}
-table th:nth-child(2), table td:nth-child(2) { /* 이름 */
-  width: 9.5%;
-  padding-left: 15px;
-}
-table th:nth-child(3), table td:nth-child(3) { /* 나이 */
-  width: 10%;
-  text-align: center;
-  position: relative;
-}
-table th:nth-child(4), table td:nth-child(4) { /* 성별 */
-  width: 15%;
-  text-align: left;
-  padding-left: 68px;
-}
-table th:nth-child(5), table td:nth-child(5) { /* 임신 */
-  width: 8%;
-  text-align: center;
-}
-table th:nth-child(6), table td:nth-child(6) { /* KTAS */
-  width: 8%;
-  text-align: center;
-}
-table th:nth-child(7), table td:nth-child(7) { /* 병원 체류 시간 */
-  width: 15%;
-  text-align: center;
-}
-table th:nth-child(8), table td:nth-child(8) { /* 상세 정보 */
-  width: 15%;
-  text-align: center;
-  padding-right: 20px;
-}
-
-table th {
-  text-align: center;
-}
-
-table th:first-child, 
-table td:first-child {
-  text-align: left;
-}
-
-table th:nth-child(3) .sort-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-table th:nth-child(3) .sort-arrows {
-  margin-left: 11px;
-}
-
-.main-content {
-  display: flex;
-  flex-grow: 1;
-  margin-top: 70px;
-}
-
-.content-wrapper {
-  flex-grow: 1;
-  margin-left: 222px;
-  background-color: #f4f5f7;
-  min-height: calc(100vh - 70px);
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.content {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-}
-
-.content:first-child {
-  margin-top: -33px;
-}
-
-.table-container {
-  margin-top: 0;
-}
-
-.table-container h2 {
-  margin-top: 0;
-  margin-bottom: 15px;
-}
-
-.table-container table {
-  margin-top: 10px;
-}
-
-.history-table-container {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  margin-top: 20px;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.history-table th,
-.history-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.history-table th {
-  background-color: #f5f5f5;
-  font-weight: bold;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.history-table tbody tr:hover {
-  background-color: #f9f9f9;
-}
-
-.history-table-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.history-table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.history-table-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.history-table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.patient-info-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #f8f8f8;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 9px 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.patient-info-banner > div {
-  flex: 1;
-  text-align: center;
-  padding: 0 10px;
-  border-right: 1px solid #e0e0e0;
-  font-size: 14px;
-  color: #333;
-}
-
-.patient-info-banner > div:last-child {
-  border-right: none;
-}
-
-.patient-info-banner > div strong {
-  display: block;
-  font-size: 16px;
-  margin-bottom: 5px;
-  color: #2c3e50;
-}
-
-.patient-info-banner .placement-recommendation {
-  font-weight: bold;
-}
-
-.patient-info-banner .placement-recommendation.입원 {
-  color: #e74c3c;
-}
-
-.patient-info-banner .placement-recommendation.관찰 {
-  color: #f39c12;
-}
-
-.patient-info-banner .placement-recommendation.퇴원 {
-  color: #27ae60;
-}
-
-.patient-info-banner .emergency-level {
-  font-weight: bold;
-}
-
-.patient-info-banner .emergency-level.level-5,
-.patient-info-banner .emergency-level.level-4 {
-  color: #e74c3c;
-}
-
-.patient-info-banner .emergency-level.level-3 {
-  color: #f39c12;
-}
-
-.patient-info-banner .emergency-level.level-2,
-.patient-info-banner .emergency-level.level-1 {
-  color: #27ae60;
-}
-
-.patient-details {
-  margin-top: 0;
-}
-
-.patient-details h3 {
-  margin-top: 0;
-}
-
-/* 성별 필터 관련 수정된 스타일 */
-.gender-header {
-  position: relative;
-  cursor: pointer;
-}
-
-.gender-header-content {
-  display: flex;
-  align-items: center;
-}
-
-.gender-filter-indicator {
-  margin-left: 5px;
-  font-size: 0.8em;
-  color: #666;
-}
-
-.gender-filter-tags {
-  display: inline-flex;
-  margin-left: 10px;
-}
-
-.gender-tag {
+.pagination button:hover:not(.active) {
   background-color: #f0f0f0;
-  border-radius: 4px;
-  padding: 3px 8px;
-  margin-right: 5px;
-  font-size: 0.9em;
-  color: #666;
-  display: flex;
-  align-items: center;
-  font-size: 0.8em; /* 선택한 필터 옵션 텍스트 크기 축소 */
-}
-
-.gender-tag button {
-  background: none;
-  border: none;
-  color: #999;
-  margin-left: 8px;
-  cursor: pointer;
-  font-size: 1.3em;
-  line-height: 1;
-}
-
-.gender-tag button:hover {
-  color: #666;
-}
-
-.gender-options {
-  position: absolute;
-  top: 100%;
-  left: 68px;  /* 성별 텍스트의 padding-left와 일치 */
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 15px;
-  z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  font-size: 1.1em;
-}
-
-.gender-options label {
-  display: block;
-  margin-bottom: 7px;
-  cursor: pointer;
-  margin-bottom: 5px; /* 성별 필터 옵션 아래 여백 축소 */
-}
-
-.gender-options input[type="checkbox"] {
-  margin-right: 8px;
-  transform: scale(1.1);
-}
-
-.gender-options span {
-  cursor: pointer; /* 텍스트에 마우스를 올렸을 때 커서 변경 */
 }
