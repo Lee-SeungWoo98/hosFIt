@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import kr.spring.dto.PatientDTO;
 import kr.spring.entity.Patient;
 import kr.spring.entity.Visit;
 import kr.spring.service.PatientService;
@@ -24,10 +25,11 @@ public class PatientController {
     private PatientService patientService;
     
    // @CrossOrigin
+    
+   // @CrossOrigin
     @GetMapping("/list")
-    public List<Patient> getAllPatients() {
+    public List<PatientDTO> getAllPatients() {
         System.out.println("[PatientController - getAllPatients] Calling PatientService to get all patients");
-        System.out.println(patientService.getAllPatients().toString());
         return patientService.getAllPatients();
     }
 
