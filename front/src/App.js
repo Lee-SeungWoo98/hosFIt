@@ -25,8 +25,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [ktasData, setKtasData] = useState(null);
-  const [tasLevel, setTasLevel] = useState(null);
-
+  const [ktasFilter, setKtasFilter] = useState([]); // 배열로 변경
+  
   const checkSession = async () => {
     try {
       const result = await axios.get(
@@ -70,9 +70,8 @@ function App() {
     setLoading(true);
     try {
       const result = await axios.get(
-        "http://localhost:8082/boot/patients/5/visits"
+        "http://localhost:8082/boot/patients/list"
       );
-      console.log("Fetched data:", result.data);
       if (Array.isArray(result.data)) {
         setPatients(result.data);
         setFilteredPatients(result.data);
@@ -101,7 +100,6 @@ function App() {
     }
   };
 
-  // 필터링된 환자 데이터를 업데이트하는 함수
   const handleFilteredPatientsUpdate = (filters) => {
     let filtered = [...patients];
     
@@ -119,11 +117,16 @@ function App() {
       );
     }
 
-    // TAS 레벨 필터링
+    // TAS 레벨 필터링 수정
     if (filters.tas.length > 0) {
       filtered = filtered.filter(patient => 
-        patient.visits?.[0]?.tas && filters.tas.includes(String(patient.visits[0].tas))
+        patient.visits?.[0]?.tas && 
+        filters.tas.map(t => String(t)).includes(String(patient.visits[0].tas))
       );
+      // KTAS 필터 상태 업데이트
+      setKtasFilter(filters.tas.map(t => parseInt(t)));
+    } else {
+      setKtasFilter([]);
     }
 
     // 체류 시간 정렬
@@ -138,20 +141,36 @@ function App() {
     setFilteredPatients(filtered);
   };
 
-  // TAS 클릭 핸들러 - 헤더의 TAS 버튼 클릭 시
   const handleTASClick = (tasLevel) => {
     if (tasLevel.includes("미사용")) {
-      alert("미사용은 필터링 없어용");
+      setKtasFilter([]);
+      setFilteredPatients(patients);
       return;
     }
-    const level = tasLevel.split(" ")[1];
-    alert(`KTAS : ${level}`);
     
-    const filtered = patients.filter(patient => {
-      return patient.visits?.[0]?.tas === parseInt(level);
+    const level = tasLevel.split(" ")[1];
+    const numericLevel = parseInt(level);
+    
+    setKtasFilter(prev => {
+      let newFilter;
+      if (prev.includes(numericLevel)) {
+        // 이미 선택된 레벨이면 제거
+        newFilter = prev.filter(l => l !== numericLevel);
+      } else {
+        // 새로운 레벨이면 추가
+        newFilter = [...prev, numericLevel];
+      }
+
+      // 필터링된 환자 목록 업데이트
+      const filtered = patients.filter(patient => {
+        return newFilter.length === 0 || 
+               (patient.visits?.[0]?.tas && 
+                newFilter.includes(patient.visits[0].tas));
+      });
+      setFilteredPatients(filtered);
+
+      return newFilter;
     });
-    setFilteredPatients(filtered);
-    setTasLevel(level);
   };
 
   useEffect(() => {
@@ -195,6 +214,7 @@ function App() {
                 allPatients={patients}
                 patients={filteredPatients}
                 ktasData={ktasData}
+                ktasFilter={ktasFilter}
                 loading={loading}
                 error={error}
                 handleSearch={handleSearch}

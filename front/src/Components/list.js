@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// 필터 옵션 레이블 매핑 추가
+// 필터 옵션 레이블 매핑은 동일하게 유지
 const filterLabels = {
   gender: { 
     name: '성별',
@@ -22,20 +22,22 @@ const filterLabels = {
   }
 };
 
-function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate }) {
+function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate, ktasFilter }) {
   const navigate = useNavigate();
   const [patientList, setPatientList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
+  // selectedFilters 초기값에 ktasFilter(배열) 반영
   const [selectedFilters, setSelectedFilters] = useState({
     gender: [],
     pregnancystatus: [],
-    tas: [],
+    tas: Array.isArray(ktasFilter) ? ktasFilter.map(String) : [],
     los_hours: 'none'
   });
 
+  // 환자 데이터 변경 시 효과
   useEffect(() => {
     setIsLoading(true);
     if (patients && Array.isArray(patients)) {
@@ -46,6 +48,21 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate }) {
     setCurrentPage(1);
     setIsLoading(false);
   }, [patients]);
+
+  // KTAS 필터 변경 시 효과
+  useEffect(() => {
+    if (Array.isArray(ktasFilter)) {
+      setSelectedFilters(prev => ({
+        ...prev,
+        tas: ktasFilter.map(String)
+      }));
+    } else {
+      setSelectedFilters(prev => ({
+        ...prev,
+        tas: []
+      }));
+    }
+  }, [ktasFilter]);
 
   const patientsPerPage = 5;
   const indexOfLastPatient = currentPage * patientsPerPage;
@@ -65,6 +82,7 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate }) {
     setShowFilterOptions(!showFilterOptions);
   };
 
+  // 필터 변경 핸들러 수정
   const handleFilterChange = (type, value) => {
     setSelectedFilters(prev => {
       const newFilters = { ...prev };
@@ -105,7 +123,7 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate }) {
     navigate('/patient', { state: { patientData: patient } });
   };
 
-  // 수정된 renderActiveFilters 함수
+  // 활성화된 필터 태그 렌더링 함수는 동일하게 유지
   const renderActiveFilters = () => {
     return (
       <div className="active-filters">
@@ -224,7 +242,7 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate }) {
                     {[1, 2, 3, 4, 5].map(level => (
                       <label key={level}>
                         <input
-                          type="checkbox"
+                          type="checkbox"  // radio에서 checkbox로 변경
                           checked={selectedFilters.tas.includes(String(level))}
                           onChange={() => handleFilterChange('tas', String(level))}
                         />
