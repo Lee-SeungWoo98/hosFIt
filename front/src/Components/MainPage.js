@@ -3,14 +3,13 @@ import { useLocation } from "react-router-dom";  // useLocation을 MainPage에�
 import Header from "./Header";  // Header 컴포넌트
 import List from "./list";  // List 컴포넌트
 
-
-function MainPage({ searchTerm, patients, ktasData, loading, error, handleSearch }) {
+function MainPage({ searchTerm, patients, ktasData, loading, error, handleSearch, onTASClick }) {
     const location = useLocation();  // 로그인 페이지에서 전달된 state 받아오기
     const username = location.state?.username || "익명 사용자";  // username이 전달되었는지 확인
     
     return (
       <div className="app">
-        <Header onSearch={handleSearch} ktasData={ktasData} username={username} />
+        <Header onSearch={handleSearch} ktasData={ktasData} username={username} onTASClick={onTASClick}/>
         
         {/* KTAS 데이터가 없어도 리스트는 그대로 보이게 렌더링 분리 */}
         <div className="main-content">

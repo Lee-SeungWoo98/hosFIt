@@ -2,27 +2,34 @@ import React from "react";
 import "../Components/Ktas.css";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-
-const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
+const Ktas = ({ ktasData, onTASClick }) => {
+  // App.js로부터 받은 ktasData 사용
+  
   const totalBeds = ktasData?.totalBeds || 0;
   const usedBeds = ktasData?.usedBeds || 0;
-  const unusedBeds = totalBeds - usedBeds;
 
-  const tasData = ktasData?.ktasRatios?.map((ratio, index) => {
-    const level = index + 1;
-    const colors = ["#0000FF", "#FF0000", "#FFFF00", "#00FF00", "#FFFFFF"]; // 각 레벨에 맞는 색상
-    return {
-      name: `KTAS ${level}`,
-      value: ratio,
-      color: colors[index] || "#DDDDDD", // 색상 지정
-    };
-  }) || [];
+  // 데이터가 아직 로드되지 않았다면 미사용 병상 계산을 미루기
+  const unusedBeds = totalBeds > 0 ? totalBeds - usedBeds : 0;
+
+  console.log(`Total Beds: ${totalBeds}, Used Beds: ${usedBeds}`);
+  console.log(`Unused Beds: ${unusedBeds}`);
+
+  const tasData =
+    ktasData?.ktasRatios?.map((ratio, index) => {
+      const level = index + 1;
+      const colors = ["#0000FF", "#FF0000", "#FFFF00", "#00FF00", "#FFFFFF"]; // 각 레벨에 맞는 색상
+      return {
+        name: `KTAS ${level}`,
+        value: ratio,
+        color: colors[index] || "#DDDDDD", // 색상 지정
+      };
+    }) || [];
 
   const fullData = [
-    ...tasData, 
+    ...tasData,
     { name: "미사용", value: unusedBeds, color: "#DDDDDD" }, // 미사용 병상 (회색)
   ];
-
+  console.log(fullData);
   return (
     <aside className="sidebar">
       <div className="chart-container">
@@ -38,7 +45,15 @@ const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
               innerRadius={50}
               outerRadius={80}
               labelLine={false}
-              label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius }) => {
+              label={({
+                name,
+                value,
+                cx,
+                cy,
+                midAngle,
+                innerRadius,
+                outerRadius,
+              }) => {
                 const RADIAN = Math.PI / 180;
                 const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -48,7 +63,7 @@ const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
                   <text
                     x={x}
                     y={y}
-                    fill="black" 
+                    fill="black"
                     textAnchor="middle"
                     dominantBaseline="central"
                   >
@@ -67,7 +82,12 @@ const Ktas = ({ ktasData }) => {  // App.js로부터 받은 ktasData 사용
       </div>
       <div className="label-container">
         {fullData.map((entry, index) => (
-          <div key={index} className="label-item">
+          // Ktas.js 파일에서 수정 부분
+          <div
+            key={index}
+            className="label-item"
+            onClick={() => onTASClick(entry.name)}
+          >
             <span
               style={{ backgroundColor: entry.color }}
               className="label-dot"
