@@ -46,7 +46,7 @@ const MainIcon = ({ size = 20 }) => (
   </svg>
 );
 
-function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearch 함수를 전달받음
+function Header({ onSearch, ktasData, username, onTASClick  }) {  // 부모로부터 onSearch 함수를 전달받음
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (e) => {
@@ -68,7 +68,7 @@ function Header({ onSearch, ktasData, username  }) {  // 부모로부터 onSearc
         </div>
       </div>
       <div className="header-content">
-        <Ktas ktasData={ktasData}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
+        <Ktas ktasData={ktasData} onTASClick={onTASClick}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
       </div>
     </>
   );
