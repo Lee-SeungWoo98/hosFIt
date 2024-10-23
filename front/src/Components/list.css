@@ -93,6 +93,8 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+  margin-top: -2px;
+  margin-bottom: 12px;
 }
 
 .filter-button:hover {
@@ -329,4 +331,58 @@ table th:nth-child(11), table td:nth-child(11) {
 .page-info {
   font-size: 14px;
   color: #666;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+  background-color: #f9f9f9;
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.active-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-tag {
+  display: flex;
+  align-items: center;
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  gap: 6px;
+}
+
+.filter-tag-remove {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.filter-tag-remove:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
