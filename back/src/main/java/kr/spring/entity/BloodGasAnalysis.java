@@ -17,7 +17,7 @@ import lombok.Data;
 
 
 @Entity
-@Table(name = "bloodgas_analysis")
+@Table(name = "bloodgasanalysis")
 @Data
 public class BloodGasAnalysis {
 
@@ -40,5 +40,5 @@ public class BloodGasAnalysis {
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", referencedColumnName = "bloodidx", insertable = false, updatable = false)
-    private Labtests labtest;
+    private LabTest labtest;
 }
