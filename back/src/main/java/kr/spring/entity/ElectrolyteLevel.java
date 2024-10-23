@@ -22,7 +22,7 @@ public class ElectrolyteLevel {
 
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false) // 중복 매핑 방지
-    private Labtests labtest;
+    private LabTest labtest;
 
     @Column(name = "sodium")
     private Long sodium;

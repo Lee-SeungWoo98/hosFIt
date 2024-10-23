@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
-import org.modelmapper.ModelMapper;  // 알 수 없는 오류....
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,8 @@ public class PatientService {
 
     @Autowired
     private PatientRepository patientRepository;
-
+    
+  
     @Autowired
     private VisitRepository visitRepository;
     @Autowired
@@ -33,18 +34,19 @@ public class PatientService {
     public List<PatientDTO> getAllPatients() {
         List<Patient> patients = patientRepository.findAll();
 
-        // 환자 정보만 반환 (방문 기록은 제외)
+        // ModelMapper를 사용해 자동으로 변환
         return patients.stream()
-                .map(patient -> {
-                    PatientDTO dto = modelMapper.map(patient, PatientDTO.class);
-                    dto.setVisits(Collections.emptyList()); // 방문 기록을 빈 리스트로 설정
-                    return dto;
-                })
-                .collect(Collectors.toList());
-    }
-    public List<Patient> getPatients(String name) {
+                .<PatientDTO>map(patient -> modelMapper.map(patient, PatientDTO.class))  // 명시적 타입 지정
+                .collect(Collectors.toList());    }
+
+    public List<PatientDTO> getPatients(String name) {
         System.out.println("[PatientService - getPatients] Searching patients with name containing: " + name);
-        return patientRepository.findByNameContainingIgnoreCase(name);
+        List<Patient> patients = patientRepository.findByNameContainingIgnoreCase(name);
+
+        // ModelMapper를 사용해 자동으로 변환
+        return patients.stream()
+                .<PatientDTO>map(patient -> modelMapper.map(patient, PatientDTO.class))  // 명시적 타입 지정
+                .collect(Collectors.toList());
     }
 
     public PatientService(PatientRepository patientRepository, VisitRepository visitRepository) {
@@ -59,5 +61,16 @@ public class PatientService {
         patient.setVisits(visits); // 방문 기록 설정
         return patient;
     }
+ // TAS 값을 기준으로 환자 목록 반환
+    public List<Patient> getPatientsByTAS(Long tas) {
+        return patientRepository.findDistinctByVisitsTASAndStaystatus(tas);
+    }
+
+	public List<Patient> getPatientsByStaystatus() {
+		// TODO Auto-generated method stub
+		return patientRepository.findDistinctByStaystatus();
+	}
+    
+    
 
 }

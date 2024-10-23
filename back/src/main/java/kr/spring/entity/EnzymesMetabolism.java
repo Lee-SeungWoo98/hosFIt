@@ -13,43 +13,43 @@ public class EnzymesMetabolism {
 
     @Id
     @Column(name = "bloodidx")
-    private Integer bloodidx;
+    private Long bloodIdx;
 
     @Column(name = "CK")
-    private Integer ck;
+    private Long ck;
 
     @Column(name = "CKMB")
-    private Integer ckmb;
+    private Long ckmb;
 
     @Column(name = "Creatinine")
-    private Float creatinine;
+    private Long creatinine;
 
     @Column(name = "DDimer")
-    private Integer dDimer;
+    private Long dDimer;
 
     @Column(name = "GGT")
-    private Integer ggt;
+    private Long ggt;
 
     @Column(name = "Glucose")
-    private Integer glucose;
+    private Long glucose;
 
     @Column(name = "INRPT")
-    private Float inrpt;
+    private Long inrpt;
 
     @Column(name = "Lactate")
-    private Float lactate;
+    private Long lactate;
 
     @Column(name = "LD")
-    private Integer ld;
+    private Long ld;
 
     @Column(name = "Lipase")
-    private Integer lipase;
+    private Long lipase;
 
     @Column(name = "Magnesium")
-    private Float magnesium;
+    private Long magnesium;
 
     @Column(name = "NTproBNP")
-    private Integer ntproBNP;
+    private Long ntproBNP;
 
     @Column(name = "regdate")
     private LocalDateTime  regdate;
@@ -57,7 +57,7 @@ public class EnzymesMetabolism {
     // 외래키 관계 설정
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private Labtests labtest;
+    private LabTest labtest;
 
     // getter, setter 생략
 }

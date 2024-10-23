@@ -14,5 +14,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     // 환자 기록들
     List<Visit> findByPatient(Patient patient);
 
+	Visit findByStayId(Long stayId);
+
   
 }

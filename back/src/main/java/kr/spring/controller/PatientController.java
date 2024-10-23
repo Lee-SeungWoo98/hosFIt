@@ -25,8 +25,6 @@ public class PatientController {
     private PatientService patientService;
     
    // @CrossOrigin
-    
-   // @CrossOrigin
     @GetMapping("/list")
     public List<PatientDTO> getAllPatients() {
         System.out.println("[PatientController - getAllPatients] Calling PatientService to get all patients");
@@ -34,7 +32,7 @@ public class PatientController {
     }
 
     @GetMapping("/search")
-    public @ResponseBody List<Patient> getPatients(@RequestParam(required = false) String name) {
+    public @ResponseBody List<PatientDTO> getPatients(@RequestParam(required = false) String name) {
         System.out.println("[PatientController - getPatients] Calling PatientService to search patients with name: " + name);
         return patientService.getPatients(name);
     }
@@ -44,5 +42,16 @@ public class PatientController {
     public ResponseEntity<Patient> getPatientWithVisits(@PathVariable Long subjectId) {
         Patient patient = patientService.getPatientWithVisits(subjectId);
         return ResponseEntity.ok(patient);
+    }
+    // 특정tas만 조회 
+    @GetMapping("/byTAS")
+    public List<Patient> getPatientsByTAS(@RequestParam("tas") Long tas) {
+        System.out.println("[PatientController - getPatientsByTAS] TAS level: " + tas);
+        return patientService.getPatientsByTAS(tas);
+    }
+    // 전체tas조회
+    @GetMapping("/byStaystatus")
+    public List<Patient> getPatientsByStaystatus() {
+        return patientService.getPatientsByStaystatus();
     }
 }

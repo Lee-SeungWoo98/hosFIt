@@ -14,55 +14,55 @@ import javax.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "Chemicalexaminationsenzymes")
+@Table(name = "chemicalexaminationsenzymes")
 @Data
 public class ChemicalExaminationsEnzymes {
-
+	
     @Id
     @Column(name = "bloodidx")
-    private Integer bloodidx;
+    private Long bloodIdx;
 
     @Column(name = "Acetone")
-    private Integer acetone;
+    private Long acetone;
 
     @Column(name = "ALT")
-    private Integer alt;
+    private Long alt;
 
     @Column(name = "Albumin")
-    private Float albumin;
+    private Long albumin;
 
     @Column(name = "alkalinephosphatase")
-    private Integer alkalinePhosphatase;
+    private Long alkalinePhosphatase;
 
     @Column(name = "Ammonia")
-    private Integer ammonia;
+    private Long ammonia;
 
     @Column(name = "Amylase")
-    private Integer amylase;
+    private Long amylase;
 
     @Column(name = "AST")
-    private Integer ast;
+    private Long ast;
 
     @Column(name = "betahydroxybutyrate")
-    private Float betaHydroxybutyrate;
+    private Long betaHydroxybutyrate;
 
     @Column(name = "Bicarbonate")
-    private Integer bicarbonate;
+    private Long bicarbonate;
 
     @Column(name = "Bilirubin")
-    private Float bilirubin;
+    private Long bilirubin;
 
     @Column(name = "CRP")
-    private Float crp;
+    private Long crp;
 
     @Column(name = "Calcium")
-    private Float calcium;
+    private Long calcium;
 
     @Column(name = "CO2")
-    private Integer co2;
+    private Long co2;
 
     @Column(name = "Chloride")
-    private Integer chloride;
+    private Long chloride;
 
     @Column(name = "regdate")
     private LocalDateTime  regdate;
@@ -70,7 +70,7 @@ public class ChemicalExaminationsEnzymes {
     // 외래키 관계 설정
     @ManyToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private Labtests labtest;
+    private LabTest labtest;
 
     // getter, setter 생략
 }
