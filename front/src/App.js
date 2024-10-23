@@ -70,7 +70,7 @@ function App() {
     setLoading(true);
     try {
       const result = await axios.get(
-        "http://localhost:8082/boot/patients/list"
+        "http://localhost:8082/boot/patients/byStaystatus"
       );
       if (Array.isArray(result.data)) {
         setPatients(result.data);
