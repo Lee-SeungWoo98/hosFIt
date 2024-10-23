@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom'; // 페이지 이동을 위한 hook 추가
+import { ChevronLeft, ChevronRight } from 'lucide-react'; // 페이지네이션 화살표 아이콘 추가
+
 
 function List({ searchTerm, patients }) {
+  const navigate = useNavigate();
   const [patientList, setPatientList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
+  
+  // 필터 상태 관리
   const [selectedFilters, setSelectedFilters] = useState({
     subject_id: { active: false, direction: 'asc' },
     name: { active: false, direction: 'asc' },
@@ -17,26 +23,24 @@ function List({ searchTerm, patients }) {
     tas: { active: false, values: [] }
   });
 
-  // Props로 받은 patients 데이터 처리
+  // 환자 데이터 초기화
   useEffect(() => {
-    console.log("Received patients data:", patients);
     if (patients && Array.isArray(patients)) {
       setPatientList(patients);
     } else if (patients) {
-      // 단일 환자 데이터인 경우 배열로 변환
       setPatientList([patients]);
     }
     setCurrentPage(1); // 새 데이터를 받으면 첫 페이지로 이동
   }, [patients]);
 
-  // 필터 적용
+  // 필터 적용 로직
   useEffect(() => {
     if (!patientList.length) return;
 
     let filteredResults = [...patientList];
     
     if (Object.values(selectedFilters).some(filter => filter.active)) {
-      // 필터링
+      // 필터링 로직
       filteredResults = filteredResults.filter(patient => {
         return Object.entries(selectedFilters).every(([key, filter]) => {
           if (!filter.active) return true;
@@ -53,7 +57,7 @@ function List({ searchTerm, patients }) {
         });
       });
 
-      // 정렬
+      // 정렬 로직
       filteredResults.sort((a, b) => {
         for (const [key, filter] of Object.entries(selectedFilters)) {
           if (filter.active && filter.direction) {
@@ -85,34 +89,30 @@ function List({ searchTerm, patients }) {
     }
 
     setPatientList(filteredResults);
-  }, [selectedFilters, patientList]);
+  }, [selectedFilters]);
 
+  // 페이지네이션 로직
   const patientsPerPage = 5;
-  const pageNumbersToShow = 5;
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = patientList.slice(indexOfFirstPatient, indexOfLastPatient);
   const totalPages = Math.ceil(patientList.length / patientsPerPage);
 
-  const changePage = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const getPageNumbers = () => {
-    let startPage = Math.max(1, currentPage - Math.floor(pageNumbersToShow / 2));
-    let endPage = Math.min(totalPages, startPage + pageNumbersToShow - 1);
-
-    if (endPage - startPage + 1 < pageNumbersToShow) {
-      startPage = Math.max(1, endPage - pageNumbersToShow + 1);
+  // 페이지 이동 함수 - 화살표 네비게이션 지원
+  const changePage = (direction) => {
+    if (direction === 'next' && currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    } else if (direction === 'prev' && currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
     }
-
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
+  // 필터 옵션 토글
   const toggleFilterOptions = () => {
     setShowFilterOptions(!showFilterOptions);
   };
 
+  // 필터 변경 핸들러
   const handleFilterChange = (field, value, type = 'direction') => {
     setSelectedFilters(prev => ({
       ...prev,
@@ -127,9 +127,9 @@ function List({ searchTerm, patients }) {
     }));
   };
 
+  // 환자 상세정보 페이지로 이동
   const showPatientDetails = (patient) => {
-    console.log("Selected patient details:", patient);
-    // 상세 정보 표시 로직 구현
+    navigate('/patient', { state: { patientData: patient } });
   };
 
   if (!patientList.length) {
@@ -137,166 +137,40 @@ function List({ searchTerm, patients }) {
   }
 
   return (
-    <>
+    <div className="page-wrapper">
+      {/* 수정된 브레드크럼 구조 */}
+      <div className="breadcrumb">
+        <a href="/">Home</a>
+      </div>
+      
+      {/* 수정된 헤더 구조 */}
       <div className="page-header">
-        <div className="breadcrumb">
-          <a href="/">Home</a>
-          <span> / </span>
-          <span className="current">Main</span>
-        </div>
-        <h1 className="page-title">응급실 환자 리스트</h1>
+        <h1 className="page-title">
+          <span className="breadcrumb-separator">&lt;</span>
+          응급실 환자 리스트
+        </h1>
+        <span className="total-count">(총 {patientList.length}명)</span>
       </div>
 
       <div className="content-area">
         <div className="table-container">
           <div className="table-header">
-            <span>(총 {patientList.length}명)</span>
             <button className="filter-button" onClick={toggleFilterOptions}>
-              필터 옵션
+              환자 옵션
             </button>
           </div>
 
+          {/* 모듈화된 필터 옵션 패널 */}
           {showFilterOptions && (
             <div className="filter-options-panel">
-              <div className="filter-section">
-                <h3>정렬 옵션</h3>
-                {Object.entries({
-                  subject_id: '환자번호',
-                  name: '이름',
-                  age: '나이',
-                  birthdate: '생년월일',
-                  los_hours: '체류 시간'
-                }).map(([field, label]) => (
-                  <div key={field} className="filter-option">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters[field].active}
-                        onChange={() => handleFilterChange(field, 'asc')}
-                      />
-                      {label}
-                    </label>
-                    {selectedFilters[field].active && (
-                      <div className="direction-options">
-                        <label>
-                          <input
-                            type="radio"
-                            checked={selectedFilters[field].direction === 'asc'}
-                            onChange={() => handleFilterChange(field, 'asc')}
-                          />
-                          오름차순
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            checked={selectedFilters[field].direction === 'desc'}
-                            onChange={() => handleFilterChange(field, 'desc')}
-                          />
-                          내림차순
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="filter-section">
-                <h3>필터 옵션</h3>
-                <div className="filter-option">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.gender.active}
-                      onChange={() => handleFilterChange('gender', [], 'values')}
-                    />
-                    성별
-                  </label>
-                  {selectedFilters.gender.active && (
-                    <div className="value-options">
-                      <label>
-                        <input
-                          type="checkbox"
-                          value="여"
-                          checked={selectedFilters.gender.values.includes('여')}
-                          onChange={(e) => handleFilterChange('gender', e.target.value, 'values')}
-                        />
-                        여자
-                      </label>
-                      <label>
-                        <input
-                          type="checkbox"
-                          value="남"
-                          checked={selectedFilters.gender.values.includes('남')}
-                          onChange={(e) => handleFilterChange('gender', e.target.value, 'values')}
-                        />
-                        남자
-                      </label>
-                    </div>
-                  )}
-                </div>
-
-                <div className="filter-option">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.pregnancystatus.active}
-                      onChange={() => handleFilterChange('pregnancystatus', [], 'values')}
-                    />
-                    임신 여부
-                  </label>
-                  {selectedFilters.pregnancystatus.active && (
-                    <div className="value-options">
-                      <label>
-                        <input
-                          type="checkbox"
-                          value="0"
-                          checked={selectedFilters.pregnancystatus.values.includes('0')}
-                          onChange={(e) => handleFilterChange('pregnancystatus', e.target.value, 'values')}
-                        />
-                        No
-                      </label>
-                      <label>
-                        <input
-                          type="checkbox"
-                          value="1"
-                          checked={selectedFilters.pregnancystatus.values.includes('1')}
-                          onChange={(e) => handleFilterChange('pregnancystatus', e.target.value, 'values')}
-                        />
-                        Yes
-                      </label>
-                    </div>
-                  )}
-                </div>
-
-                <div className="filter-option">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.tas.active}
-                      onChange={() => handleFilterChange('tas', [], 'values')}
-                    />
-                    TAS
-                  </label>
-                  {selectedFilters.tas.active && (
-                    <div className="value-options">
-                      {[1, 2, 3, 4, 5].map(level => (
-                        <label key={level}>
-                          <input
-                            type="checkbox"
-                            value={level}
-                            checked={selectedFilters.tas.values.includes(level.toString())}
-                            onChange={(e) => handleFilterChange('tas', e.target.value, 'values')}
-                          />
-                          Level {level}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <FilterOptions
+                selectedFilters={selectedFilters}
+                handleFilterChange={handleFilterChange}
+              />
             </div>
           )}
 
+          {/* 환자 목록 테이블 */}
           <table>
             <thead>
               <tr>
@@ -339,21 +213,166 @@ function List({ searchTerm, patients }) {
             </tbody>
           </table>
 
+          {/* 새로운 화살표 페이지네이션 */}
           <div className="pagination">
-            {getPageNumbers().map((number) => (
-              <button
-                key={number}
-                onClick={() => changePage(number)}
-                className={number === currentPage ? "active" : ""}
-              >
-                {number}
-              </button>
-            ))}
+            <button 
+              onClick={() => changePage('prev')}
+              disabled={currentPage === 1}
+              className="pagination-arrow"
+            >
+              <ChevronLeft />
+            </button>
+            <span className="page-info">{currentPage} / {totalPages}</span>
+            <button 
+              onClick={() => changePage('next')}
+              disabled={currentPage === totalPages}
+              className="pagination-arrow"
+            >
+              <ChevronRight />
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
+
+// 필터 옵션 컴포넌트 - 모듈화를 통한 유지보수성 개선
+const FilterOptions = ({ selectedFilters, handleFilterChange }) => {
+  // 필터 옵션 설정
+  const filterCategories = {
+    sorting: {
+      title: "정렬 옵션",
+      options: {
+        subject_id: '환자번호',
+        name: '이름',
+        age: '나이',
+        birthdate: '생년월일',
+        los_hours: '체류 시간'
+      }
+    },
+    filtering: {
+      title: "필터 옵션",
+      options: {
+        gender: {
+          label: '성별',
+          values: [
+            { value: '여', label: '여자' },
+            { value: '남', label: '남자' }
+          ]
+        },
+        pregnancystatus: {
+          label: '임신 여부',
+          values: [
+            { value: '0', label: 'No' },
+            { value: '1', label: 'Yes' }
+          ]
+        },
+        tas: {
+          label: 'TAS',
+          values: [1, 2, 3, 4, 5].map(level => ({
+            value: level.toString(),
+            label: `Level ${level}`
+          }))
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="filter-options-container">
+      {Object.entries(filterCategories).map(([categoryKey, category]) => (
+        <div key={categoryKey} className="filter-section">
+          <h3>{category.title}</h3>
+          <div className="filter-options-grid">
+            {Object.entries(category.options).map(([optionKey, option]) => (
+              <div key={optionKey} className="filter-option">
+                {categoryKey === 'sorting' ? (
+                  <SortingOption
+                    field={optionKey}
+                    label={option}
+                    filter={selectedFilters[optionKey]}
+                    onChange={handleFilterChange}
+                  />
+                ) : (
+                  <FilteringOption
+                    field={optionKey}
+                    label={option.label}
+                    values={option.values}
+                    filter={selectedFilters[optionKey]}
+                    onChange={handleFilterChange}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// 정렬 옵션 컴포넌트
+const SortingOption = ({ field, label, filter, onChange }) => (
+  <div className="sorting-option">
+    <label>
+      <input
+        type="checkbox"
+        checked={filter.active}
+        onChange={() => onChange(field, 'asc')}
+      />
+      {label}
+    </label>
+    {filter.active && (
+      <div className="direction-options">
+        <label>
+          <input
+            type="radio"
+            checked={filter.direction === 'asc'}
+            onChange={() => onChange(field, 'asc')}
+          />
+          오름차순
+        </label>
+        <label>
+          <input
+            type="radio"
+            checked={filter.direction === 'desc'}
+            onChange={() => onChange(field, 'desc')}
+          />
+          내림차순
+        </label>
+      </div>
+    )}
+  </div>
+);
+
+// 필터링 옵션 컴포넌트
+const FilteringOption = ({ field, label, values, filter, onChange }) => (
+  <div className="filtering-option">
+    <label>
+      <input
+        type="checkbox"
+        checked={filter.active}
+        onChange={() => onChange(field, [], 'values')}
+      />
+      {label}
+    </label>
+    {filter.active && (
+      <div className="value-options">
+        {values.map(({ value, label }) => (
+          <label key={value}>
+            <input
+              type="checkbox"
+              value={value}
+              checked={filter.values.includes(value)}
+              onChange={(e) => onChange(field, e.target.value, 'values')}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+    )}
+  </div>
+);
 
 export default List;

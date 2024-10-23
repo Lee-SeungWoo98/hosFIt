@@ -1,189 +1,245 @@
 .content {
-  margin-top: 0; /* 불필요한 음수 마진 제거 */
+  margin-top: 0;
 }
 
-.table-container {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: calc(100% - 240px); /* 사이드바의 너비를 고려하여 전체 너비 설정 */
-  margin-left: 240px; /* 사이드바와의 간격 조절 */
-  margin-top: -20px; /* 필요에 따라 조정 */
-  box-sizing: border-box; /* 패딩과 보더를 포함하여 전체 너비 조정 */
+.page-wrapper {
+  margin-top: -16px;
 }
 
-/* 페이지 헤더 스타일 */
+/* 브레드크럼 스타일 */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #000000ac;
+  padding: 0 20px;
+  max-width: calc(98% - 230px);
+  margin-left: 240px;
+  margin-bottom: 10px;
+}
+
+.breadcrumb-link {
+  color: #000000b5;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+/* 페이지 헤더 */
 .page-header {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
   padding: 0 20px;
-  max-width: calc(98% - 230px); /* 사이드바의 너비를 고려한 최대 너비 */
-  margin-left: 240px; /* 사이드바와의 간격 조절 */
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  color: #666;
-}
-
-.breadcrumb a {
-  color: #3f51b5;
-  text-decoration: none;
-}
-
-.breadcrumb span {
-  margin: 0 8px;
-}
-
-.breadcrumb .current {
-  color: #666;
+  max-width: calc(98% - 230px);
+  margin-left: 240px;
 }
 
 .page-title {
-  margin-left: 20px;
-  font-size: 24px;
-  color: #333;
-}
-
-/* 필터 영역 스타일 */
-.filter-container {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.filter-button {
-  padding: 8px 16px;
-  background-color: #3f51b5;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.filter-options-panel {
-  margin-top: 15px;
-  padding: 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: #f8f8f8;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-}
-
-.filter-section h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  color: #333;
-}
-
-.filter-option {
-  margin-bottom: 10px;
-  padding-left: 10px;
-}
-
-.filter-option label {
   display: flex;
   align-items: center;
-  cursor: pointer;
+  font-size: 26.1px;
+  font-weight: 550;
+  color: #333;
+  margin: 0;
+  flex-grow: 1;
+  margin-left: -18px;
 }
 
-.filter-option input[type="checkbox"],
-.filter-option input[type="radio"] {
-  margin-right: 8px;
-}
-
-.direction-options,
-.value-options {
-  margin-left: 25px;
-  margin-top: 5px;
-}
-
-.direction-options label,
-.value-options label {
-  margin-right: 15px;
-  font-size: 14px;
-}
-
-/* 선택된 필터 태그 스타일 */
-.selected-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.filter-tag {
-  display: flex;
-  align-items: center;
-  background-color: #f0f0f0;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 14px;
+.page-separator {
+  margin-right: 10px;
   color: #666;
+  font-size: 19px;
 }
 
-.filter-tag .filter-value {
-  background-color: #e0e0e0;
-  padding: 2px 6px;
-  border-radius: 3px;
-  margin-left: 5px;
-  display: flex;
-  align-items: center;
-}
-
-.filter-tag button {
-  background: none;
-  border: none;
-  color: #999;
-  margin-left: 5px;
-  cursor: pointer;
-  padding: 0 3px;
+.total-count {
+  margin-left: auto;
+  color: #585757;
   font-size: 16px;
 }
 
-.filter-tag button:hover {
-  color: #666;
-}
-
-/* 테이블 스타일 */
+/* 테이블 컨테이너 */
 .table-container {
   background-color: white;
   padding: 20px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: calc(100% - 240px);
+  margin-left: 240px;
+  box-sizing: border-box;
 }
 
-.table-header {
+/* 필터 영역 */
+.filter-container {
+  position: relative;
+  margin-top: -2px;
+  margin-bottom: 13px;
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-button {
+  padding: 6px 12px;
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.filter-button:hover {
+  background-color: #303f9f;
+}
+
+/* 선택된 필터 태그 */
+.selected-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-tag {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+  border: 1px solid #e0e0e0;
+}
+
+.filter-tag-close {
+  margin-left: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #999;
+}
+
+.filter-tag-close:hover {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+/* 필터 옵션 패널 */
+.filter-options-panel {
+  margin-top: 10px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f8f8f8;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-options-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   margin-bottom: 15px;
 }
 
-.table-header span {
-  color: #666;
-  font-size: 14px;
+.filter-option {
+  background-color: #f8f8f8;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
 }
 
+.filter-option:last-child {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-option-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-option-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 라디오/체크박스 스타일 */
+.direction-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 4px;
+}
+
+.value-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 4px;
+}
+
+.direction-option,
+.value-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 필터 액션 영역 */
+.filter-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filter-apply-button {
+  padding: 6px 16px;
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.filter-apply-button:hover {
+  background-color: #303f9f;
+}
+
+/* 테이블 스타일 */
 table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0 10px;
+  margin-bottom: 20px;
 }
 
 th, td {
+  padding: 12px;
   text-align: left;
-  padding: 15px;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -194,66 +250,31 @@ th {
 }
 
 /* 컬럼 너비 설정 */
-table th:nth-child(1),
-table td:nth-child(1) { /* 환자번호 */
-  width: 8%;
+table th:nth-child(1), table td:nth-child(1) { width: 8%; }  /* 환자번호 */
+table th:nth-child(2), table td:nth-child(2) { width: 10%; } /* 이름 */
+table th:nth-child(3), table td:nth-child(3) { width: 6%; }  /* 성별 */
+table th:nth-child(4), table td:nth-child(4) { width: 10%; } /* 생년월일 */
+table th:nth-child(5), table td:nth-child(5) { width: 6%; }  /* 나이 */
+table th:nth-child(6), table td:nth-child(6) { width: 15%; } /* 주소 */
+table th:nth-child(7), table td:nth-child(7) { width: 8%; }  /* 임신여부 */
+table th:nth-child(8), table td:nth-child(8) { width: 8%; }  /* 통증점수 */
+table th:nth-child(9), table td:nth-child(9) { width: 8%; }  /* 체류시간 */
+table th:nth-child(10), table td:nth-child(10) { width: 6%; } /* TAS */
+table th:nth-child(11), table td:nth-child(11) { width: 15%; } /* 상세정보 */
+
+/* 중앙 정렬이 필요한 컬럼들 */
+table th:nth-child(1), table td:nth-child(1),
+table th:nth-child(3), table td:nth-child(3),
+table th:nth-child(5), table td:nth-child(5),
+table th:nth-child(7), table td:nth-child(7),
+table th:nth-child(8), table td:nth-child(8),
+table th:nth-child(9), table td:nth-child(9),
+table th:nth-child(10), table td:nth-child(10),
+table th:nth-child(11), table td:nth-child(11) {
   text-align: center;
 }
 
-table th:nth-child(2),
-table td:nth-child(2) { /* 병명 코드 */
-  width: 8%;
-  text-align: center;
-}
-
-table th:nth-child(3),
-table td:nth-child(3) { /* 이름 */
-  width: 8%;
-}
-
-table th:nth-child(4),
-table td:nth-child(4) { /* 나이 */
-  width: 7%;
-  text-align: center;
-}
-
-table th:nth-child(5),
-table td:nth-child(5) { /* 성별 */
-  width: 8%;
-  text-align: center;
-}
-
-table th:nth-child(6),
-table td:nth-child(6) { /* 임신 여부 */
-  width: 8%;
-  text-align: center;
-}
-
-table th:nth-child(7),
-table td:nth-child(7) { /* KTAS */
-  width: 8%;
-  text-align: center;
-}
-
-table th:nth-child(8),
-table td:nth-child(8) { /* 병원 체류 시간 */
-  width: 12%;
-  text-align: center;
-}
-
-table th:nth-child(9),
-table td:nth-child(9) { /* 배치 추천 */
-  width: 15%;
-  text-align: center;
-}
-
-table th:nth-child(10),
-table td:nth-child(10) { /* 상세 정보 */
-  width: 8%;
-  text-align: center;
-}
-
-/* 상세보기 버튼 스타일 */
+/* 상세보기 버튼 */
 .details-button {
   padding: 6px 12px;
   background-color: #3f51b5;
@@ -261,36 +282,51 @@ table td:nth-child(10) { /* 상세 정보 */
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  transition: background-color 0.2s;
 }
 
 .details-button:hover {
   background-color: #303f9f;
 }
 
-/* 페이지네이션 스타일 */
+/* 페이지네이션 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 15px;
   margin-top: 20px;
 }
 
-.pagination button {
-  padding: 8px 12px;
-  margin: 0 4px;
-  border: 1px solid #e0e0e0;
-  background-color: white;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.pagination button.active {
+.pagination-arrow {
   background-color: #3f51b5;
   color: white;
-  border-color: #3f51b5;
+  border: none;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
 }
 
-.pagination button:hover:not(.active) {
-  background-color: #f0f0f0;
+.pagination-arrow:hover:not(:disabled) {
+  background-color: #303f9f;
+}
+
+.pagination-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
 }
