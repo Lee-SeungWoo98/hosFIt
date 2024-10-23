@@ -9,6 +9,10 @@
     height: auto; /* 반응형 레이아웃 */
     margin-bottom: 20px; /* 차트 아래 간격 추가 */
   }
+
+  .chart-title{
+    font-size: 25px;
+  }
   
   .label-container {
     margin-top: 10px;

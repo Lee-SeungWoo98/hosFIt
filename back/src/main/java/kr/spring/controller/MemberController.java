@@ -68,7 +68,7 @@ public class MemberController {
     
     
     
-    
+    // 회원리스트 
     @GetMapping("/memberList")
     public @ResponseBody List<Member> memberList() {
     	System.out.println(service.getAllMembers().toString());

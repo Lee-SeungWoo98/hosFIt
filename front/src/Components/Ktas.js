@@ -34,7 +34,7 @@ const Ktas = ({ ktasData, onTASClick }) => {
   return (
     <aside className="sidebar">
       <div className="chart-container">
-        <h3>KTAS 병상 점유율</h3>
+        <h3 className="chart-title">KTAS 병상 점유율</h3>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie
@@ -43,51 +43,36 @@ const Ktas = ({ ktasData, onTASClick }) => {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={50}
-              outerRadius={80}
-              labelLine={false}
+              innerRadius={45}
+              outerRadius={90}
               onMouseEnter={(data, index) => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
-              label={({
-                name,
-                value,
-                cx,
-                cy,
-                midAngle,
-                innerRadius,
-                outerRadius,
-              }) => {
-                const RADIAN = Math.PI / 180;
-                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                
-                // 그래프에 숫자 나오게 하는 부분
-                // return (
-                //   <text
-                //     x={x}
-                //     y={y}
-                //     fill="black"
-                //     textAnchor="middle"
-                //     dominantBaseline="central"
-                //   >
-                //     {`${value}`}
-                //   </text>
-                // );
-              }}
             >
-              {fullData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color} 
-                  style={{
-                    transition: 'transform 0.3s ease',
-                    transform: hoveredIndex === index ? 'scale(1.1)' : 'scale(1)',
-                  }}
-                />
-              ))}
+              {fullData.map((entry, index) => {
+                const offset = 15; // 이동할 거리
+
+                // 각 섹션의 중심 각도 계산
+                const angle =
+                  ((index * 360) / fullData.length) * (Math.PI / 180);
+
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    style={{
+                      transition: "transform 0.3s ease",
+                      transform:
+                        hoveredIndex === index
+                          ? `scale(1.1) translate(${
+                              Math.cos(angle) * offset
+                            }px, ${Math.sin(angle) * offset}px)`
+                          : "scale(1)",
+                      transformOrigin: "50% 50%", // 원의 중심 기준으로 변형
+                    }}
+                  />
+                );
+              })}
             </Pie>
-            <Tooltip />
           </PieChart>
         </ResponsiveContainer>
       </div>
