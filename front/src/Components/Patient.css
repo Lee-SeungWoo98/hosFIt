@@ -3,8 +3,9 @@
   padding: 20px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
-  margin-top: 20px;
+  margin-top: -40px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-left: 222px;
 }
 
 .patient-details h3 {
@@ -263,4 +264,24 @@
 
 .history-table-container::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.selected-visit {
+  background-color: #e3f2fd;
+}
+
+.loading-message, .error-message {
+  text-align: center;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.loading-message {
+  background-color: #f3f4f6;
 }

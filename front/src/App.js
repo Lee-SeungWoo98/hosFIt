@@ -26,6 +26,8 @@ function App() {
   const [error, setError] = useState(null);
   const [ktasData, setKtasData] = useState(null);
   const [ktasFilter, setKtasFilter] = useState([]); // 배열로 변경
+  const [labTests, setLabTests] = useState(null);
+  const [visitInfo, setVisitInfo] = useState(null);
   
   const checkSession = async () => {
     try {
@@ -55,7 +57,7 @@ function App() {
     setError(null);
     try {
       const result = await axios.get(
-        `http://localhost:8082/boot/patients/=${term}`
+        `http://localhost:8082/boot/patients/${term}`
       );
       setPatients(result.data);
       setFilteredPatients(result.data);
@@ -99,6 +101,34 @@ function App() {
       });
     }
   };
+
+  const fetchLabTests = async (stay_id) => {
+    try {
+        const result = await axios.get(
+            `http://localhost:8082/boot/labtests/${stay_id}`
+        );
+        setLabTests(result.data);  // 상태 설정 유지
+        return result.data;        // 데이터도 반환
+    } catch (error) {
+        console.error("Lab tests 데이터 로드 실패:", error);
+        setLabTests(null);
+        return null;
+    }
+};
+
+const fetchVisitInfo = async (subject_id) => {
+    try {
+        const result = await axios.get(
+            `http://localhost:8082/boot/patients/${subject_id}/visits`
+        );
+        setVisitInfo(result.data);  // 상태 설정 유지
+        return result.data;         // 데이터도 반환
+    } catch (error) {
+        console.error("Vital signs 데이터 로드 실패:", error);
+        setVisitInfo(null);
+        return null;
+    }
+};
 
   const handleFilteredPatientsUpdate = (filters) => {
     let filtered = [...patients];
@@ -220,6 +250,10 @@ function App() {
                 handleSearch={handleSearch}
                 onTASClick={handleTASClick}
                 onFilteredPatientsUpdate={handleFilteredPatientsUpdate}
+                labTests={labTests}
+                visitInfo={visitInfo}
+                fetchLabTests={fetchLabTests}
+                fetchVisitInfo={fetchVisitInfo}
               />
             ) : (
               <Navigate to="/login" />

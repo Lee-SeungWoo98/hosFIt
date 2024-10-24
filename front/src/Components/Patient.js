@@ -1,41 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import React, { useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
 import './Patient.css';
 
-function Patient({ patient, onBack }) {
+function Patient({ patientData, labTests, visitInfo, onBack }) {
   const [showBloodTest, setShowBloodTest] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [patientInfo, setPatientInfo] = useState(null);
-  const [patientHistory, setPatientHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  useEffect(() => {
-    fetchPatientData();
-  }, [patient.patientId]);
+  // patientInfo 형식에 맞게 데이터 가공
+  const [patientInfo, setPatientInfo] = useState({
+    name: patientData?.name,
+    age: patientData?.age,
+    emergencyLevel: `Level ${patientData?.visits?.[0]?.tas}`,
+    stayDuration: `${patientData?.visits?.[0]?.los_hours}시간`,
+    vitalSigns: patientData?.visits?.[0]?.vital_signs || [],
+    bloodTestData: labTests
+  });
 
-  const fetchPatientData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(`/selectPatient?patientId=${patient.patientId}`);
-      if (response.data && response.data.patient) {
-        setPatientInfo(response.data.patient);
-        setPatientHistory(response.data.medicalRecords || []);
-      } else {
-        setPatientInfo(null);
-        setPatientHistory([]);
-      }
-    } catch (err) {
-      console.error('Error fetching patient data:', err);
-      setError('환자 데이터를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 방문 기록 변환
+  const [patientHistory, setPatientHistory] = useState(
+    visitInfo?.visits?.map(visit => ({
+      date: new Date(visit.visit_date).toLocaleDateString(),
+      ktas: visit.tas,
+      stayDuration: `${visit.los_hours}시간`,
+      placement: visit.staystatus === 0 ? '퇴원' : '입원'
+    })) || []
+  );
 
   const getPlacementRecommendation = (patient) => {
     if (patient.emergencyLevel === 'Level 5' || patient.emergencyLevel === 'Level 4') {
@@ -88,25 +81,34 @@ function Patient({ patient, onBack }) {
 
   const handleDateClick = (date) => {
     setSelectedDate(date);
-    // 여기에서 선택된 날짜에 대한 데이터를 가져오는 로직을 구현해야 합니다.
-    // 예: fetchDataForDate(date);
   };
+
+  // 차트 데이터 포맷 수정
+  const vitalSignsData = patientInfo.vitalSigns.map(sign => ({
+    time: new Date(sign.chart_time).toLocaleTimeString(),
+    temperature: parseFloat(sign.temperature),
+    heartRate: sign.heartrate,
+    bloodPressure: sign.sbp,
+    bloodPressureDiastolic: sign.dbp,
+    oxygenSaturation: parseFloat(sign.o2sat),
+    respirationRate: sign.resprate
+  }));
 
   const renderChart = (title, chart, description) => (
     <div className="chart-item">
       <h4>{title}</h4>
       {chart}
-      <p className="chart-description">그래프에 대한 설명을 적어주세요. {description}</p>
+      <p className="chart-description">{description}</p>
     </div>
   );
 
   const temperatureChart = (
     <ResponsiveContainer width="100%" height={200}>
-      {patientInfo?.vitalSigns && patientInfo.vitalSigns.length > 0 ? (
-        <LineChart data={patientInfo.vitalSigns}>
+      {vitalSignsData.length > 0 ? (
+        <LineChart data={vitalSignsData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis />
+          <YAxis domain={[35, 42]} />
           <Tooltip />
           <Legend />
           <Line type="monotone" dataKey="temperature" stroke="#8884d8" name="체온(°C)" />
@@ -119,16 +121,17 @@ function Patient({ patient, onBack }) {
 
   const heartRateBloodPressureChart = (
     <ResponsiveContainer width="100%" height={200}>
-      {patientInfo?.vitalSigns && patientInfo.vitalSigns.length > 0 ? (
-        <LineChart data={patientInfo.vitalSigns}>
+      {vitalSignsData.length > 0 ? (
+        <LineChart data={vitalSignsData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis yAxisId="left" />
-          <YAxis yAxisId="right" orientation="right" />
+          <YAxis yAxisId="left" domain={[40, 200]} />
+          <YAxis yAxisId="right" orientation="right" domain={[40, 200]} />
           <Tooltip />
           <Legend />
           <Line yAxisId="left" type="monotone" dataKey="heartRate" stroke="#82ca9d" name="심박수(bpm)" />
-          <Line yAxisId="right" type="monotone" dataKey="bloodPressure" stroke="#ffc658" name="혈압(mmHg)" />
+          <Line yAxisId="right" type="monotone" dataKey="bloodPressure" stroke="#ffc658" name="수축기 혈압(mmHg)" />
+          <Line yAxisId="right" type="monotone" dataKey="bloodPressureDiastolic" stroke="#ff8042" name="이완기 혈압(mmHg)" />
         </LineChart>
       ) : (
         <div className="no-data-message">데이터가 필요합니다.</div>
@@ -138,28 +141,15 @@ function Patient({ patient, onBack }) {
 
   const oxygenSaturationChart = (
     <ResponsiveContainer width="100%" height={200}>
-      {patientInfo?.oxygenSaturation ? (
-        <PieChart>
-          <Pie
-            data={[
-              { name: '정상', value: patientInfo.oxygenSaturation.normal },
-              { name: '경계', value: patientInfo.oxygenSaturation.borderline },
-              { name: '위험', value: patientInfo.oxygenSaturation.critical },
-            ]}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {COLORS.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
+      {vitalSignsData.length > 0 ? (
+        <LineChart data={vitalSignsData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="time" />
+          <YAxis domain={[80, 100]} />
           <Tooltip />
           <Legend />
-        </PieChart>
+          <Line type="monotone" dataKey="oxygenSaturation" stroke="#8884d8" name="산소포화도(%)" />
+        </LineChart>
       ) : (
         <div className="no-data-message">데이터가 필요합니다.</div>
       )}
@@ -168,15 +158,15 @@ function Patient({ patient, onBack }) {
 
   const respirationRateChart = (
     <ResponsiveContainer width="100%" height={200}>
-      {patientInfo?.respirationRate && patientInfo.respirationRate.length > 0 ? (
-        <BarChart data={patientInfo.respirationRate}>
+      {vitalSignsData.length > 0 ? (
+        <LineChart data={vitalSignsData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" />
-          <YAxis />
+          <XAxis dataKey="time" />
+          <YAxis domain={[8, 40]} />
           <Tooltip />
           <Legend />
-          <Bar dataKey="value" fill="#8884d8" name="호흡수(/분)" />
-        </BarChart>
+          <Line type="monotone" dataKey="respirationRate" stroke="#8884d8" name="호흡수(/분)" />
+        </LineChart>
       ) : (
         <div className="no-data-message">데이터가 필요합니다.</div>
       )}
@@ -197,17 +187,21 @@ function Patient({ patient, onBack }) {
       </div>
       <div className={`data-container ${showBloodTest ? 'show-blood-test' : ''}`}>
         <div className="charts-container">
-          {renderChart("체온 변화", temperatureChart, "체온 변화에 대한 AI 소견")}
-          {renderChart("심박수 및 혈압", heartRateBloodPressureChart, "심박수 및 혈압에 대한 AI 소견")}
-          {renderChart("산소포화도 분포", oxygenSaturationChart, "산소포화도 분포에 대한 AI 소견")}
-          {renderChart("호흡수 변화", respirationRateChart, "호흡수 변화에 대한 AI 소견")}
+          {renderChart("체온 변화", temperatureChart, "체온 변화 추이")}
+          {renderChart("심박수 및 혈압", heartRateBloodPressureChart, "심박수 및 혈압 추이")}
+          {renderChart("산소포화도", oxygenSaturationChart, "산소포화도 추이")}
+          {renderChart("호흡수", respirationRateChart, "호흡수 추이")}
         </div>
         {showBloodTest && (
-          <div className="blood-test-data">
-            <h4>피검사 데이터</h4>
-            <pre>{patientInfo?.bloodTestData || '피검사 데이터가 없습니다.'}</pre>
-          </div>
-        )}
+        <div className="blood-test-data">
+          <h4>피검사 데이터</h4>
+          {labTests && labTests.length > 0 ? (
+            <pre>{JSON.stringify(labTests, null, 2)}</pre>
+          ) : (
+            <p>피검사 데이터가 없습니다.</p>
+          )}
+        </div>
+      )}
       </div>
       <br/>
       <h3>응급실 내원 기록</h3>
