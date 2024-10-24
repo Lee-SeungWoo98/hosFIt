@@ -11,7 +11,7 @@ function Login({ onLogin }) {
 
   const handleLogin = async () => {
     try {
-      await axios.post('http://localhost:8082/boot/login', {
+      await axios.post('http://localhost:8082/boot/member/login', {
         username,
         password,
       }, { withCredentials: true });  // 세션 쿠키 허용

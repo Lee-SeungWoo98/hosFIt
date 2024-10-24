@@ -32,7 +32,7 @@ function App() {
   const checkSession = async () => {
     try {
       const result = await axios.get(
-        "http://localhost:8082/boot/checkSession",
+        "http://localhost:8082/boot/member/checkSession",
         { withCredentials: true }
       );
       if (result.data.isAuthenticated) {
