@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // 필터 옵션 레이블 매핑은 동일하게 유지
@@ -22,12 +21,23 @@ const filterLabels = {
   }
 };
 
-function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate, ktasFilter }) {
-  const navigate = useNavigate();
+function List({ 
+  searchTerm, 
+  allPatients, 
+  patients, 
+  onFilteredPatientsUpdate, 
+  ktasFilter, 
+  labTests, 
+  visitInfo, 
+  fetchLabTests, 
+  fetchVisitInfo, 
+  onPatientSelect 
+}) {
   const [patientList, setPatientList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   // selectedFilters 초기값에 ktasFilter(배열) 반영
   const [selectedFilters, setSelectedFilters] = useState({
@@ -119,9 +129,29 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate, kta
     setShowFilterOptions(false);
   };
 
-  const showPatientDetails = (patient) => {
-    navigate('/patient', { state: { patientData: patient } });
-  };
+  const showPatientDetails = async (patient) => {
+    setLoadingDetails(true);
+    try {
+        const [labTestsData, visitInfoData] = await Promise.all([
+            fetchLabTests(patient.visits?.[0]?.stay_id),
+            fetchVisitInfo(patient.subject_id)
+        ]);
+
+        // visitInfo는 있지만 labTests가 없는 경우도 허용
+        if (!visitInfoData) {
+            console.error("Failed to fetch visit info");
+            return;
+        }
+
+        // labTests가 없더라도 계속 진행
+        onPatientSelect(patient, labTestsData || [], visitInfoData);
+        
+    } catch (error) {
+        console.error("Failed to fetch patient details:", error);
+    } finally {
+        setLoadingDetails(false);
+    }
+};
 
   // 활성화된 필터 태그 렌더링 함수는 동일하게 유지
   const renderActiveFilters = () => {
@@ -325,8 +355,9 @@ function List({ searchTerm, allPatients, patients, onFilteredPatientsUpdate, kta
                       <button 
                         onClick={() => showPatientDetails(patient)} 
                         className="details-button"
+                        disabled={loadingDetails}
                       >
-                        상세 보기
+                        {loadingDetails ? '로딩 중...' : '상세 보기'}
                       </button>
                     </td>
                   </tr>
