@@ -10,25 +10,28 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
   const [error, setError] = useState(null);
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  // patientInfo 형식에 맞게 데이터 가공
   const [patientInfo, setPatientInfo] = useState({
     name: patientData?.name,
     age: patientData?.age,
-    emergencyLevel: `Level ${patientData?.visits?.[0]?.tas}`,
-    stayDuration: `${patientData?.visits?.[0]?.los_hours}시간`,
-    vitalSigns: patientData?.visits?.[0]?.vital_signs || [],
+    // 기존: visits[0] -> 변경: visits[visits.length - 1]
+    // 데이터가 쭉쭉 추가되는 거라 생각해서 그럼 가장 마지막에 추가된 데이터가 최근 기록이겠네 생각.
+    emergencyLevel: `Level ${patientData?.visits?.[patientData.visits.length - 1]?.tas}`,
+    stayDuration: `${patientData?.visits?.[patientData.visits.length - 1]?.los_hours}시간`,
+    vitalSigns: patientData?.visits?.[patientData.visits.length - 1]?.vital_signs || [],
     bloodTestData: labTests
-  });
+});
 
-  // 방문 기록 변환
+  // 방문 기록 변환  // 최신 기록이 위에 나오도록
   const [patientHistory, setPatientHistory] = useState(
-    visitInfo?.visits?.map(visit => ({
-      date: new Date(visit.visit_date).toLocaleDateString(),
-      ktas: visit.tas,
-      stayDuration: `${visit.los_hours}시간`,
-      placement: visit.staystatus === 0 ? '퇴원' : '입원'
-    })) || []
-  );
+    (visitInfo?.visits?.map(visit => ({
+        date: new Date(visit.visit_date).toLocaleDateString(),
+        originalDate: visit.visit_date,  // 정렬을 위해 원본 날짜 보존
+        stay_id: visit.stay_id,         // 클릭 시 해당 방문 데이터 찾기 위해 보존
+        ktas: visit.tas,
+        stayDuration: `${visit.los_hours}시간`,
+        placement: visit.staystatus === 0 ? '퇴원' : '입원'
+    })) || []).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) // 날짜 역순 정렬
+);
 
   const getPlacementRecommendation = (patient) => {
     if (patient.emergencyLevel === 'Level 5' || patient.emergencyLevel === 'Level 4') {
@@ -79,9 +82,20 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     </div>
   );
 
-  const handleDateClick = (date) => {
+  const handleDateClick = (date, stay_id) => {
     setSelectedDate(date);
-  };
+    // stay_id로 해당하는 방문 기록 찾기
+    const selectedVisit = visitInfo.visits.find(visit => visit.stay_id === stay_id);
+    if (selectedVisit) {
+        // 찾은 방문 기록의 데이터로 차트 업데이트
+        setPatientInfo(prev => ({
+            ...prev,
+            emergencyLevel: `Level ${selectedVisit.tas}`,
+            stayDuration: `${selectedVisit.los_hours}시간`,
+            vitalSigns: selectedVisit.vital_signs || []
+        }));
+    }
+};
 
   // 차트 데이터 포맷 수정
   const vitalSignsData = patientInfo.vitalSigns.map(sign => ({
@@ -222,8 +236,11 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
               {patientHistory.map((record, index) => (
                 <tr key={index}>
                   <td>
-                    <button className="date-button" onClick={() => handleDateClick(record.date)}>
-                      {record.date}
+                  <button 
+                      className="date-button" 
+                      onClick={() => handleDateClick(record.date, record.stay_id)}  // 입실 날짜 클릭시 해당 record의 stay_id도 같이 전달해서 그 날짜 데이터
+                  >
+                    {record.date} 
                     </button>
                   </td>
                   <td>{record.ktas}</td>

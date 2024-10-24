@@ -138,6 +138,8 @@
   height: 300px;
   transition: all 0.2s ease;
   position: relative;
+  margin-right: 13px;
+  margin-bottom: 13px;
 }
 
 .chart-item h4 {
@@ -190,8 +192,9 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: calc(41% - 20px);  
+  width: calc(44% - 19px);  
   margin-left: 20px;
+  margin-bottom: 12px;
 }
 
 .show-blood-test .blood-test-data {
