@@ -14,13 +14,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import kr.spring.entity.Member;
+import kr.spring.entity.MemberInterface;
 import kr.spring.service.MemberService;
 
 @RestController
+@RequestMapping("/member")
 public class MemberController {
 
     @Autowired
@@ -64,17 +67,18 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
-
     
-    
-    
-    // 회원리스트 
+    // 멤버 전체 조회 ( 이름, 직책, 부서, 전공 )
     @GetMapping("/memberList")
-    public @ResponseBody List<Member> memberList() {
-    	System.out.println(service.getAllMembers().toString());
+    public @ResponseBody List<MemberInterface> memberList() {
         return service.getAllMembers();
     }
     
+    // 멤버 상세 조회 ( 이름, 직책, 부서, 전공 )
+    @GetMapping("/memberInfo")
+    public @ResponseBody MemberInterface memberInfo(String username) {
+        return service.getMemberInfo("admin");
+    }
     
     
     

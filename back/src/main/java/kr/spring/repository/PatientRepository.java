@@ -27,5 +27,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     @Query("SELECT DISTINCT p FROM Patient p JOIN p.visits v WHERE v.staystatus = 1")
     List<Patient> findDistinctByStaystatus();
+
    
 }

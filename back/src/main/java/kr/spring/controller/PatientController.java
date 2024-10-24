@@ -1,6 +1,7 @@
 package kr.spring.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -54,4 +55,6 @@ public class PatientController {
     public List<Patient> getPatientsByStaystatus() {
         return patientService.getPatientsByStaystatus();
     }
-}
+    //tas값만 병상용조회 
+    
+    }

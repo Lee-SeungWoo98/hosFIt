@@ -2,7 +2,9 @@
 package kr.spring.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -70,6 +72,26 @@ public class PatientService {
 		// TODO Auto-generated method stub
 		return patientRepository.findDistinctByStaystatus();
 	}
+	
+	   public Map<Integer, Long> getPatientsByTas() {
+		   System.out.println("[PatientService - getPatientsByTas] Service method called");
+	        List<Object[]> result = patientRepository.countPatientsByTas();
+	        Map<Integer, Long> tasCountMap = new HashMap<>();
+
+	        // SQL 쿼리 결과를 Map에 저장
+	        for (Object[] row : result) {
+	            Integer tas = ((Number) row[0]).intValue();
+	            Long count = (Long) row[1];
+	            tasCountMap.put(tas, count);
+	        }
+
+	        // tas 1부터 5까지의 값을 반환, 없으면 0 처리
+	        for (int i = 1; i <= 5; i++) {
+	            tasCountMap.putIfAbsent(i, 0L);  // 없는 tas 값은 0으로 처리
+	        }
+
+	        return tasCountMap;
+	    }
     
     
 

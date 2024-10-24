@@ -48,30 +48,17 @@ const Ktas = ({ ktasData, onTASClick }) => {
               onMouseEnter={(data, index) => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              {fullData.map((entry, index) => {
-                const offset = 15; // 이동할 거리
-
-                // 각 섹션의 중심 각도 계산
-                const angle =
-                  ((index * 360) / fullData.length) * (Math.PI / 180);
-
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    style={{
-                      transition: "transform 0.3s ease",
-                      transform:
-                        hoveredIndex === index
-                          ? `scale(1.1) translate(${
-                              Math.cos(angle) * offset
-                            }px, ${Math.sin(angle) * offset}px)`
-                          : "scale(1)",
-                      transformOrigin: "50% 50%", // 원의 중심 기준으로 변형
-                    }}
-                  />
-                );
-              })}
+              {fullData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  stroke={hoveredIndex === index ? "#000" : "none"} // 호버 시 윤곽선 추가
+                  strokeWidth={hoveredIndex === index ? 3 : 0} // 윤곽선 두께 설정
+                  style={{
+                    transition: "stroke 0.3s ease", // 부드럽게 윤곽선 나타나게 하기
+                  }}
+                />
+              ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
