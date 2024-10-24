@@ -43,10 +43,10 @@ function MainPage({
   return (
     <div className="app">
       <Header
-        onSearch={handleSearch}
-        ktasData={ktasData}
-        username={username}
-        onTASClick={onTASClick}
+        onSearch={handleSearch}  // 검색어
+        ktasData={ktasData}  // ktas 데이터
+        username={username}  // 로그인 유저 id
+        onTASClick={onTASClick}  // ktas 필터링
       />
       <div className="main-content">
         {loading ? (
