@@ -3,6 +3,281 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { ArrowLeft } from 'lucide-react';
 import './Patient.css';
 
+// 상수로 분리 (파일 상단에 위치)
+const ranges = {
+  // Blood Levels
+  hemoglobin: { male: [13.5, 17.5], female: [12.0, 16.0] },
+  platelet_count: [150000, 450000],
+  wbc: [4000, 11000],
+  rbc: { male: [4.5, 5.9], female: [4.1, 5.1] },
+  sedimentation_rate: { male: [0, 15], female: [0, 20] },
+  
+  // Electrolyte Levels
+  sodium: [135, 145],
+  potassium: [3.5, 5.0],
+  chloride: [96, 106],
+  
+  // Enzymes & Metabolism
+  ck: [22, 198],
+  ckmb: [0, 25],
+  creatinine: [0.7, 1.3],
+  ggt: [8, 61],
+  glucose: [70, 100],
+  inrpt: [0.8, 1.2],
+  lactate: [0.5, 2.2],
+  ld: [140, 280],
+  lipase: [13, 60],
+  magnesium: [1.7, 2.2],
+  ntpro_bnp: [0, 125],
+  ddimer: [0, 500],
+  
+  // Chemical Examinations & Enzymes
+  acetone: [0, 0],
+  alt: [7, 56],
+  albumin: [3.4, 5.4],
+  alkaline_phosphatase: [44, 147],
+  ammonia: [15, 45],
+  amylase: [28, 100],
+  ast: [8, 48],
+  beta_hydroxybutyrate: [0, 0.6],
+  bicarbonate: [22, 29],
+  bilirubin: [0.3, 1.2],
+  crp: [0, 3.0],
+  calcium: [8.6, 10.3],
+  co2: [23, 29],
+  
+  // Blood Gas Analysis
+  po2: [80, 100],
+  ph: [7.35, 7.45],
+  pco2: [35, 45]
+};
+
+// 단위 정보 추가
+const units = {
+  hemoglobin: 'g/dL',
+  platelet_count: '/μL',
+  wbc: '/μL',
+  rbc: 'x 10⁶/μL',
+  sedimentation_rate: 'mm/hr',
+  sodium: 'mEq/L',
+  potassium: 'mEq/L',
+  chloride: 'mEq/L',
+  ck: 'U/L',
+  ckmb: 'U/L',
+  creatinine: 'mg/dL',
+  ggt: 'U/L',
+  glucose: 'mg/dL',
+  inrpt: '',
+  lactate: 'mmol/L',
+  ld: 'U/L',
+  lipase: 'U/L',
+  magnesium: 'mg/dL',
+  ntpro_bnp: 'pg/mL',
+  ddimer: 'ng/mL',
+  acetone: '',
+  alt: 'U/L',
+  albumin: 'g/dL',
+  alkaline_phosphatase: 'U/L',
+  ammonia: 'μmol/L',
+  amylase: 'U/L',
+  ast: 'U/L',
+  beta_hydroxybutyrate: 'mmol/L',
+  bicarbonate: 'mEq/L',
+  bilirubin: 'mg/dL',
+  crp: 'mg/L',
+  calcium: 'mg/dL',
+  co2: 'mEq/L',
+  po2: 'mmHg',
+  ph: '',
+  pco2: 'mmHg'
+};
+
+// 피그마 보니까 그래프 밑에 한글로 검사명이 적혀있어서 한글 매핑 객체 추가(그래프 밑에 영어로 검사명 적혀있으니 안 예쁘긴 했음)
+const koreanNames = {
+  hemoglobin: "헤모글로빈(Hemoglobin)",
+  platelet_count: "혈소판 수(Platelet Count)",
+  wbc: "백혈구 수(WBC)",
+  rbc: "적혈구 수(RBC)",
+  sedimentation_rate: "적혈구 침강속도(ESR)",
+  sodium: "나트륨(Sodium)",
+  potassium: "칼륨(Potassium)",
+  chloride: "염소(Chloride)",
+  ck: "크레아틴 키나아제(CK)",
+  ckmb: "CK-MB",
+  creatinine: "크레아티닌(Creatinine)",
+  ggt: "감마글루타밀전이효소(GGT)",
+  glucose: "혈당(Glucose)",
+  inrpt: "혈액응고(INR)",
+  lactate: "젖산(Lactate)",
+  ld: "젖산탈수소효소(LD)",
+  lipase: "리파아제(Lipase)",
+  magnesium: "마그네슘(Magnesium)",
+  ntpro_bnp: "NT-proBNP",
+  ddimer: "D-다이머(D-dimer)",
+  acetone: "아세톤(Acetone)",
+  alt: "알라닌아미노전달효소(ALT)",
+  albumin: "알부민(Albumin)",
+  alkaline_phosphatase: "알칼리성 포스파타제(ALP)",
+  ammonia: "암모니아(Ammonia)",
+  amylase: "아밀라아제(Amylase)",
+  ast: "아스파르테이트아미노전달효소(AST)",
+  beta_hydroxybutyrate: "베타하이드록시부티레이트(BHB)",
+  bicarbonate: "중탄산염(Bicarbonate)",
+  bilirubin: "빌리루빈(Bilirubin)",
+  crp: "C-반응성 단백(CRP)",
+  calcium: "칼슘(Calcium)",
+  co2: "이산화탄소(CO2)",
+  po2: "산소분압(PO2)",
+  ph: "산도(pH)",
+  pco2: "이산화탄소분압(PCO2)"
+};
+
+
+// checkNormalRange 함수 수정
+const checkNormalRange = (category, value, gender) => {
+  const range = ranges[category];
+  if (!range) return null;
+
+  const numValue = parseFloat(value);
+  
+  // 성별에 따른 범위가 있는 경우
+  if (range.male && range.female) {
+    const genderRange = gender === '남' ? range.male : range.female;
+    return numValue >= genderRange[0] && numValue <= genderRange[1];
+  }
+  
+  // 일반적인 범위
+  return numValue >= range[0] && numValue <= range[1];
+};
+
+const BloodTestResults = ({ labTests, gender }) => {
+  const [showRawData, setShowRawData] = useState(false);
+  
+  if (!labTests || labTests.length === 0) return <p>피검사 데이터가 없습니다.</p>;
+  
+  const labTest = labTests[0];
+  let abnormalItems = [];
+  
+  const categories = [
+    { name: 'blood_levels', displayName: '혈액검사' },
+    { name: 'electrolyte_levels', displayName: '전해질검사' },
+    { name: 'enzymes_metabolisms', displayName: '효소 및 대사검사' },
+    { name: 'chemical_examinations_enzymes', displayName: '화학검사' },
+    { name: 'blood_gas_analysis', displayName: '혈액가스분석' }
+  ];
+ 
+  categories.forEach(category => {
+    if (labTest[category.name] && labTest[category.name].length > 0) {
+      const data = labTest[category.name][0];
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
+          const isNormal = checkNormalRange(key, value, gender);
+          if (isNormal === false) {
+            const range = typeof ranges[key] === 'function' 
+              ? ranges[key](gender) 
+              : ranges[key];
+            
+            if (range) {
+              abnormalItems.push({ 
+                key: key,
+                value: value,
+                normalRange: `${range[0]}-${range[1]}`
+              });
+            }
+          }
+        }
+      });
+    }
+  });
+ 
+  return (
+    <div className="blood-test-results">
+      <div className="blood-test-header">
+        <h2>피검사 데이터</h2>
+        <button className="raw-data-button" onClick={() => setShowRawData(!showRawData)}>
+          {showRawData ? '그래프로 보기' : '수치 보기'}
+        </button>
+      </div>
+ 
+          {showRawData ? (
+      <div className="raw-data">
+        {categories.map(category => {
+          const categoryData = labTest[category.name];
+          if (categoryData && categoryData.length > 0) {
+            const data = categoryData[0];
+            return (
+              <div key={category.name} style={{marginBottom: '20px'}}>
+                <h3>{category.displayName}</h3>
+                <table className="raw-data-table">
+                  <thead>
+                    <tr>
+                      <th>검사항목</th>
+                      <th>수치</th>
+                      <th>정상범위</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(data).map(([key, value]) => {
+                      if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
+                        return (
+                          <tr key={key}>
+                            <td>{koreanNames[key] || key}</td>
+                            <td>{value} {units[key]}</td>
+                            <td>{getRangeDisplay(key, gender, ranges)} {units[key]}</td>
+                          </tr>
+                        );
+                      }
+                      return null;
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+      ) : (
+        <>
+          <div className="abnormal-circles">
+            {abnormalItems.map((item, index) => (
+              <div key={index} className="circle-item">
+                <div className="circle">
+                  <div className="value">{item.value}</div>
+                  <div className="range">/{item.normalRange}</div>
+                </div>
+                <p className="item-name">{koreanNames[item.key] || item.key}</p>
+              </div>
+            ))}
+          </div>
+          <div className="result-text">
+            <p className="abnormal-count">
+              비정상 <span className="count">{abnormalItems.length}</span>건 외 정상 검출
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+ };
+
+ const getRangeDisplay = (key, gender, ranges) => {
+  const range = ranges[key];
+  if (!range) return '-';
+  
+  // 성별에 따른 범위가 있는 경우
+  if (range.male && range.female) {
+    if (gender === '남') {
+      return `${range.male[0]} - ${range.male[1]}`;
+    } else {
+      return `${range.female[0]} - ${range.female[1]}`;
+    }
+  }
+  
+  // 일반적인 범위
+  return `${range[0]} - ${range[1]}`;
+};
+
 function Patient({ patientData, labTests, visitInfo, onBack }) {
   const [showBloodTest, setShowBloodTest] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -33,15 +308,6 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     })) || []).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) // 날짜 역순 정렬
 );
 
-  const getPlacementRecommendation = (patient) => {
-    if (patient.emergencyLevel === 'Level 5' || patient.emergencyLevel === 'Level 4') {
-      return '입원';
-    } else if (patient.emergencyLevel === 'Level 3' || patient.emergencyLevel === 'Level 2') {
-      return '관찰';
-    } else {
-      return '퇴원';
-    }
-  };
 
   const PatientInfoBanner = ({ patientInfo, error }) => (
     <div className="patient-info-banner">
@@ -58,7 +324,7 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
             {patientInfo?.age ? `${patientInfo.age}세` : '데이터가 없어요.'}
           </div>
           <div>
-            <strong>응급도 레벨</strong>
+            <strong>KTAS</strong>
             {patientInfo?.emergencyLevel ? (
               <span className={`emergency-level level-${patientInfo.emergencyLevel.split(' ')[1]}`}>
                 {patientInfo.emergencyLevel}
@@ -71,11 +337,7 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
           </div>
           <div>
             <strong>배치 추천</strong>
-            {patientInfo?.emergencyLevel ? (
-              <span className={`placement-recommendation ${getPlacementRecommendation(patientInfo)}`}>
-                {getPlacementRecommendation(patientInfo)}
-              </span>
-            ) : '데이터가 없어요.'}
+            ㅁㅁㅁ
           </div>
         </>
       )}
@@ -122,7 +384,7 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
         <LineChart data={vitalSignsData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis domain={[35, 42]} />
+          <YAxis domain={[35, 40]} />
           <Tooltip />
           <Legend />
           <Line type="monotone" dataKey="temperature" stroke="#8884d8" name="체온(°C)" />
@@ -159,7 +421,7 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
         <LineChart data={vitalSignsData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis domain={[80, 100]} />
+          <YAxis domain={[85, 100]} />
           <Tooltip />
           <Legend />
           <Line type="monotone" dataKey="oxygenSaturation" stroke="#8884d8" name="산소포화도(%)" />
@@ -208,12 +470,7 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
         </div>
         {showBloodTest && (
         <div className="blood-test-data">
-          <h4>피검사 데이터</h4>
-          {labTests && labTests.length > 0 ? (
-            <pre>{JSON.stringify(labTests, null, 2)}</pre>
-          ) : (
-            <p>피검사 데이터가 없습니다.</p>
-          )}
+          <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
         </div>
       )}
       </div>

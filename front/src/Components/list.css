@@ -252,27 +252,48 @@ th {
 }
 
 /* 컬럼 너비 설정 */
-table th:nth-child(1), table td:nth-child(1) { width: 8%; }  /* 환자번호 */
-table th:nth-child(2), table td:nth-child(2) { width: 10%; } /* 이름 */
-table th:nth-child(3), table td:nth-child(3) { width: 6%; }  /* 성별 */
-table th:nth-child(4), table td:nth-child(4) { width: 10%; } /* 생년월일 */
-table th:nth-child(5), table td:nth-child(5) { width: 6%; }  /* 나이 */
-table th:nth-child(6), table td:nth-child(6) { width: 15%; } /* 주소 */
-table th:nth-child(7), table td:nth-child(7) { width: 8%; }  /* 임신여부 */
-table th:nth-child(8), table td:nth-child(8) { width: 8%; }  /* 통증점수 */
-table th:nth-child(9), table td:nth-child(9) { width: 8%; }  /* 체류시간 */
-table th:nth-child(10), table td:nth-child(10) { width: 6%; } /* TAS */
-table th:nth-child(11), table td:nth-child(11) { width: 15%; } /* 상세정보 */
+table th:nth-child(1), table td:nth-child(1) { width: 8%; }   /* 환자번호 */
+table th:nth-child(2), table td:nth-child(2) { width: 6%; }   /* 이름 */
+table th:nth-child(3), table td:nth-child(3) { width: 5%; }   /* 성별 */
+table th:nth-child(4), table td:nth-child(4) { width: 8%; }   /* 생년월일 */
+table th:nth-child(5), table td:nth-child(5) { width: 5%; }   /* 나이 */
+table th:nth-child(6), table td:nth-child(6) { width: 12%; }  /* 주소 */
+table th:nth-child(7), table td:nth-child(7) { width: 7%; }   /* 임신여부 */
+table th:nth-child(8), table td:nth-child(8) { width: 7%; }   /* 통증점수 */
+table th:nth-child(9), table td:nth-child(9) { width: 12%; }  /* 방문시간 */
+table th:nth-child(10), table td:nth-child(10) { width: 9%; } /* 체류시간 */
+table th:nth-child(11), table td:nth-child(11) { width: 5%; } /* TAS */
+table th:nth-child(12), table td:nth-child(12) { width: 15%; } /* 상세정보 */
+
+table th:nth-child(9), table td:nth-child(9) {
+  height: 69.1px;          /* 셀 높이 고정 */
+  line-height: 1.3;      /* 줄간격 조절 */
+  padding: 8px 12px;     /* 패딩 조절 */
+}
+
+/* 방문시간 크기 크우려고 위아래 분리 */
+table td:nth-child(9) br {
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* 시간부분 글자 키우기 */
+table td:nth-child(9) > :last-child {
+  font-size: 1.02em;
+}
 
 /* 중앙 정렬이 필요한 컬럼들 */
 table th:nth-child(1), table td:nth-child(1),
 table th:nth-child(3), table td:nth-child(3),
+table th:nth-child(4), table td:nth-child(4),
 table th:nth-child(5), table td:nth-child(5),
+table th:nth-child(6), table td:nth-child(6),
 table th:nth-child(7), table td:nth-child(7),
 table th:nth-child(8), table td:nth-child(8),
 table th:nth-child(9), table td:nth-child(9),
 table th:nth-child(10), table td:nth-child(10),
-table th:nth-child(11), table td:nth-child(11) {
+table th:nth-child(11), table td:nth-child(11),
+table th:nth-child(12), table td:nth-child(12) {
   text-align: center;
 }
 
