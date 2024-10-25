@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>응급실 관리자 대시보드</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF 생성 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>응급실 관리자</h2>
+                <div class="admin-info">
+                    <span class="admin-name">홍길동</span>
+                    <span class="admin-role">시스템 관리자</span>
+                </div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" data-tab="dashboard">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                    대시보드
+                </a></li>
+                <li><a href="#" data-tab="model">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1.75 9c0 .24-.02.47-.05.71l.01-.01 1.47 1.16c.14.1.23.18.23.18l-1.7 2.94-2.02-.8.02-.02c-.37.29-.77.53-1.21.71l-.97 1.68h-3.24l-.97-1.68c-.44-.18-.84-.42-1.21-.71l.02.02-2.02.8-1.7-2.94s.09-.08.23-.18l1.47-1.16.01.01c-.03-.24-.05-.47-.05-.71s.02-.47.05-.71l-.01.01-1.47-1.16c-.14-.1-.23-.18-.23-.18l1.7-2.94 2.02.8-.02.02c.37-.29.77-.53 1.21-.71l.97-1.68h3.24l.97 1.68c.44.18.84.42 1.21.71l-.02-.02 2.02-.8 1.7 2.94s-.09.08-.23.18l-1.47 1.16-.01-.01c.03.24.05.47.05.71z"/>
+                    </svg>
+                    AI 모델 관리
+                </a></li>
+                <li><a href="#" data-tab="staff">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05.02.01.03.03.04.04 1.14.83 1.93 1.94 1.93 3.41V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                    의료진 관리
+                </a></li>
+                <li><a href="#" data-tab="stats">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    통계 분석
+                </a></li>
+                <li><a href="#" data-tab="errors">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    에러 로그
+                </a></li>
+                <li><a href="#" data-tab="settings">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                    </svg>
+                    설정
+                </a></li>
+            </ul>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <!-- 상단 헤더 -->
+            <header class="content-header">
+                <div class="header-title">
+                    <h1 id="current-page-title">대시보드</h1>
+                    <span class="last-updated">마지막 업데이트: 2024-10-25 10:30:00</span>
+                </div>
+                <div class="header-actions">
+                    <button class="refresh-btn" onclick="refreshData()">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        새로고침
+                    </button>
+                </div>
+            </header>
+
+            <!-- 대시보드 섹션 -->
+            <section id="dashboard" class="tab-content active">
+                <div class="loading-overlay" id="dashboardLoading">
+                    <div class="loading-spinner"></div>
+                    <p>데이터 로딩 중...</p>
+                </div>
+
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>모델 정확도</h3>
+                            <div class="trend up">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M7 14l5-5 5 5z"/>
+                                </svg>
+                                <span>1.2%</span>
+                            </div>
+                        </div>
+                        <div class="value">94.5%</div>
+                        <div class="sub-text">최근 30일</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>ICU 입실률</h3>
+                            <div class="trend down">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                                <span>0.8%</span>
+                            </div>
+                        </div>
+                        <div class="value">15.2%</div>
+                        <div class="sub-text">목표: 20%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>총 예측 건수</h3>
+                            <div class="trend up">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M7 14l5-5 5 5z"/>
+                                </svg>
+                                <span>12.5%</span>
+                            </div>
+                        </div>
+                        <div class="value">2,480</div>
+                        <div class="sub-text">이번 달</div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>월별 입실 현황</h3>
+                            <div class="chart-actions">
+                                <select class="chart-period">
+                                    <option value="6">최근 6개월</option>
+                                    <option value="12">최근 12개월</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>병동별 분포</h3>
+                            <div class="chart-actions">
+                                <button class="chart-download" onclick="downloadChart('distributionChart')">
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alerts-section">
+                    <div class="section-header">
+                        <h3>최근 알림</h3>
+                        <button class="view-all">전체보기</button>
+                    </div>
+                    <div class="alert-list">
+                        <div class="alert-item warning">
+                            <div class="alert-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                </svg>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-header">
+                                    <span class="alert-title">ICU 입실률 경고</span>
+                                    <span class="alert-time">10:30</span>
+                                </div>
+                                <p class="alert-message">현재 ICU 입실률(15.2%)이 목표치(20%)보다 낮습니다</p>
+                            </div>
+                        </div>
+                        <div class="alert-item info">
+                            <div class="alert-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                </svg>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-header">
+                                    <span class="alert-title">모델 업데이트</span>
+                                    <span class="alert-time">09:15</span>
+                                </div>
+                                <p class="alert-message">AI 모델 v2.1.0 업데이트가 완료되었습니다</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI 모델 관리 섹션 -->
+            <section id="model" class="tab-content">
+                <div class="model-settings">
+                    <div class="settings-header">
+                        <h3>ICU 점수 설정</h3>
+                        <span class="last-modified">마지막 수정: 2024-10-24 15:30</span>
+                    </div>
+                    <div class="score-settings">
+                        <div class="setting-item">
+                            <label for="icuThreshold">ICU 입실 기준점수</label>
+                            <div class="input-group">
+                                <input type="number" id="icuThreshold" value="40" min="0" max="100">
+                                <span class="unit">점</span>
+                            </div>
+                            <div class="threshold-info">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24"  width="16" height="16">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                    </svg>
+                                </div>
+                                <span>현재 설정: 40점 이상 시 ICU 입실 권장</span>
+                            </div>
+                        </div>
+                        <button class="save-btn" onclick="updateICUThreshold()">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                            설정 저장
+                        </button>
+                    </div>
+                </div>
+
+                <div class="model-performance">
+                    <div class="performance-header">
+                        <h3>예측 성능 모니터링</h3>
+                        <div class="period-selector">
+                            <button class="period-btn active" data-period="7">7일</button>
+                            <button class="period-btn" data-period="30">30일</button>
+                            <button class="period-btn" data-period="90">90일</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="model-history">
+                    <div class="history-header">
+                        <h3>모델 업데이트 이력</h3>
+                        <button class="history-download">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            내보내기
+                        </button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>날짜</th>
+                                    <th>버전</th>
+                                    <th>정확도</th>
+                                    <th>변경사항</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2024-10-24</td>
+                                    <td>v2.1.0</td>
+                                    <td>94.5%</td>
+                                    <td>LSTM 레이어 최적화</td>
+                                    <td><span class="status active">활성</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2024-10-15</td>
+                                    <td>v2.0.1</td>
+                                    <td>93.2%</td>
+                                    <td>데이터 전처리 개선</td>
+                                    <td><span class="status inactive">비활성</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2024-09-30</td>
+                                    <td>v2.0.0</td>
+                                    <td>92.8%</td>
+                                    <td>새로운 모델 아키텍처 적용</td>
+                                    <td><span class="status inactive">비활성</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 의료진 관리 섹션 -->
+            <section id="staff" class="tab-content">
+                <div class="staff-controls">
+                    <div class="controls-left">
+                        <button class="add-btn" onclick="openStaffModal('add')">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            의료진 추가
+                        </button>
+                    </div>
+                    <div class="controls-right">
+                        <div class="search-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            </svg>
+                            <input type="text" id="staffSearch" placeholder="이름 또는 직책으로 검색...">
+                        </div>
+                        <select id="departmentFilter" class="filter-select">
+                            <option value="">전체 부서</option>
+                            <option value="응급의학과">응급의학과</option>
+                            <option value="내과">내과</option>
+                            <option value="외과">외과</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="staff-list">
+                    <div class="table-wrapper">
+                        <table class="staff-table">
+                            <thead>
+                                <tr>
+                                    <th>사번</th>
+                                    <th>이름</th>
+                                    <th>직책</th>
+                                    <th>부서</th>
+                                    <th>이메일</th>
+                                    <th>마지막 로그인</th>
+                                    <th>상태</th>
+                                    <th>액션</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2024001</td>
+                                    <td class="staff-info">
+                                        <img src="https://via.placeholder.com/32" alt="프로필" class="staff-avatar">
+                                        <span>김의사</span>
+                                    </td>
+                                    <td>전문의</td>
+                                    <td>응급의학과</td>
+                                    <td>kim@hospital.com</td>
+                                    <td>2024-10-25 09:30</td>
+                                    <td><span class="status active">활성</span></td>
+                                    <td class="actions">
+                                        <button class="edit-btn" onclick="openStaffModal('edit', '2024001')">
+                                            <svg class="icon" viewBox="0 0 24 24">
+                                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                            </svg>
+                                        </button>
+                                        <button class="reset-btn" onclick="resetPassword('2024001')">
+                                            <svg class="icon" viewBox="0 0 24 24">
+                                                <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- 추가 의료진 데이터 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 통계 분석 섹션 -->
+            <section id="stats" class="tab-content">
+                <div class="stats-controls">
+                    <div class="controls-left">
+                        <select id="statsPeriod" class="period-select">
+                            <option value="monthly">월별 통계</option>
+                            <option value="yearly">연간 통계</option>
+                        </select>
+                        <input type="month" id="statsMonth" value="2024-10">
+                    </div>
+                    <div class="controls-right">
+                        <button class="pdf-btn" onclick="generatePDFReport()">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            PDF 생성
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-content" id="statsReport">
+                    <div class="stats-summary">
+                        <h3>통계 요약</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <h4>평균 ICU 입실률</h4>
+                                <div class="stat-value">15.2%</div>
+                                <div class="stat-trend up">
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M7 14l5-5 5 5z"/>
+                                    </svg>
+                                    <span>2.1%</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <h4>평균 재실일수</h4>
+                                <div class="stat-value">4.5일</div>
+                                <div class="stat-trend down">
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                    <span>0.5일</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <h4>모델 정확도</h4>
+                                <div class="stat-value">94.5%</div>
+                                <div class="stat-trend up">
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M7 14l5-5 5 5z"/>
+                                    </svg>
+                                    <span>1.2%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-details">
+                        <canvas id="statsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+<!-- 에러 로그 섹션 -->
+            <section id="errors" class="tab-content">
+                <div class="error-controls">
+                    <div class="error-filters">
+                        <div class="search-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            </svg>
+                            <input type="text" id="logSearch" placeholder="에러 메시지 검색...">
+                        </div>
+                        <select id="logLevel" class="filter-select">
+                            <option value="all">전체 레벨</option>
+                            <option value="error">에러</option>
+                            <option value="warning">경고</option>
+                            <option value="info">정보</option>
+                        </select>
+                        <input type="date" id="logDate" class="date-filter">
+                    </div>
+                    <button class="export-btn" onclick="exportErrorLogs()">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        로그 내보내기
+                    </button>
+                </div>
+
+                <div class="error-list" id="errorLogs">
+                    <div class="error-item error">
+                        <div class="error-header">
+                            <div class="error-info">
+                                <span class="error-time">2024-10-24 14:30:00</span>
+                                <span class="error-type">Error</span>
+                                <span class="error-id">#ERR-2410-001</span>
+                            </div>
+                            <div class="error-status unresolved">
+                                <span class="status-dot"></span>
+                                미해결
+                            </div>
+                        </div>
+                        <div class="error-content">
+                            <div class="error-message">모델 예측 실패 (환자 ID: 12345)</div>
+                            <div class="error-details">
+                                <pre>Stack trace:
+Error: Failed to predict ICU admission score
+    at PredictionModel.calculate (model.js:245)
+    at async ProcessManager.handlePatient (manager.js:123)</pre>
+                            </div>
+                        </div>
+                        <div class="error-actions">
+                            <button class="resolve-btn" onclick="resolveError('ERR-2410-001')">해결 표시</button>
+                            <button class="report-btn" onclick="sendErrorReport('ERR-2410-001')">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
+                                </svg>
+                                유지보수 팀에 전송
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="error-item warning">
+                        <div class="error-header">
+                            <div class="error-info">
+                                <span class="error-time">2024-10-24 13:15:00</span>
+                                <span class="error-type">Warning</span>
+                                <span class="error-id">#WARN-2410-002</span>
+                            </div>
+                            <div class="error-status resolved">
+                                <span class="status-dot"></span>
+                                해결됨
+                            </div>
+                        </div>
+                        <div class="error-content">
+                            <div class="error-message">데이터 지연 발생</div>
+                            <div class="error-details">
+                                <p>생체 신호 데이터 수신 지연 (30초 이상)</p>
+                            </div>
+                        </div>
+                        <div class="error-actions">
+                            <button class="view-btn" onclick="viewErrorDetails('WARN-2410-002')">상세 보기</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-pagination">
+                    <button class="pagination-btn" disabled>이전</button>
+                    <span class="pagination-info">1-2 / 총 2개</span>
+                    <button class="pagination-btn" disabled>다음</button>
+                </div>
+            </section>
+
+            <!-- 설정 섹션 -->
+            <section id="settings" class="tab-content">
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3>알림 설정</h3>
+                            <button class="edit-btn">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="settings-content">
+                            <div class="setting-item">
+                                <label for="maintainerEmail">유지보수 담당자 이메일</label>
+                                <input type="email" id="maintainerEmail" value="maintenance@hospital.com">
+                            </div>
+                            <div class="setting-item">
+                                <label>자동 알림 설정</label>
+                                <div class="checkbox-group">
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="errorNotification" checked>
+                                        <label for="errorNotification">에러 발생 시 자동 알림</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="performanceNotification" checked>
+                                        <label for="performanceNotification">성능 저하 시 알림</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="updateNotification" checked>
+                                        <label for="updateNotification">시스템 업데이트 알림</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+<br>
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3>대시보드 설정</h3>                            
+                            <button class="edit-btn">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="settings-content">
+                            <div class="setting-item">
+                                <label>데이터 갱신 주기</label>
+                                <select id="refreshInterval">
+                                    <option value="30">30초</option>
+                                    <option value="60">1분</option>
+                                    <option value="300">5분</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>차트 표시 설정</label>
+                                <div class="checkbox-group">
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="showTrends" checked>
+                                        <label for="showTrends">추세선 표시</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="showTooltips" checked>
+                                        <label for="showTooltips">툴팁 표시</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="cancel-btn">취소</button>
+                    <button class="save-btn" onclick="saveSettings()">설정 저장</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 모달 -->
+    <div id="staffModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>의료진 정보</h3>
+                <button class="close-btn" onclick="closeStaffModal()">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="staffForm">
+                <div class="form-group">
+                    <label>이름</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>직책</label>
+                    <select name="position" required>
+                        <option value="전문의">전문의</option>
+                        <option value="레지던트">레지던트</option>
+                        <option value="인턴">인턴</option>
+                        <option value="간호사">간호사</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>부서</label>
+                    <select name="department" required>
+                        <option value="응급의학과">응급의학과</option>
+                        <option value="내과">내과</option>
+                        <option value="외과">외과</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>이메일</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn" onclick="closeStaffModal()">취소</button>
+                    <button type="submit" class="save-btn">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 알림 컨테이너 -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- JavaScript -->
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
