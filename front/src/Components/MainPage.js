@@ -18,7 +18,8 @@ function MainPage({
   labTests,
   visitInfo,
   fetchLabTests,
-  fetchVisitInfo
+  fetchVisitInfo,
+  logout,
 }) {
   const location = useLocation();
   const username = location.state?.username || "익명 사용자";
@@ -47,6 +48,7 @@ function MainPage({
         ktasData={ktasData}  // ktas 데이터
         username={username}  // 로그인 유저 id
         onTASClick={onTASClick}  // ktas 필터링
+        logout={logout}  // 로그아웃
       />
       <div className="main-content">
         {loading ? (

@@ -11,8 +11,9 @@ const Ktas = ({ ktasData, onTASClick }) => {
   // 데이터가 아직 로드되지 않았다면 미사용 병상 계산을 미루기
   const unusedBeds = totalBeds > 0 ? totalBeds - usedBeds : 0;
 
-  console.log(`Total Beds: ${totalBeds}, Used Beds: ${usedBeds}`);
-  console.log(`Unused Beds: ${unusedBeds}`);
+  // 테스트용
+  // console.log(`Total Beds: ${totalBeds}, Used Beds: ${usedBeds}`);
+  // console.log(`Unused Beds: ${unusedBeds}`);
 
   const tasData =
     ktasData?.ktasRatios?.map((ratio, index) => {
@@ -29,7 +30,8 @@ const Ktas = ({ ktasData, onTASClick }) => {
     ...tasData,
     { name: "미사용", value: unusedBeds, color: "#DDDDDD" }, // 미사용 병상 (회색)
   ];
-  console.log(fullData);
+  // 테스트용
+  // console.log(fullData);
 
   return (
     <aside className="sidebar">

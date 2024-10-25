@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import "../Components/Ktas";
 import Ktas from "../Components/Ktas";
 import SearchBar from "./SearchBar";
+import logoutIcon from './assets/images/logout.png';
 
 // 프로필 아이콘
 const ProfileIcon = ({ size = 29 }) => (
@@ -46,7 +47,7 @@ const MainIcon = ({ size = 20 }) => (
   </svg>
 );
 
-function Header({ onSearch, ktasData, username, onTASClick  }) {  // 부모로부터 onSearch 함수를 전달받음
+function Header({ onSearch, ktasData, username, onTASClick, logout  }) {  // 부모로부터 onSearch 함수를 전달받음
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (e) => {
@@ -63,6 +64,7 @@ function Header({ onSearch, ktasData, username, onTASClick  }) {  // 부모로�
         </div>
         <SearchBar onSearch={onSearch}/> 
         <div className="user-info">
+          <img className="logout" src={logoutIcon} alt="logout icon" onClick={() => logout()}></img>
           <ProfileIcon size={29} />
           <span className="user-name">{username}님 환영합니다.</span>
         </div>

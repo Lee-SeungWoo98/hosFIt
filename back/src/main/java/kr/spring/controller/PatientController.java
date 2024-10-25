@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import kr.spring.dto.PatientDTO;
 import kr.spring.entity.Patient;
 import kr.spring.entity.Visit;
+import kr.spring.entity.VitalSigns;
 import kr.spring.service.PatientService;
 
 @RestController
@@ -55,6 +56,45 @@ public class PatientController {
     public List<Patient> getPatientsByStaystatus() {
         return patientService.getPatientsByStaystatus();
     }
+    // 환자 생체 데이터
+    @GetMapping("/{stayId}/vitalsigns")
+    public List<VitalSigns> getPatientVitalSigns(@PathVariable Long stayId){
+    	return patientService.getVitalSigns(stayId);
+           }
     //tas값만 병상용조회 
+    @GetMapping("/bybed")
+    public ResponseEntity<Map<Integer, Long>> getPatientsByTas() {
+        System.out.println("[PatientController - getPatientsByTas] Fetching TAS count");
+        Map<Integer, Long> result = patientService.getPatientsByTas();
+        
+        // 결과를 확인하여 응답을 반환
+        if (result.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(result);
+        }
     
+      
+        
+   
+        
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+}
