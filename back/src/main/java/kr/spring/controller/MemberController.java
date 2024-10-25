@@ -44,6 +44,20 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
     }
+    
+    @GetMapping("/logout")
+    public ResponseEntity<Map<String, String>> MemberLogout(HttpSession session) {
+        Map<String, String> response = new HashMap<>();
+        
+        if (session != null) {
+            session.invalidate();  // 세션 무효화
+            response.put("message", "Logout successful");
+        } else {
+            response.put("message", "No session found");
+        }
+        
+        return ResponseEntity.ok(response);  // JSON 형태로 응답
+    }
 
     
     @GetMapping("/checkSession")
