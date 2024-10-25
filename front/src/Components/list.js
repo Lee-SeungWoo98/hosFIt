@@ -9,7 +9,7 @@ const filterLabels = {
   },
   pregnancystatus: {
     name: '임신 여부',
-    values: { '0': 'No', '1': 'Yes' }
+    values: { '0': 'No', '1': 'Yes', '-': 'No' }
   },
   tas: {
     name: 'KTAS',
@@ -74,7 +74,7 @@ function List({
     }
   }, [ktasFilter]);
 
-  const patientsPerPage = 5;
+  const patientsPerPage = 10;
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = patientList.slice(indexOfFirstPatient, indexOfLastPatient);
@@ -250,7 +250,7 @@ function List({
                     <label>
                       <input
                         type="checkbox"
-                        checked={selectedFilters.pregnancystatus.includes('0')}
+                        checked={selectedFilters.pregnancystatus.includes('0') || selectedFilters.pregnancystatus.includes('-')}
                         onChange={() => handleFilterChange('pregnancystatus', '0')}
                       />
                       No
@@ -332,6 +332,7 @@ function List({
                 <th>주소</th>
                 <th>임신 여부</th>
                 <th>통증 점수</th>
+                <th>방문 시간</th>
                 <th>체류 시간</th>
                 <th>KTAS</th>
                 <th>상세 정보</th>
@@ -347,9 +348,28 @@ function List({
                     <td>{patient.birthdate}</td>
                     <td>{patient.age}</td>
                     <td>{patient.address}</td>
-                    <td>{patient.pregnancystatus === "0" ? "N" : "Y"}</td>
+                    <td>{patient.pregnancystatus === "0" ? "N" : patient.pregnancystatus === "1" ? "Y" : "-"}</td>
                     <td>{patient.visits?.[0]?.pain || '-'}</td>
-                    <td>{patient.visits?.[0]?.los_hours || '-'}시간</td>
+                    <td>
+                      {patient.visits?.length > 0 ? (
+                        <>
+                          {new Date(patient.visits[patient.visits.length - 1].visit_date).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          }).replace(/\. /g, '.').slice(0, -1)} (KST)
+                          <br />
+                          <span>
+                            {new Date(patient.visits[patient.visits.length - 1].visit_date).toLocaleTimeString('ko-KR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false
+                            })}
+                          </span>
+                        </>
+                      ) : '-'}
+                    </td>
+                    <td>{patient.visits?.[patient.visits.length - 1]?.los_hours || '-'}시간</td>
                     <td>{patient.visits?.[0]?.tas || '-'}</td>
                     <td>
                       <button 
