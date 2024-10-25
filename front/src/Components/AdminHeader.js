@@ -1,78 +1,26 @@
+import React from 'react';
 
-import React, { useState } from "react";
-import { Search } from "lucide-react";
-import "../Components/Ktas";
-import Ktas from "../Components/Ktas";
-import SearchBar from "./SearchBar";
-// push push
-// 프로필 아이콘
-const ProfileIcon = ({ size = 29 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 29 29"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <circle cx="14.5" cy="14.5" r="14" fill="#E0E0E0" stroke="#BDBDBD" />
-    <circle cx="14.5" cy="11.5" r="5" fill="#BDBDBD" />
-    <path
-      d="M6 25.5C6 25.5 8 19.5 14.5 19.5C21 19.5 23 25.5 23 25.5"
-      stroke="#BDBDBD"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-// 메인 아이콘
-const MainIcon = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 20 20"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M1 10L10 1L19 10" stroke="currentColor" strokeWidth="2" />
-    <path d="M4 10V19H16V10" stroke="currentColor" strokeWidth="2" />
-    <rect
-      x="8"
-      y="13"
-      width="4"
-      height="6"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-function AdminHeader({ onSearch, ktasData, username, onTASClick  }) {  // 부모로부터 onSearch 함수를 전달받음
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    onSearch(e.target.value); // 검색어를 부모 컴포넌트로 전달
-
-  };
-
+function AdminHeader() {
   return (
-    <>
-      <div className="top-bar">
-        <div className="logo-container">
-          <div className="logo-space">hosFit</div>
-        </div>
-        <SearchBar onSearch={onSearch}/> 
-        <div className="user-info">
-          <ProfileIcon size={29} />
-          <span className="user-name">{username}님 환영합니다.</span>
-        </div>
+    <header className="content-header">
+      <div className="header-title">
+        <h1 id="current-page-title">대시보드</h1>
+        <span className="last-updated">마지막 업데이트: 2024-10-25 10:30:00</span>
       </div>
-      <div className="header-content">
-        <Ktas ktasData={ktasData} onTASClick={onTASClick}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
+      <div className="header-actions">
+        <button className="refresh-btn" onClick={refreshData}>
+          <svg className="icon" viewBox="0 0 24 24">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+          새로고침
+        </button>
       </div>
-    </>
+    </header>
   );
 }
 
-export default AdminHeader;
+function refreshData() {
+  // 데이터 새로고침 로직
+}
 
+export default AdminHeader;

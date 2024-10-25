@@ -8,7 +8,7 @@ import {
 import axios from "axios";
 import Login from "./Components/Login";
 import MainPage from "./Components/MainPage";
-import AdminAPP from "./Components/AdminApp";
+import AdminAPP from "./Components/AdminAPP";
 import "./App.css";
 import "./Components/list.css";
 import "./Components/Header.css";
