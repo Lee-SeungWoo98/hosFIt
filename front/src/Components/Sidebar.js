@@ -18,25 +18,19 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   };
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-header">
+    <div className="admin-sidebar">
+      <div className="admin-sidebar-header">
         <h2>응급실 관리자</h2>
-        <div className="admin-info">
-          <span className="admin-name">홍길동</span>
-          <span className="admin-role">시스템 관리자</span>
+        <div className="admin-user-info">
+          <span className="admin-user-name">홍길동</span>
+          <span className="admin-user-role">시스템 관리자</span>
         </div>
       </div>
 
-      <nav className="nav-links">
+      <nav className="admin-nav-links">
         {navItems.map(({ id, Icon, label }) => (
-          <a
-            key={id}
-            href="#"
-            onClick={(e) => handleClick(e, id)}
-            className={`nav-link ${activeTab === id ? 'active' : ''}`}
-            data-tab={id}
-          >
-            <Icon className="icon" />
+          <a key={id} href="#" onClick={(e) => handleClick(e, id)} className={`admin-nav-link ${activeTab === id ? 'active' : ''}`} data-tab={id}>
+            <Icon className="admin-icon" />
             <span>{label}</span>
           </a>
         ))}
