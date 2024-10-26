@@ -13,8 +13,9 @@
 }
 
 .admin-alerts-header h3 {
-  font-size: 1.125rem;
+  font-size: 1.3rem;
   font-weight: 600;
+  margin-right: auto; /* 버튼과의 간격 조정 */
 }
 
 .admin-view-all-btn {
@@ -23,6 +24,19 @@
   background: none;
   border: none;
   cursor: pointer;
+}
+
+.admin-view-all-btn:hover {
+  text-decoration: underline;
+}
+
+.admin-view-all-btn {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 1370px;
 }
 
 .admin-view-all-btn:hover {
