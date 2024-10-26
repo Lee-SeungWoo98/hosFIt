@@ -1,0 +1,26 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.admin-main-content {
+  flex: 1;
+  padding: 2rem;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .admin-main-content {
+      margin-left: 80px;
+      padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-main-content {
+      margin-left: 0;
+      padding: 1rem;
+  }
+}

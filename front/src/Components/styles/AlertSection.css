@@ -1,0 +1,94 @@
+.admin-alerts-section {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.admin-alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-alerts-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.admin-view-all-btn {
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-view-all-btn:hover {
+  text-decoration: underline;
+}
+
+.admin-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-alert-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--background-color);
+  transition: transform 0.2s ease;
+}
+
+.admin-alert-item:hover {
+  transform: translateX(4px);
+}
+
+.admin-alert-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-alert-item.warning .admin-alert-icon {
+  background-color: #fef3c7;
+  color: var(--warning-color);
+}
+
+.admin-alert-item.info .admin-alert-icon {
+  background-color: #dbeafe;
+  color: var(--primary-color);
+}
+
+.admin-alert-content {
+  flex: 1;
+}
+
+.admin-alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.admin-alert-title {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.admin-alert-time {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.admin-alert-message {
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
