@@ -1,0 +1,95 @@
+/* Base styles and variables - 이미 :root는 전역이므로 그대로 유지 */
+:root {
+  --primary-color: #2563eb;
+  --primary-dark: #1e40af;
+  --primary-light: #60a5fa;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --background-color: #f3f4f6;
+  --card-background: #ffffff;
+  --text-color: #1f2937;
+  --text-light: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.admin-notification-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+.admin-notification {
+  background-color: var(--card-background);
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: adminSlideIn 0.3s ease;
+  transition: opacity 0.3s ease;
+}
+
+.admin-notification.success {
+  border-left: 4px solid var(--success-color);
+}
+
+.admin-notification.error {
+  border-left: 4px solid var(--error-color);
+}
+
+.admin-notification.warning {
+  border-left: 4px solid var(--warning-color);
+}
+
+.admin-notification.info {
+  border-left: 4px solid var(--primary-color);
+}
+
+@keyframes adminSlideIn {
+  from {
+      transform: translateX(100%);
+      opacity: 0;
+  }
+  to {
+      transform: translateX(0);
+      opacity: 1;
+  }
+}
+
+/* Animation utilities */
+@keyframes adminFadeIn {
+  from {
+      opacity: 0;
+  }
+  to {
+      opacity: 1;
+  }
+}
+
+.admin-fade-in {
+  animation: adminFadeIn 0.3s ease;
+}
+
+/* Icons */
+.admin-icon {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+
+.admin-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-icon-lg {
+  width: 24px;
+  height: 24px;
+}

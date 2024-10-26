@@ -1,18 +1,17 @@
-/* Chart.css */
-.chart-card {
+.admin-chart-container {
     background-color: #fff;
     padding: 1.5rem;
     border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
 }
 
-.chart-header {
+.admin-chart-base-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 1.5rem;
 }
 
-.chart-wrapper {
+.admin-chart-base-wrapper {
     position: relative;
     height: 300px;
 }

@@ -1,0 +1,82 @@
+.admin-charts-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.admin-chart-card {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.admin-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.admin-chart-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.admin-chart-wrapper {
+  position: relative;
+  height: 300px;
+}
+
+.admin-chart-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-chart-period {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.admin-chart-download {
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-chart-download:hover {
+  background-color: var(--background-color);
+}
+
+@media (max-width: 1024px) {
+  .admin-charts-container {
+      grid-template-columns: 1fr;
+  }
+
+  .admin-chart-wrapper {
+      height: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-chart-header {
+      flex-direction: column;
+      gap: 1rem;
+  }
+
+  .admin-chart-actions {
+      width: 100%;
+      justify-content: flex-end;
+  }
+}
