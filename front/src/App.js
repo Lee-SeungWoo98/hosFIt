@@ -282,7 +282,7 @@ function App() {
 
     fetchAllData();
 
-    const intervalId = setInterval(fetchAllData, 60000); // 1분마다 데이터 새로고침
+    const intervalId = setInterval(fetchAllData, 600000); // 1분마다 데이터 새로고침
     return () => clearInterval(intervalId); // 컴포넌트가 사라질 때 interval 정리
   }, [isAuthenticated]);
 
@@ -330,7 +330,9 @@ function App() {
           path="/admin"
           element={
             isAuthenticated && position === "관리자" ? (
-              <AdminAPP />
+              <AdminAPP 
+                logout={logout}
+              />
             ) : (
               <Navigate to="/login" />
             )

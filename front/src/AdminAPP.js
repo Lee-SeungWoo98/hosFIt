@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import Layout from './Components/Layout';
 import Dashboard from './Components/Dashboard';
 import AIModel from './Components/AIModel';
@@ -10,9 +11,18 @@ import AdminHeader from './Components/AdminHeader';
 import NotificationContainer from './Components/NotificationContainer';
 import './Components/styles/AdminApp.css';
 
-const AdminApp = () => {
+const AdminApp = ({logout}) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
+
+  const SelectAllMember = async () => {
+    try{
+      const result = await axios.get("http://localhost:8082/boot/member/memberList");
+      
+    }catch(error){
+      console.log("리스트 출력 실패");
+    }
+  }
 
   const handleRefresh = () => {
     setLoading(true);
@@ -90,7 +100,7 @@ const AdminApp = () => {
 
   return (
     <>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+      <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout}>
         <AdminHeader 
           title={getPageTitle()} 
           lastUpdated="2024-10-25 10:30:00"
