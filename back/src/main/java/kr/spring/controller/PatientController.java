@@ -73,11 +73,7 @@ public class PatientController {
         } else {
             return ResponseEntity.ok(result);
         }
-    
-      
-        
-   
-        
+
     }
     
     
