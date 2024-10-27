@@ -327,14 +327,12 @@ function List({
                 <th>환자번호</th>
                 <th>이름</th>
                 <th>성별</th>
-                <th>생년월일</th>
                 <th>나이</th>
-                <th>주소</th>
-                <th>임신 여부</th>
                 <th>통증 점수</th>
-                <th>방문 시간</th>
+                <th>입실 시간</th>
                 <th>체류 시간</th>
                 <th>KTAS</th>
+                <th>AI_TAS</th>
                 <th>상세 정보</th>
               </tr>
             </thead>
@@ -345,10 +343,7 @@ function List({
                     <td>{patient.subject_id}</td>
                     <td>{patient.name}</td>
                     <td>{patient.gender}</td>
-                    <td>{patient.birthdate}</td>
                     <td>{patient.age}</td>
-                    <td>{patient.address}</td>
-                    <td>{patient.pregnancystatus === "0" ? "N" : patient.pregnancystatus === "1" ? "Y" : "-"}</td>
                     <td>{patient.visits?.[0]?.pain || '-'}</td>
                     <td>
                       {patient.visits?.length > 0 ? (
@@ -371,6 +366,7 @@ function List({
                     </td>
                     <td>{patient.visits?.[patient.visits.length - 1]?.los_hours || '-'}시간</td>
                     <td>{patient.visits?.[0]?.tas || '-'}</td>
+                    <td>{patient.ai_tas || '-'}</td> {/* AI_TAS 값을 여기에 표시 */}
                     <td>
                       <button 
                         onClick={() => showPatientDetails(patient)} 
@@ -384,7 +380,7 @@ function List({
                 ))
               ) : (
                 <tr>
-                  <td colSpan="11" className="no-data-message">
+                  <td colSpan="10" className="no-data-message"> {/* colspan 업데이트 */}
                     조건에 해당하는 환자가 없습니다
                   </td>
                 </tr>
