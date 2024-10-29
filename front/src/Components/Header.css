@@ -11,7 +11,7 @@
 .user-sidebar {
   width: 280px;
   background-color: var(--card-background, white);
-  padding: 2rem;
+  padding: 1rem;
   box-shadow: var(--shadow, 0 2px 4px rgba(0,0,0,0.1));
   position: fixed;
   height: 100vh;
@@ -40,9 +40,10 @@
 
 .user-profile {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 0.5rem;
+  width: max-content;
 }
 
 .user-name {
