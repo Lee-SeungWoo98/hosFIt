@@ -1,23 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, RotateCcw, Search } from 'lucide-react';  // 필터 초기화,검색 버튼 추가로 import했어요
 
-// 필터 옵션 레이블 매핑은 동일하게 유지
-const filterLabels = {
-  gender: { 
-    name: '성별',
-    values: { '남': '남자', '여': '여자' }
-  },
-  pregnancystatus: {
-    name: '임신 여부',
-    values: { '0': 'No', '1': 'Yes', '-': 'No' }
+const filterOptions = {
+  gender: {
+    label: 'Select Gender',
+    options: [
+      { value: '', label: 'All' },  // 초기값 옵션 추가
+      { value: '남', label: '남자' },
+      { value: '여', label: '여자' }
+    ]
   },
   tas: {
-    name: 'KTAS',
-    values: { '1': 'Level 1', '2': 'Level 2', '3': 'Level 3', '4': 'Level 4', '5': 'Level 5' }
+    label: 'Select KTAS',
+    options: [
+      { value: '', label: 'All' },  // 초기값 옵션 추가
+      { value: '1', label: 'Level 1' },
+      { value: '2', label: 'Level 2' },
+      { value: '3', label: 'Level 3' },
+      { value: '4', label: 'Level 4' },
+      { value: '5', label: 'Level 5' }
+    ]
   },
-  los_hours: {
-    name: '체류 시간',
-    values: { 'asc': '오름차순', 'desc': '내림차순' }
+  painScore: {
+    label: 'Select Pain Score',
+    options: [
+      { value: '', label: 'All' },  // 초기값 옵션 추가
+      ...Array.from({ length: 10 }, (_, i) => ({
+        value: String(i + 1),
+        label: String(i + 1)
+      }))
+    ]
   }
 };
 
@@ -31,23 +43,73 @@ function List({
   visitInfo, 
   fetchLabTests, 
   fetchVisitInfo, 
-  onPatientSelect 
+  onPatientSelect,
+  onSearch
 }) {
   const [patientList, setPatientList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  
-  // selectedFilters 초기값에 ktasFilter(배열) 반영
-  const [selectedFilters, setSelectedFilters] = useState({
-    gender: [],
-    pregnancystatus: [],
-    tas: Array.isArray(ktasFilter) ? ktasFilter.map(String) : [],
-    los_hours: 'none'
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: null
   });
+  
+  // Dropdown states
+  const [openDropdown, setOpenDropdown] = useState(null);
+  
+  const [selectedFilters, setSelectedFilters] = useState({
+    gender: '',
+    tas: '',
+    painScore: ''
+  });
+  // 필터 초기화 함수 추가
+  const resetAllFilters = () => {
+    setSelectedFilters({
+      gender: '',
+      tas: '',
+      painScore: ''
+    });
+  };
 
-  // 환자 데이터 변경 시 효과
+  // Filter the patient list when filters change
+  useEffect(() => {
+    if (!patients) return;
+  
+    let filteredPatients = [...patients];
+  
+    // 검색어로 환자 이름과 번호 필터링 추가
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filteredPatients = filteredPatients.filter(patient => 
+        patient.name.toLowerCase().includes(searchLower) || 
+        patient.subject_id.toString().includes(searchLower)
+      );
+    }
+  
+    // 기존 필터 로직
+    if (selectedFilters.gender) {
+      filteredPatients = filteredPatients.filter(patient => 
+        patient.gender === selectedFilters.gender
+      );
+    }
+  
+    if (selectedFilters.tas) {
+      filteredPatients = filteredPatients.filter(patient => 
+        patient.visits?.[0]?.tas === Number(selectedFilters.tas)
+      );
+    }
+  
+    if (selectedFilters.painScore) {
+      filteredPatients = filteredPatients.filter(patient => 
+        patient.visits?.[0]?.pain === Number(selectedFilters.painScore)
+      );
+    }
+  
+    setPatientList(filteredPatients);
+    setCurrentPage(1);
+  }, [patients, selectedFilters, searchTerm]); // searchTerm을 의존성 배열에 추가
+
   useEffect(() => {
     setIsLoading(true);
     if (patients && Array.isArray(patients)) {
@@ -61,15 +123,16 @@ function List({
 
   // KTAS 필터 변경 시 효과
   useEffect(() => {
-    if (Array.isArray(ktasFilter)) {
+    if (Array.isArray(ktasFilter) && ktasFilter.length > 0) {
       setSelectedFilters(prev => ({
         ...prev,
-        tas: ktasFilter.map(String)
+        tas: ktasFilter[0].toString() // 문자열로 변환
       }));
     } else {
+      // KTAS 필터가 비어있을 때 (미사용 선택시나 같은 레벨 다시 클릭시) 초기화
       setSelectedFilters(prev => ({
         ...prev,
-        tas: []
+        tas: ''
       }));
     }
   }, [ktasFilter]);
@@ -88,113 +151,157 @@ function List({
     }
   };
 
-  const toggleFilterOptions = () => {
-    setShowFilterOptions(!showFilterOptions);
+  const handleFilterSelect = (type, value) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [type]: value
+    }));
+    setOpenDropdown(null);
   };
 
-  // 필터 변경 핸들러 수정
-  const handleFilterChange = (type, value) => {
-    setSelectedFilters(prev => {
-      const newFilters = { ...prev };
-      
-      if (type === 'los_hours') {
-        newFilters.los_hours = value;
-      } else {
-        if (prev[type].includes(value)) {
-          newFilters[type] = prev[type].filter(item => item !== value);
-        } else {
-          newFilters[type] = [...prev[type], value];
-        }
-      }
-      
-      return newFilters;
-    });
+  const toggleDropdown = (dropdownName) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
   };
 
-  const removeFilter = (type, value) => {
-    const newFilters = { ...selectedFilters };
-    
-    if (type === 'los_hours') {
-      newFilters.los_hours = 'none';
-    } else {
-      newFilters[type] = newFilters[type].filter(item => item !== value);
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = null;
     }
     
-    setSelectedFilters(newFilters);
-    onFilteredPatientsUpdate(newFilters);
+    setSortConfig({ key, direction });
+    
+    if (direction === null) {
+      setPatientList([...patients]);
+      return;
+    }
+
+    const sortedList = [...patientList].sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
+      
+      // Handle special cases
+      if (key === 'los_hours') {
+        aValue = a.visits?.[0]?.los_hours || 0;
+        bValue = b.visits?.[0]?.los_hours || 0;
+      } else if (key === 'tas') {
+        aValue = a.visits?.[0]?.tas || 0;
+        bValue = b.visits?.[0]?.tas || 0;
+      } else if (key === 'pain') {
+        aValue = a.visits?.[0]?.pain || 0;
+        bValue = b.visits?.[0]?.pain || 0;
+      } else if (key === 'visit_date' && a.visits?.length && b.visits?.length) {
+        aValue = new Date(a.visits[a.visits.length - 1].visit_date).getTime();
+        bValue = new Date(b.visits[b.visits.length - 1].visit_date).getTime();
+      }
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      }
+      return aValue < bValue ? 1 : -1;
+    });
+
+    setPatientList(sortedList);
   };
 
-  const handleApplyFilters = () => {
-    onFilteredPatientsUpdate(selectedFilters);
-    setShowFilterOptions(false);
+  const renderSortIcon = (columnName) => {
+    if (sortConfig.key === columnName) {
+      if (sortConfig.direction === 'asc') {
+        return <ChevronUp className="sort-icon" size={14} />;
+      } else if (sortConfig.direction === 'desc') {
+        return <ChevronDown className="sort-icon" size={14} />;
+      }
+    }
+    return null;
+  };
+
+  const clearFilter = (type) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [type]: ''
+    }));
   };
 
   const showPatientDetails = async (patient) => {
     setLoadingDetails(true);
     try {
-        const [labTestsData, visitInfoData] = await Promise.all([
-            fetchLabTests(patient.visits?.[0]?.stay_id),
-            fetchVisitInfo(patient.subject_id)
-        ]);
+      const [labTestsData, visitInfoData] = await Promise.all([
+        fetchLabTests(patient.visits?.[0]?.stay_id),
+        fetchVisitInfo(patient.subject_id)
+      ]);
 
-        // visitInfo는 있지만 labTests가 없는 경우도 허용
-        if (!visitInfoData) {
-            console.error("Failed to fetch visit info");
-            return;
-        }
+      if (!visitInfoData) {
+        console.error("Failed to fetch visit info");
+        return;
+      }
 
-        // labTests가 없더라도 계속 진행
-        onPatientSelect(patient, labTestsData || [], visitInfoData);
-        
+      onPatientSelect(patient, labTestsData || [], visitInfoData);
     } catch (error) {
-        console.error("Failed to fetch patient details:", error);
+      console.error("Failed to fetch patient details:", error);
     } finally {
-        setLoadingDetails(false);
+      setLoadingDetails(false);
     }
-};
-
-  // 활성화된 필터 태그 렌더링 함수는 동일하게 유지
-  const renderActiveFilters = () => {
-    return (
-      <div className="active-filters">
-        {Object.entries(selectedFilters).map(([type, value]) => {
-          if (type === 'los_hours' && value !== 'none') {
-            return (
-              <div key={`${type}-${value}`} className="filter-tag">
-                <span>{filterLabels[type].name}: {filterLabels[type].values[value]}</span>
-                <button
-                  className="filter-tag-remove"
-                  onClick={() => removeFilter(type, value)}
-                >
-                  ×
-                </button>
-              </div>
-            );
-          }
-          
-          if (Array.isArray(value) && value.length > 0) {
-            return value.map(item => (
-              <div key={`${type}-${item}`} className="filter-tag">
-                <span>{filterLabels[type].name}: {filterLabels[type].values[item]}</span>
-                <button
-                  className="filter-tag-remove"
-                  onClick={() => removeFilter(type, item)}
-                >
-                  ×
-                </button>
-              </div>
-            ));
-          }
-          
-          return null;
-        })}
-      </div>
-    );
   };
 
   if (isLoading) {
     return <div>Loading patients...</div>;
   }
+
+  // Filter dropdowns rendering
+  const renderFilterDropdowns = () => (
+    <div className="filter-dropdowns">
+      {/* 검색창 추가 */}
+      <div className="dropdown-container search-container">
+        <div className="dropdown-trigger search-input-wrapper">
+          <Search size={16} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search by Patient ID or Name"
+            value={searchTerm}
+            onChange={(e) => onSearch(e.target.value)}
+            className="patient-search-input"
+          />
+        </div>
+      </div>
+  
+      {/* 기존 필터 옵션들 */}
+      {Object.entries(filterOptions).map(([filterType, { label, options }]) => (
+      <div key={filterType} className="dropdown-container">
+        <button 
+          className="dropdown-trigger"
+          onClick={() => toggleDropdown(filterType)}
+        >
+          {selectedFilters[filterType] 
+            ? options.find(opt => opt.value === selectedFilters[filterType])?.label 
+            : label}
+          <ChevronDown size={16} className={`dropdown-arrow ${openDropdown === filterType ? 'open' : ''}`} />
+        </button>
+        {openDropdown === filterType && (
+          <div className="dropdown-content">
+            {options.map(option => (
+              <div
+                key={option.value}
+                className={`dropdown-item ${selectedFilters[filterType] === option.value ? 'selected' : ''}`}
+                onClick={() => handleFilterSelect(filterType, option.value)}
+              >
+                {option.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
+    <button 
+      className="reset-filters-button"
+      onClick={resetAllFilters}
+      title="Reset Filters"
+    >
+      <RotateCcw size={18} />
+    </button>
+  </div>
+);
 
   return (
     <div className="page-wrapper">
@@ -212,127 +319,38 @@ function List({
 
       <div className="content-area">
         <div className="table-container">
-          <div className="filter-section">
-            <button className="filter-button" onClick={toggleFilterOptions}>
-              환자 옵션
-            </button>
-            {renderActiveFilters()}
-          </div>
-
-          {showFilterOptions && (
-            <div className="filter-options-panel">
-              <div className="filter-options-container">
-                <div className="filter-group">
-                  <label className="filter-label">성별</label>
-                  <div className="filter-choices">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters.gender.includes('남')}
-                        onChange={() => handleFilterChange('gender', '남')}
-                      />
-                      남자
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters.gender.includes('여')}
-                        onChange={() => handleFilterChange('gender', '여')}
-                      />
-                      여자
-                    </label>
-                  </div>
-                </div>
-
-                <div className="filter-group">
-                  <label className="filter-label">임신 여부</label>
-                  <div className="filter-choices">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters.pregnancystatus.includes('0') || selectedFilters.pregnancystatus.includes('-')}
-                        onChange={() => handleFilterChange('pregnancystatus', '0')}
-                      />
-                      No
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters.pregnancystatus.includes('1')}
-                        onChange={() => handleFilterChange('pregnancystatus', '1')}
-                      />
-                      Yes
-                    </label>
-                  </div>
-                </div>
-
-                <div className="filter-group">
-                  <label className="filter-label">KTAS</label>
-                  <div className="filter-choices">
-                    {[1, 2, 3, 4, 5].map(level => (
-                      <label key={level}>
-                        <input
-                          type="checkbox"  // radio에서 checkbox로 변경
-                          checked={selectedFilters.tas.includes(String(level))}
-                          onChange={() => handleFilterChange('tas', String(level))}
-                        />
-                        Level {level}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="filter-group">
-                  <label className="filter-label">체류 시간</label>
-                  <div className="filter-choices">
-                    <label>
-                      <input
-                        type="radio"
-                        checked={selectedFilters.los_hours === 'none'}
-                        onChange={() => handleFilterChange('los_hours', 'none')}
-                      />
-                      기본
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        checked={selectedFilters.los_hours === 'asc'}
-                        onChange={() => handleFilterChange('los_hours', 'asc')}
-                      />
-                      오름차순
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        checked={selectedFilters.los_hours === 'desc'}
-                        onChange={() => handleFilterChange('los_hours', 'desc')}
-                      />
-                      내림차순
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="filter-actions">
-                <button className="filter-apply-button" onClick={handleApplyFilters}>
-                  확인
-                </button>
-              </div>
-            </div>
-          )}
+          {renderFilterDropdowns()}
 
           <table>
             <thead>
               <tr>
-                <th>환자번호</th>
-                <th>이름</th>
-                <th>성별</th>
-                <th>나이</th>
-                <th>통증 점수</th>
-                <th>입실 시간</th>
-                <th>체류 시간</th>
-                <th>KTAS</th>
-                <th>AI_TAS</th>
+                <th onClick={() => handleSort('subject_id')} className="sortable-header">
+                  환자번호 {renderSortIcon('subject_id')}
+                </th>
+                <th onClick={() => handleSort('name')} className="sortable-header">
+                  이름 {renderSortIcon('name')}
+                </th>
+                <th onClick={() => handleSort('gender')} className="sortable-header">
+                  성별 {renderSortIcon('gender')}
+                </th>
+                <th onClick={() => handleSort('age')} className="sortable-header">
+                  나이 {renderSortIcon('age')}
+                </th>
+                <th onClick={() => handleSort('pain')} className="sortable-header">
+                  통증 점수 {renderSortIcon('pain')}
+                </th>
+                <th onClick={() => handleSort('visit_date')} className="sortable-header">
+                  입실 시간 {renderSortIcon('visit_date')}
+                </th>
+                <th onClick={() => handleSort('los_hours')} className="sortable-header">
+                  체류 시간 {renderSortIcon('los_hours')}
+                </th>
+                <th onClick={() => handleSort('tas')} className="sortable-header">
+                  KTAS {renderSortIcon('tas')}
+                </th>
+                <th onClick={() => handleSort('ai_tas')} className="sortable-header">
+                  AI_TAS {renderSortIcon('ai_tas')}
+                </th>
                 <th>상세 정보</th>
               </tr>
             </thead>
@@ -366,7 +384,7 @@ function List({
                     </td>
                     <td>{patient.visits?.[patient.visits.length - 1]?.los_hours || '-'}시간</td>
                     <td>{patient.visits?.[0]?.tas || '-'}</td>
-                    <td>{patient.ai_tas || '-'}</td> {/* AI_TAS 값을 여기에 표시 */}
+                    <td>{patient.ai_tas || '-'}</td>
                     <td>
                       <button 
                         onClick={() => showPatientDetails(patient)} 
@@ -380,7 +398,7 @@ function List({
                 ))
               ) : (
                 <tr>
-                  <td colSpan="10" className="no-data-message"> {/* colspan 업데이트 */}
+                  <td colSpan="10" className="no-data-message">
                     조건에 해당하는 환자가 없습니다
                   </td>
                 </tr>

@@ -1,3 +1,7 @@
+/* 폰트 스타일 찾는 중 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
 /* 차트 디자인 */
 .chart-container {
     display: flex;
@@ -10,23 +14,28 @@
     margin-bottom: 20px; /* 차트 아래 간격 추가 */
   }
 
-  .chart-title{
-    font-size: 25px;
+  .chart-title {
+    /* 옵션 2: 더 강조된 전문적인 스타일 */
+    font-family: 'Pretendard', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 512;
+    color: #2c3e50;
+    letter-spacing: -0.01em;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.25rem;
   }
   
   .label-container {
-    margin-top: 22vh;
+    margin-top: 18.5vh;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    background-color: aqua;
   }
   
   .label-item {
     display: flex;
     align-items: center;
     margin: 5px 10px;
-    background-color: beige;
     z-index: 999999;
   }
   
