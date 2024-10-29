@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import List from "./list";
-import Patient from "./Patient"; // Patient 컴포넌트 import 추가
+import Patient from "./Patient";
 
 function MainPage({
   searchTerm,
@@ -23,44 +23,94 @@ function MainPage({
 }) {
   const location = useLocation();
   const username = location.state?.username || "익명 사용자";
-  
-  // 선택된 환자 상태 추가
-  const [selectedPatient, setSelectedPatient] = useState(null);
 
-  // 환자 선택 핸들러 추가
-  const handlePatientSelect = (patientData, labTestsData, visitInfoData) => {
-    setSelectedPatient({
-      patientData,
-      labTests: labTestsData,
-      visitInfo: visitInfoData
-    });
+  // 선택된 환자 상태를 더 세분화
+  const [selectedPatient, setSelectedPatient] = useState({
+    patientData: null,
+    labTests: null,
+    visitInfo: null,
+  });
+
+  // 환자 선택 핸들러 업데이트
+  const handlePatientSelect = async (patientData, initialLabTests, initialVisitInfo) => {
+    try {
+      // 선택된 환자의 최신 데이터 조회
+      const newLabTests = await fetchLabTests(patientData.visits[0].stay_id);
+      const newVisitInfo = await fetchVisitInfo(patientData.subject_id);
+
+      // 받아온 visitInfo 데이터에 vital_signs가 있는지 확인하고 데이터 구조 수정
+      const formattedVisitInfo = {
+        ...newVisitInfo,
+        visits: newVisitInfo.visits.map(visit => ({
+          ...visit,
+          vital_signs: visit.vital_signs?.map(sign => ({
+            ...sign,
+            heartrate: parseFloat(sign.heartrate),
+            resprate: parseFloat(sign.resprate),
+            o2sat: parseFloat(sign.o2sat),
+            sbp: parseFloat(sign.sbp),
+            dbp: parseFloat(sign.dbp),
+            temperature: parseFloat(sign.temperature)
+          }))
+        }))
+      };
+
+      setSelectedPatient({
+        patientData: {
+          ...patientData,
+          visits: patientData.visits.map(visit => ({
+            ...visit,
+            vital_signs: visit.vital_signs?.map(sign => ({
+              ...sign,
+              heartrate: parseFloat(sign.heartrate),
+              resprate: parseFloat(sign.resprate),
+              o2sat: parseFloat(sign.o2sat),
+              sbp: parseFloat(sign.sbp),
+              dbp: parseFloat(sign.dbp),
+              temperature: parseFloat(sign.temperature)
+            }))
+          }))
+        },
+        labTests: newLabTests,
+        visitInfo: formattedVisitInfo
+      });
+    } catch (error) {
+      console.error("Error fetching patient details:", error);
+    }
   };
 
-  // 뒤로가기 핸들러 추가
+  // 뒤로가기 핸들러
   const handleBack = () => {
-    setSelectedPatient(null);
+    setSelectedPatient({
+      patientData: null,
+      labTests: null,
+      visitInfo: null
+    });
   };
 
   return (
     <div className="app">
       <Header
-        onSearch={handleSearch}  // 검색어
-        ktasData={ktasData}  // ktas 데이터
-        username={username}  // 로그인 유저 id
-        onTASClick={onTASClick}  // ktas 필터링
-        logout={logout}  // 로그아웃
+        onSearch={handleSearch}
+        ktasData={ktasData}
+        username={username}
+        onTASClick={onTASClick}
+        logout={logout}
+        ktasFilter={ktasFilter}
       />
       <div className="main-content">
         {loading ? (
           <p>로딩 중...</p>
         ) : error ? (
           <p>{error}</p>
-        ) : selectedPatient ? ( // 환자 선택 여부에 따라 조건부 렌더링
+        ) : selectedPatient.patientData ? (
           <Patient
             patientData={selectedPatient.patientData}
             labTests={selectedPatient.labTests}
             visitInfo={selectedPatient.visitInfo}
             onBack={handleBack}
+            fetchLabTests={fetchLabTests}
+            fetchVisitInfo={fetchVisitInfo}
           />
         ) : (
           <List
@@ -74,6 +124,7 @@ function MainPage({
             fetchLabTests={fetchLabTests}
             fetchVisitInfo={fetchVisitInfo}
             onPatientSelect={handlePatientSelect}
+            onSearch={handleSearch}
           />
         )}
       </div>

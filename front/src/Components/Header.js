@@ -1,12 +1,9 @@
-
 import React, { useState } from "react";
 import { Search } from "lucide-react";
 import "../Components/Ktas";
 import Ktas from "../Components/Ktas";
-import SearchBar from "./SearchBar";
 import logoutIcon from './assets/images/logout.png';
 
-// 프로필 아이콘
 const ProfileIcon = ({ size = 29 }) => (
   <svg
     width={size}
@@ -25,56 +22,34 @@ const ProfileIcon = ({ size = 29 }) => (
   </svg>
 );
 
-// 메인 아이콘
-const MainIcon = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 20 20"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M1 10L10 1L19 10" stroke="currentColor" strokeWidth="2" />
-    <path d="M4 10V19H16V10" stroke="currentColor" strokeWidth="2" />
-    <rect
-      x="8"
-      y="13"
-      width="4"
-      height="6"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-function Header({ onSearch, ktasData, username, onTASClick, logout  }) {  // 부모로부터 onSearch 함수를 전달받음
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    onSearch(e.target.value); // 검색어를 부모 컴포넌트로 전달
-
-  };
-
+function Header({ onSearch, ktasData, username, onTASClick, logout, ktasFilter }) {  // ktasFilter 추가
   return (
-    <>
-      <div className="top-bar">
-        <div className="logo-container">
-          <div className="logo-space">hosFit</div>
+    <div className="user-layout">
+      <div className="user-sidebar">
+        <div className="user-sidebar-header">
+          <h2>hosFit</h2>
+          <div className="user-info">
+            <div className="user-profile">
+              <ProfileIcon size={40} />
+              <span className="user-name">{username}</span>
+              <span className="user-role">의료진</span>
+            </div>
+            <button className="logout-button" onClick={logout}>
+              <img src={logoutIcon} alt="logout" className="logout-icon" />
+              로그아웃
+            </button>
+          </div>
         </div>
-        <SearchBar onSearch={onSearch}/> 
-        <div className="user-info">
-          <img className="logout" src={logoutIcon} alt="logout icon" onClick={() => logout()}></img>
-          <ProfileIcon size={29} />
-          <span className="user-name">{username}님 환영합니다.</span>
+        <div className="ktas-section">
+          <Ktas 
+            ktasData={ktasData} 
+            onTASClick={onTASClick} 
+            ktasFilter={ktasFilter}  // 추가된 부분
+          />
         </div>
       </div>
-      <div className="header-content">
-        <Ktas ktasData={ktasData} onTASClick={onTASClick}/> {/* App.js에서 받은 KTAS 데이터를 Ktas 컴포넌트로 전달 */}
-      </div>
-    </>
+    </div>
   );
 }
 
 export default Header;
-

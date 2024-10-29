@@ -370,84 +370,205 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     respirationRate: sign.resprate
   }));
 
-  const renderChart = (title, chart, description) => (
+  const renderChart = (title, chart) => (
     <div className="chart-item">
       <h4>{title}</h4>
-      {chart}
-      <p className="chart-description">{description}</p>
+      <div className="chart-wrapper">
+        {chart}
+      </div>
     </div>
   );
 
-  const temperatureChart = (
-    <ResponsiveContainer width="100%" height={200}>
-      {vitalSignsData.length > 0 ? (
-        <LineChart data={vitalSignsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis domain={[35, 40]} />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="temperature" stroke="#8884d8" name="체온(°C)" />
-        </LineChart>
-      ) : (
-        <div className="no-data-message">데이터가 필요합니다.</div>
-      )}
-    </ResponsiveContainer>
-  );
+  // 체온 차트
+const temperatureChart = (
+  <ResponsiveContainer width="100%" height="100%">
+    {vitalSignsData.length > 0 ? (
+      <LineChart
+        data={vitalSignsData}
+        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="time" 
+          tick={{ fontSize: 12 }}
+          height={30}
+        />
+        <YAxis 
+          domain={[35, 40]} 
+          tick={{ fontSize: 12 }}
+          width={40}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.375rem'
+          }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="temperature" 
+          stroke="#8884d8" 
+          name="체온(°C)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    ) : (
+      <div className="no-data-message">데이터가 필요합니다.</div>
+    )}
+  </ResponsiveContainer>
+);
 
-  const heartRateBloodPressureChart = (
-    <ResponsiveContainer width="100%" height={200}>
-      {vitalSignsData.length > 0 ? (
-        <LineChart data={vitalSignsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis yAxisId="left" domain={[40, 200]} />
-          <YAxis yAxisId="right" orientation="right" domain={[40, 200]} />
-          <Tooltip />
-          <Legend />
-          <Line yAxisId="left" type="monotone" dataKey="heartRate" stroke="#82ca9d" name="심박수(bpm)" />
-          <Line yAxisId="right" type="monotone" dataKey="bloodPressure" stroke="#ffc658" name="수축기 혈압(mmHg)" />
-          <Line yAxisId="right" type="monotone" dataKey="bloodPressureDiastolic" stroke="#ff8042" name="이완기 혈압(mmHg)" />
-        </LineChart>
-      ) : (
-        <div className="no-data-message">데이터가 필요합니다.</div>
-      )}
-    </ResponsiveContainer>
-  );
+// 심박수 및 혈압 차트
+const heartRateBloodPressureChart = (
+  <ResponsiveContainer width="100%" height="100%">
+    {vitalSignsData.length > 0 ? (
+      <LineChart
+        data={vitalSignsData}
+        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="time" 
+          tick={{ fontSize: 12 }}
+          height={30}
+        />
+        <YAxis 
+          yAxisId="left" 
+          domain={[40, 200]} 
+          tick={{ fontSize: 12 }}
+          width={40}
+        />
+        <YAxis 
+          yAxisId="right" 
+          orientation="right" 
+          domain={[40, 200]} 
+          tick={{ fontSize: 12 }}
+          width={40}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.375rem'
+          }}
+        />
+        <Line 
+          yAxisId="left" 
+          type="monotone" 
+          dataKey="heartRate" 
+          stroke="#82ca9d" 
+          name="심박수(bpm)"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line 
+          yAxisId="right" 
+          type="monotone" 
+          dataKey="bloodPressure" 
+          stroke="#ffc658" 
+          name="수축기 혈압(mmHg)"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line 
+          yAxisId="right" 
+          type="monotone" 
+          dataKey="bloodPressureDiastolic" 
+          stroke="#ff8042" 
+          name="이완기 혈압(mmHg)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    ) : (
+      <div className="no-data-message">데이터가 필요합니다.</div>
+    )}
+  </ResponsiveContainer>
+);
 
-  const oxygenSaturationChart = (
-    <ResponsiveContainer width="100%" height={200}>
-      {vitalSignsData.length > 0 ? (
-        <LineChart data={vitalSignsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis domain={[85, 100]} />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="oxygenSaturation" stroke="#8884d8" name="산소포화도(%)" />
-        </LineChart>
-      ) : (
-        <div className="no-data-message">데이터가 필요합니다.</div>
-      )}
-    </ResponsiveContainer>
-  );
+// 산소포화도 차트
+const oxygenSaturationChart = (
+  <ResponsiveContainer width="100%" height="100%">
+    {vitalSignsData.length > 0 ? (
+      <LineChart
+        data={vitalSignsData}
+        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="time" 
+          tick={{ fontSize: 12 }}
+          height={30}
+        />
+        <YAxis 
+          domain={[85, 100]} 
+          tick={{ fontSize: 12 }}
+          width={40}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.375rem'
+          }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="oxygenSaturation" 
+          stroke="#8884d8" 
+          name="산소포화도(%)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    ) : (
+      <div className="no-data-message">데이터가 필요합니다.</div>
+    )}
+  </ResponsiveContainer>
+);
 
-  const respirationRateChart = (
-    <ResponsiveContainer width="100%" height={200}>
-      {vitalSignsData.length > 0 ? (
-        <LineChart data={vitalSignsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis domain={[8, 40]} />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="respirationRate" stroke="#8884d8" name="호흡수(/분)" />
-        </LineChart>
-      ) : (
-        <div className="no-data-message">데이터가 필요합니다.</div>
-      )}
-    </ResponsiveContainer>
-  );
+// 호흡수 차트
+const respirationRateChart = (
+  <ResponsiveContainer width="100%" height="100%">
+    {vitalSignsData.length > 0 ? (
+      <LineChart
+        data={vitalSignsData}
+        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="time" 
+          tick={{ fontSize: 12 }}
+          height={30}
+        />
+        <YAxis 
+          domain={[8, 40]} 
+          tick={{ fontSize: 12 }}
+          width={40}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.375rem'
+          }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="respirationRate" 
+          stroke="#8884d8" 
+          name="호흡수(/분)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    ) : (
+      <div className="no-data-message">데이터가 필요합니다.</div>
+    )}
+  </ResponsiveContainer>
+);
 
   return (
     <div className="patient-details">
@@ -462,18 +583,31 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
         </button>
       </div>
       <div className={`data-container ${showBloodTest ? 'show-blood-test' : ''}`}>
-        <div className="charts-container">
-          {renderChart("체온 변화", temperatureChart, "체온 변화 추이")}
-          {renderChart("심박수 및 혈압", heartRateBloodPressureChart, "심박수 및 혈압 추이")}
-          {renderChart("산소포화도", oxygenSaturationChart, "산소포화도 추이")}
-          {renderChart("호흡수", respirationRateChart, "호흡수 추이")}
+      <div className="charts-grid">
+        <div className="vital-chart">
+          <h4>체온 변화</h4>
+          {temperatureChart}
         </div>
-        {showBloodTest && (
+        <div className="vital-chart">
+          <h4>심박수 및 혈압</h4>
+          {heartRateBloodPressureChart}
+        </div>
+        <div className="vital-chart">
+          <h4>산소포화도</h4>
+          {oxygenSaturationChart}
+        </div>
+        <div className="vital-chart">
+          <h4>호흡수</h4>
+          {respirationRateChart}
+        </div>
+      </div>
+      
+      {showBloodTest && (
         <div className="blood-test-data">
           <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
         </div>
       )}
-      </div>
+    </div>
       <br/>
       <h3>응급실 내원 기록</h3>
       <div className="history-table-container">

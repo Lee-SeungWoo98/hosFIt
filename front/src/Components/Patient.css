@@ -3,15 +3,15 @@
   padding: 20px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
-  margin-top: -40px;
+  margin-top: 29px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-left: 222px;
+  margin-left: 300px;
+  width: calc(100% - 321px);
 }
 
 .patient-details h3 {
   margin-bottom: 17px;
 }
-
 
 .back-button {
   padding: 6px 12px;
@@ -101,17 +101,17 @@
 }
 
 .blood-test-title {
-  width: 300px;  /* 고정된 너비 설정 */
+  width: 300px;
   display: flex;
-  justify-content: space-between;  /* 양끝 정렬 */
+  justify-content: space-between;
   align-items: center;
 }
 
 .blood-test-title h2 {
   margin: 0;
-  flex: 1;  /* 남은 공간 차지 */
-  text-align: center;  /* 가운데 정렬 */
-  padding-right: 80px;  /* 버튼 영역만큼 오른쪽 패딩 */
+  flex: 1;
+  text-align: center;
+  padding-right: 80px;
 }
 
 .blood-test-button {
@@ -123,85 +123,58 @@
   cursor: pointer;
   font-size: 14px;
   margin-right: 14px;
-
 }
 
 .data-container {
-  display: flex;
-  gap: 30px;
   position: relative;
   min-height: 600px;
+  padding: 1rem;
 }
 
-.charts-container {
+.charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  flex: 2;
-  transition: all 0.2s ease;
-  padding-top: -10px;
+  gap: 1.5rem;
+  width: 100%;
 }
 
-.chart-item {
-  background-color: #f9f9f9;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+.vital-chart {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 300px;
-  transition: all 0.2s ease;
   position: relative;
-  margin-right: 13px;
-  margin-bottom: 13px;
 }
 
-.chart-item h4 {
-  margin-top: 0;
-  margin-bottom: 5px;
-  color: #333;
-  text-align: center;
-  font-size: 14px;
-  position: absolute;
-  top: 15px;
-  left: 0;
-  right: 0;
+.vital-chart h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+  height: 20px;
+}
+
+.recharts-wrapper {
+  position: static !important;
+  height: calc(100% - 40px) !important;
+  width: 100% !important;
 }
 
 .recharts-responsive-container {
+  height: calc(100% - 40px) !important;
   width: 100% !important;
-  height: calc(100% - 60px) !important;
-  transition: transform 0.2s ease;
-  position: absolute;
-  top: 50px;
 }
 
-.chart-description {
-  font-size: 12px;
-  color: #666;
-  text-align: center;
-  margin-top: 10px;
-  padding: 0 10px;
-  position: absolute;
-  bottom: 5px;
-  left: 0;
-  right: 0;
-}
-
-.show-blood-test .charts-container {
-  flex: 1;
-  margin-right: 43%;
+.show-blood-test .charts-grid {
+  width: calc(60% - 1.5rem);
 }
 
 .blood-test-data {
   display: none;
-  flex: 1;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  padding: 1.5rem;
+  background-color: #fff;
+  border-radius: 0.5rem;
   border: 1px solid #e0e0e0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   overflow-y: auto;
@@ -209,9 +182,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: calc(44% - 19px);  
-  margin-left: 20px;
-  margin-bottom: 12px;
+  width: 40%;
 }
 
 .show-blood-test .blood-test-data {
@@ -306,16 +277,6 @@
   background-color: #f3f4f6;
 }
 
-.abnormal-count {
-  color: #000000;
-}
-
-.abnormal-count .count {
-  color: #d32f2f;
-  font-size: 1.45em;
-  font-weight: bold;
-}
-
 .blood-test-results {
   padding: 20px;
 }
@@ -324,18 +285,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 20px;  /* 30px에서 축소 */
-  padding-bottom: 15px;  /* 20px에서 축소 */
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
 }
- 
- .blood-test-header h2 {
+
+.blood-test-header h2 {
   margin: 0;
-  text-align: center; 
+  text-align: center;
   font-size: 25px;
- }
- 
- .raw-data-button {
+}
+
+.raw-data-button {
   color: #888;
   background: none;
   border: none;
@@ -344,9 +305,8 @@
   text-decoration: underline;
   font-size: 0.85em;
   white-space: nowrap;
-  min-width: 80px;  /* 최소 너비 설정 */
+  min-width: 80px;
   padding-left: 10px;
-
 }
 
 .raw-data-button:hover {
@@ -413,7 +373,6 @@
   font-weight: bold;
 }
 
-/* 테이블 스타일 추가 */
 .raw-data-table {
   width: 100%;
   border-collapse: collapse;
@@ -431,10 +390,27 @@
   background-color: #f5f5f5;
   text-align: center;
 }
+
 .raw-data-table td {
   text-align: center;
 }
 
 .raw-data-table tr:nth-child(even) {
   background-color: #f9f9f9;
+}
+
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .show-blood-test .charts-grid {
+    width: 100%;
+  }
+
+  .blood-test-data {
+    position: relative;
+    width: 100%;
+    margin-top: 1.5rem;
+  }
 }

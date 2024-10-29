@@ -236,36 +236,33 @@ function App() {
     setFilteredPatients(filtered); // 필터링된 결과 저장
   };
 
-  const handleTASClick = (tasLevel) => {
-    if (tasLevel.includes("미사용")) {
+  const handleTASClick = (entry) => {
+    if (entry.name === "미사용") {
       setKtasFilter([]); // 미사용 선택 시 필터 초기화
       setFilteredPatients(patients); // 필터링 없이 전체 데이터 설정
       return;
     }
-
-    const level = tasLevel.split(" ")[1]; // TAS 레벨 추출
-    const numericLevel = parseInt(level); // 정수로 변환
-
+  
+    const level = parseInt(entry.name.split(" ")[1]); // "KTAS 1" -> 1
+  
     setKtasFilter((prev) => {
-      let newFilter;
-      if (prev.includes(numericLevel)) {
-        newFilter = prev.filter((l) => l !== numericLevel); // 선택된 레벨 제거
+      // 현재 필터에 이미 해당 레벨이 있거나, 단일 레벨만 선택된 상태에서 같은 레벨을 클릭한 경우
+      if (prev.length === 1 && prev[0] === level) {
+        // 필터 초기화
+        setFilteredPatients(patients);
+        return [];
       } else {
-        newFilter = [...prev, numericLevel]; // 새로운 레벨 추가
+        // 새로운 레벨 설정
+        const newFilter = [level];
+        const filtered = patients.filter(patient => 
+          patient.visits?.[0]?.tas === level
+        );
+        setFilteredPatients(filtered);
+        return newFilter;
       }
-
-      const filtered = patients.filter((patient) => {
-        return (
-          newFilter.length === 0 ||
-          (patient.visits?.[0]?.tas &&
-            newFilter.includes(patient.visits[0].tas))
-        ); // 필터링된 환자 반환
-      });
-      setFilteredPatients(filtered); // 필터링된 결과 설정
-
-      return newFilter; // 새로운 필터 반환
     });
   };
+  
   // 2. 로그인된 경우에만 데이터를 요청
   useEffect(() => {
     const fetchAllData = async () => {
@@ -279,17 +276,17 @@ function App() {
         }
       }
     };
-
+  
     fetchAllData();
-
-    const intervalId = setInterval(fetchAllData, 600000); // 1분마다 데이터 새로고침
+  
+    const intervalId = setInterval(fetchAllData, 600000); // 10분마다 데이터 새로고침
     return () => clearInterval(intervalId); // 컴포넌트가 사라질 때 interval 정리
   }, [isAuthenticated]);
-
+  
   const handleSearch = (term) => {
     setSearchTerm(term); // 검색어 업데이트
   };
-
+  
   return (
     <Router>
       <Routes>
