@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import List from "./list";
 import Patient from "./Patient";
+import axios from "axios";
+import debounce from "lodash/debounce";
 
 function MainPage({
   searchTerm,
@@ -20,66 +22,113 @@ function MainPage({
   fetchLabTests,
   fetchVisitInfo,
   logout,
+  currentPage,
+  totalPages,
+  onPageChange
 }) {
   const location = useLocation();
   const username = location.state?.username || "익명 사용자";
 
-  // 선택된 환자 상태를 더 세분화
   const [selectedPatient, setSelectedPatient] = useState({
     patientData: null,
     labTests: null,
     visitInfo: null,
   });
 
-  // 환자 선택 핸들러 업데이트
-  const handlePatientSelect = async (patientData, initialLabTests, initialVisitInfo) => {
+  const formatVitalSigns = (vitalSigns) => {
+    if (!Array.isArray(vitalSigns)) return [];
+    return vitalSigns.map(sign => ({
+      ...sign,
+      chart_time: sign.chart_time ? new Date(sign.chart_time).toISOString() : null,
+      heartrate: parseFloat(sign.heartrate || 0),
+      resprate: parseFloat(sign.resprate || 0),
+      o2sat: parseFloat(sign.o2sat || 0),
+      sbp: parseFloat(sign.sbp || 0),
+      dbp: parseFloat(sign.dbp || 0),
+      temperature: parseFloat(sign.temperature || 0)
+    }));
+  };
+
+  const formatVisit = (visit) => ({
+    ...visit,
+    visit_date: visit.visit_date ? new Date(visit.visit_date).toISOString() : null,
+    los_hours: parseFloat(visit.los_hours || 0),
+    stay_id: visit.stay_id,
+    tas: parseInt(visit.tas || 0),
+    staystatus: parseInt(visit.staystatus || 0),
+    vitalSigns: formatVitalSigns(visit.vital_signs || visit.vitalSigns)
+  });
+
+  const handlePatientSelect = async (patientData, labTestData, visitInfoData) => {
     try {
-      // 선택된 환자의 최신 데이터 조회
-      const newLabTests = await fetchLabTests(patientData.visits[0].stay_id);
-      const newVisitInfo = await fetchVisitInfo(patientData.subject_id);
-
-      // 받아온 visitInfo 데이터에 vital_signs가 있는지 확인하고 데이터 구조 수정
-      const formattedVisitInfo = {
-        ...newVisitInfo,
-        visits: newVisitInfo.visits.map(visit => ({
-          ...visit,
-          vital_signs: visit.vital_signs?.map(sign => ({
-            ...sign,
-            heartrate: parseFloat(sign.heartrate),
-            resprate: parseFloat(sign.resprate),
-            o2sat: parseFloat(sign.o2sat),
-            sbp: parseFloat(sign.sbp),
-            dbp: parseFloat(sign.dbp),
-            temperature: parseFloat(sign.temperature)
-          }))
+      console.log("Patient Select 데이터:", {
+        patientData,
+        labTestData,
+        visitInfoData
+      });
+  
+      // 1. Lab Tests 데이터 구조화
+      const formattedLabTests = [{
+        blood_levels: labTestData.bloodLevels || [],
+        electrolyte_levels: labTestData.electrolyteLevels || [],
+        enzymes_metabolisms: labTestData.enzymesMetabolisms || [],
+        chemical_examinations_enzymes: labTestData.chemicalExaminationsEnzymes || [],
+        blood_gas_analysis: labTestData.bloodGasAnalysis || []
+      }];
+  
+      // 2. Visit Info 데이터 포맷팅
+      const formattedVisits = visitInfoData.visits.map(visit => ({
+        ...visit,
+        visitDate: visit.visitDate,
+        losHours: parseFloat(visit.losHours || 0),
+        pain: parseInt(visit.pain || 0),
+        tas: parseInt(visit.tas || 0),
+        staystatus: parseInt(visit.staystatus || 0),
+        vitalSigns: (visit.vitalSigns || []).map(sign => ({
+          chartTime: sign.chartTime,
+          heartrate: parseFloat(sign.heartrate || 0),
+          resprate: parseFloat(sign.resprate || 0),
+          o2sat: parseFloat(sign.o2sat || 0),
+          sbp: parseFloat(sign.sbp || 0),
+          dbp: parseFloat(sign.dbp || 0),
+          temperature: parseFloat(sign.temperature || 0)
         }))
+      }));
+  
+      const formattedVisitInfo = {
+        ...visitInfoData,
+        visits: formattedVisits
       };
-
-      setSelectedPatient({
-        patientData: {
-          ...patientData,
-          visits: patientData.visits.map(visit => ({
-            ...visit,
-            vital_signs: visit.vital_signs?.map(sign => ({
-              ...sign,
-              heartrate: parseFloat(sign.heartrate),
-              resprate: parseFloat(sign.resprate),
-              o2sat: parseFloat(sign.o2sat),
-              sbp: parseFloat(sign.sbp),
-              dbp: parseFloat(sign.dbp),
-              temperature: parseFloat(sign.temperature)
-            }))
-          }))
-        },
-        labTests: newLabTests,
+  
+      // 3. 환자 데이터 구조화
+      const formattedPatientData = {
+        ...patientData,
+        visits: formattedVisits
+      };
+  
+      console.log("변환된 데이터:", {
+        patientData: formattedPatientData,
+        labTests: formattedLabTests,
         visitInfo: formattedVisitInfo
       });
+  
+      // 4. 상태 업데이트
+      setSelectedPatient({
+        patientData: formattedPatientData,
+        labTests: formattedLabTests,
+        visitInfo: formattedVisitInfo
+      });
+  
     } catch (error) {
-      console.error("Error fetching patient details:", error);
+      console.error("handlePatientSelect 에러:", error);
+      setSelectedPatient({
+        patientData: null,
+        labTests: null,
+        visitInfo: null
+      });
     }
   };
 
-  // 뒤로가기 핸들러
   const handleBack = () => {
     setSelectedPatient({
       patientData: null,
@@ -125,6 +174,9 @@ function MainPage({
             fetchVisitInfo={fetchVisitInfo}
             onPatientSelect={handlePatientSelect}
             onSearch={handleSearch}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
           />
         )}
       </div>

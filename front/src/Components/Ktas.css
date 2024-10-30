@@ -11,7 +11,7 @@
     padding: 10px;
     width: 100%; /* 전체 폭 사용 */
     height: auto; /* 반응형 레이아웃 */
-    margin-bottom: 20px; /* 차트 아래 간격 추가 */
+    /* margin-bottom: 20px; 차트 아래 간격 추가 */
   }
 
   .chart-title {
@@ -21,15 +21,15 @@
     font-weight: 512;
     color: #2c3e50;
     letter-spacing: -0.01em;
-    padding-bottom: 0.6rem;
-    margin-bottom: 1.25rem;
+    text-align: center;
   }
   
   .label-container {
     margin-top: 18.5vh;
-    display: flex;
     justify-content: center;
     flex-wrap: wrap;
+    grid-template-columns: repeat(3, 1fr);
+    display: grid;
   }
   
   .label-item {
