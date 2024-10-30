@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useRef } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
 import './Patient.css';
 
@@ -133,25 +133,124 @@ const koreanNames = {
 };
 
 
-// checkNormalRange 함수 수정
 const checkNormalRange = (category, value, gender) => {
   const range = ranges[category];
   if (!range) return null;
 
   const numValue = parseFloat(value);
   
-  // 성별에 따른 범위가 있는 경우
   if (range.male && range.female) {
     const genderRange = gender === '남' ? range.male : range.female;
     return numValue >= genderRange[0] && numValue <= genderRange[1];
   }
   
-  // 일반적인 범위
   return numValue >= range[0] && numValue <= range[1];
+};
+
+const getRangeDisplay = (key, gender, ranges) => {
+  const range = ranges[key];
+  if (!range) return '-';
+  
+  if (range.male && range.female) {
+    if (gender === '남') {
+      return `${range.male[0]} - ${range.male[1]}`;
+    } else {
+      return `${range.female[0]} - ${range.female[1]}`;
+    }
+  }
+  
+  return `${range[0]} - ${range[1]}`;
 };
 
 const BloodTestResults = ({ labTests, gender }) => {
   const [showRawData, setShowRawData] = useState(false);
+  const [activeTab, setActiveTab] = useState('blood_levels');
+  const categoryRefs = {
+    blood_levels: useRef(null),
+    electrolyte_levels: useRef(null),
+    enzymes_metabolisms: useRef(null),
+    chemical_examinations_enzymes: useRef(null),
+    blood_gas_analysis: useRef(null)
+  };
+
+  // 수치보기 토글 핸들러
+  const handleRawDataToggle = () => {
+    setShowRawData(!showRawData);
+    if (showRawData) {
+      // 수치보기를 끌 때 탭 초기화
+      setActiveTab('blood_levels');
+    }
+  };
+
+  const handleTabClick = (categoryName) => {
+    setActiveTab(categoryName);
+    const ref = categoryRefs[categoryName];
+    if (ref && ref.current) {
+      const rawDataContainer = document.querySelector('.raw-data');
+      if (rawDataContainer) {
+        rawDataContainer.scrollTo({
+          top: ref.current.offsetTop - rawDataContainer.offsetTop - 60,
+          behavior: 'smooth'
+        });
+      }
+    }
+  };
+
+  // 카테고리 찾기 함수
+  const findCategoryByKey = (key) => {
+    const categories = [
+      'blood_levels',
+      'electrolyte_levels',
+      'enzymes_metabolisms',
+      'chemical_examinations_enzymes',
+      'blood_gas_analysis'
+    ];
+
+    for (const category of categories) {
+      if (labTest[category] && 
+          labTest[category][0] && 
+          key in labTest[category][0]) {
+        return category;
+      }
+    }
+    return null;
+  };
+
+  // 원형 그래프 클릭 핸들러
+  const handleCircleClick = (key) => {
+    const category = findCategoryByKey(key);
+    if (category) {
+      // 먼저 상태 업데이트
+      setShowRawData(true);
+      setActiveTab(category);
+      
+      // 스크롤이 안 움직여서 수정
+      setTimeout(() => {
+        const targetRow = document.querySelector(`tr[data-key="${key}"]`);
+        const rawDataContainer = document.querySelector('.raw-data');
+        const categoryTabs = document.querySelector('.category-tabs');
+        
+        if (targetRow && rawDataContainer && categoryTabs) {
+          // 탭 영역 높이를 고려한 스크롤 위치 계산
+          const tabsHeight = categoryTabs.offsetHeight;
+          const rowTop = targetRow.getBoundingClientRect().top;
+          const containerTop = rawDataContainer.getBoundingClientRect().top;
+          const scrollPosition = rawDataContainer.scrollTop + (rowTop - containerTop) - tabsHeight - 50;
+  
+          rawDataContainer.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+          });
+  
+          // 하이라이트 효과
+          targetRow.classList.add('highlighted-row');
+          setTimeout(() => {
+            targetRow.classList.remove('highlighted-row');
+          }, 2000);
+        }
+      }, 150); // 대기시간 조정
+    }
+  };
   
   if (!labTests || labTests.length === 0) return <p>피검사 데이터가 없습니다.</p>;
   
@@ -173,17 +272,12 @@ const BloodTestResults = ({ labTests, gender }) => {
         if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
           const isNormal = checkNormalRange(key, value, gender);
           if (isNormal === false) {
-            const range = typeof ranges[key] === 'function' 
-              ? ranges[key](gender) 
-              : ranges[key];
-            
-            if (range) {
-              abnormalItems.push({ 
-                key: key,
-                value: value,
-                normalRange: `${range[0]}-${range[1]}`
-              });
-            }
+            abnormalItems.push({ 
+              key: key,
+              value: value,
+              normalRange: getRangeDisplay(key, gender, ranges),
+              unit: units[key] || ''
+            });
           }
         }
       });
@@ -193,93 +287,109 @@ const BloodTestResults = ({ labTests, gender }) => {
   return (
     <div className="blood-test-results">
       <div className="blood-test-header">
-        <h2>피검사 데이터</h2>
-        <button className="raw-data-button" onClick={() => setShowRawData(!showRawData)}>
-          {showRawData ? '그래프로 보기' : '수치 보기'}
-        </button>
+        <div className="header-content">
+          <p className="abnormal-count">
+            비정상 <span className="count">{abnormalItems.length}</span>건 외 정상 검출
+          </p>
+          <button 
+            className={`raw-data-button ${showRawData ? 'active' : ''}`} 
+            onClick={handleRawDataToggle}
+          >
+            수치보기
+          </button>
+        </div>
       </div>
  
-          {showRawData ? (
-      <div className="raw-data">
-        {categories.map(category => {
-          const categoryData = labTest[category.name];
-          if (categoryData && categoryData.length > 0) {
-            const data = categoryData[0];
-            return (
-              <div key={category.name} style={{marginBottom: '20px'}}>
-                <h3>{category.displayName}</h3>
-                <table className="raw-data-table">
-                  <thead>
-                    <tr>
-                      <th>검사항목</th>
-                      <th>수치</th>
-                      <th>정상범위</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(data).map(([key, value]) => {
-                      if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
-                        return (
-                          <tr key={key}>
-                            <td>{koreanNames[key] || key}</td>
-                            <td>{value} {units[key]}</td>
-                            <td>{getRangeDisplay(key, gender, ranges)} {units[key]}</td>
+      <div className={`blood-test-content ${showRawData ? 'show-raw-data' : ''}`}>
+        {showRawData ? (
+          <>
+            <div className="category-tabs">
+              {categories.map((category) => (
+                <button
+                  key={category.name}
+                  className={`category-tab ${activeTab === category.name ? 'active' : ''}`}
+                  onClick={() => handleTabClick(category.name)}
+                >
+                  {category.displayName}
+                </button>
+              ))}
+            </div>
+            <div className="raw-data">
+              {categories.map(category => {
+                const categoryData = labTest[category.name];
+                if (categoryData && categoryData.length > 0) {
+                  const data = categoryData[0];
+                  return (
+                    <div 
+                      key={category.name} 
+                      className="category-section"
+                      ref={categoryRefs[category.name]}
+                      data-category={category.name}
+                    >
+                      <h3>{category.displayName}</h3>
+                      <table className="raw-data-table">
+                        <thead>
+                          <tr>
+                            <th>검사항목</th>
+                            <th>수치</th>
+                            <th>정상범위</th>
                           </tr>
-                        );
-                      }
-                      return null;
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            );
-          }
-          return null;
-        })}
-      </div>
-      ) : (
-        <>
+                        </thead>
+                        <tbody>
+                          {Object.entries(data).map(([key, value]) => {
+                            if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
+                              const isNormal = checkNormalRange(key, value, gender);
+                              return (
+                                <tr 
+                                  key={key}
+                                  data-key={key}
+                                  className={isNormal === false ? 'abnormal-row' : ''}
+                                >
+                                  <td>{koreanNames[key] || key}</td>
+                                  <td className={isNormal === false ? 'abnormal-value' : ''}>
+                                    {value} <span className="unit">{units[key]}</span>
+                                  </td>
+                                  <td>
+                                    {getRangeDisplay(key, gender, ranges)} <span className="unit">{units[key]}</span>
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+            </div>
+          </>
+        ) : (
           <div className="abnormal-circles">
             {abnormalItems.map((item, index) => (
-              <div key={index} className="circle-item">
+              <div 
+                key={index} 
+                className="circle-item"
+                onClick={() => handleCircleClick(item.key)}
+              >
                 <div className="circle">
                   <div className="value">{item.value}</div>
                   <div className="range">/{item.normalRange}</div>
+                  <div className="unit">{item.unit}</div>
                 </div>
                 <p className="item-name">{koreanNames[item.key] || item.key}</p>
               </div>
             ))}
           </div>
-          <div className="result-text">
-            <p className="abnormal-count">
-              비정상 <span className="count">{abnormalItems.length}</span>건 외 정상 검출
-            </p>
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
- };
-
- const getRangeDisplay = (key, gender, ranges) => {
-  const range = ranges[key];
-  if (!range) return '-';
-  
-  // 성별에 따른 범위가 있는 경우
-  if (range.male && range.female) {
-    if (gender === '남') {
-      return `${range.male[0]} - ${range.male[1]}`;
-    } else {
-      return `${range.female[0]} - ${range.female[1]}`;
-    }
-  }
-  
-  // 일반적인 범위
-  return `${range[0]} - ${range[1]}`;
 };
 
-function Patient({ patientData, labTests, visitInfo, onBack }) {
-  const [showBloodTest, setShowBloodTest] = useState(false);
+ function Patient({ patientData, labTests, visitInfo, onBack }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -294,19 +404,19 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     stayDuration: `${patientData?.visits?.[patientData.visits.length - 1]?.los_hours}시간`,
     vitalSigns: patientData?.visits?.[patientData.visits.length - 1]?.vital_signs || [],
     bloodTestData: labTests
-});
+  });
 
   // 방문 기록 변환  // 최신 기록이 위에 나오도록
   const [patientHistory, setPatientHistory] = useState(
     (visitInfo?.visits?.map(visit => ({
-        date: new Date(visit.visit_date).toLocaleDateString(),
-        originalDate: visit.visit_date,  // 정렬을 위해 원본 날짜 보존
-        stay_id: visit.stay_id,         // 클릭 시 해당 방문 데이터 찾기 위해 보존
-        ktas: visit.tas,
-        stayDuration: `${visit.los_hours}시간`,
-        placement: visit.staystatus === 0 ? '퇴원' : '입원'
-    })) || []).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) // 날짜 역순 정렬
-);
+      date: new Date(visit.visit_date).toLocaleDateString(),
+      originalDate: visit.visit_date,
+      stay_id: visit.stay_id,
+      ktas: visit.tas,
+      stayDuration: `${visit.los_hours}시간`,
+      placement: visit.staystatus === 0 ? '퇴원' : '입원'
+    })) || []).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate))
+  );
 
 
   const PatientInfoBanner = ({ patientInfo, error }) => (
@@ -315,29 +425,39 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
         <div className="error-message">데이터가 없어요.</div>
       ) : (
         <>
-          <div>
-            <strong>환자이름</strong>
-            {patientInfo?.name || '데이터가 없어요.'}
+          <div className="banner-item">
+            <span className="label">환자이름</span>
+            <div className="value-container">
+              <span className="value">{patientInfo?.name || '데이터가 없어요.'}</span>
+            </div>
           </div>
-          <div>
-            <strong>나이</strong>
-            {patientInfo?.age ? `${patientInfo.age}세` : '데이터가 없어요.'}
+          <div className="banner-item">
+            <span className="label">나이</span>
+            <div className="value-container">
+              <span className="value">{patientInfo?.age ? `${patientInfo.age}세` : '데이터가 없어요.'}</span>
+            </div>
           </div>
-          <div>
-            <strong>KTAS</strong>
-            {patientInfo?.emergencyLevel ? (
-              <span className={`emergency-level level-${patientInfo.emergencyLevel.split(' ')[1]}`}>
-                {patientInfo.emergencyLevel}
-              </span>
-            ) : '데이터가 없어요.'}
+          <div className="banner-item">
+            <span className="label">KTAS</span>
+            <div className="value-container">
+              {patientInfo?.emergencyLevel ? (
+                <span className={`ktas-badge level-${patientInfo.emergencyLevel.split(' ')[1]}`}>
+                  {`Level ${patientInfo.emergencyLevel.split(' ')[1]}`}
+                </span>
+              ) : '데이터가 없어요.'}
+            </div>
           </div>
-          <div>
-            <strong>체류 시간</strong>
-            {patientInfo?.stayDuration || '데이터가 없어요.'}
+          <div className="banner-item">
+            <span className="label">체류 시간</span>
+            <div className="value-container">
+              <span className="value with-unit">{patientInfo?.stayDuration || '데이터가 없어요.'}</span>
+            </div>
           </div>
-          <div>
-            <strong>배치 추천</strong>
-            ㅁㅁㅁ
+          <div className="banner-item">
+            <span className="label">배치 추천</span>
+            <div className="value-container">
+              ㅁㅁㅁㅁㅁㅁ
+            </div>
           </div>
         </>
       )}
@@ -370,48 +490,68 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     respirationRate: sign.resprate
   }));
 
-  const renderChart = (title, chart) => (
-    <div className="chart-item">
-      <h4>{title}</h4>
-      <div className="chart-wrapper">
-        {chart}
-      </div>
-    </div>
-  );
-
-  // 체온 차트
-const temperatureChart = (
+  // 심박수 데이터로 수정함
+  // 심박수 차트
+const heartRateChart = (
   <ResponsiveContainer width="100%" height="100%">
     {vitalSignsData.length > 0 ? (
       <LineChart
         data={vitalSignsData}
-        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+        margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <defs>
+          <linearGradient id="colorHeartRate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#E3F2FD" stopOpacity={0.5}/>
+            <stop offset="95%" stopColor="#E3F2FD" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid 
+          stroke="#eee" 
+          vertical={false}
+          strokeDasharray="5 5"
+        />
         <XAxis 
           dataKey="time" 
-          tick={{ fontSize: 12 }}
-          height={30}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          padding={{ left: 10, right: 10 }}
+          dy={5}
         />
         <YAxis 
-          domain={[35, 40]} 
-          tick={{ fontSize: 12 }}
-          width={40}
+          domain={[30, 150]} 
+          ticks={[30, 60, 90, 120, 150]}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          width={35}
         />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.375rem'
+            border: 'none',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            padding: '10px'
           }}
+          labelStyle={{ color: '#666' }}
+          itemStyle={{ color: '#2196F3' }}
+        />
+        <Area
+          type="monotone"
+          dataKey="heartRate"
+          stroke="none"
+          fill="url(#colorHeartRate)"
+          fillOpacity={1}
         />
         <Line 
           type="monotone" 
-          dataKey="temperature" 
-          stroke="#8884d8" 
-          name="체온(°C)"
-          strokeWidth={2}
+          dataKey="heartRate" 
+          stroke="#2196F3" 
+          name="심박수(bpm)"
+          strokeWidth={2.5}
           dot={false}
+          activeDot={{ r: 6, strokeWidth: 0, fill: '#2196F3' }}
         />
       </LineChart>
     ) : (
@@ -420,66 +560,75 @@ const temperatureChart = (
   </ResponsiveContainer>
 );
 
-// 심박수 및 혈압 차트
-const heartRateBloodPressureChart = (
+// 혈압 차트
+const bloodPressureChart = (
   <ResponsiveContainer width="100%" height="100%">
     {vitalSignsData.length > 0 ? (
       <LineChart
         data={vitalSignsData}
-        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+        margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <defs>
+          <linearGradient id="colorSBP" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#E3F2FD" stopOpacity={0.5}/>
+            <stop offset="95%" stopColor="#E3F2FD" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid 
+          stroke="#eee" 
+          vertical={false}
+          strokeDasharray="5 5"
+        />
         <XAxis 
           dataKey="time" 
-          tick={{ fontSize: 12 }}
-          height={30}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          padding={{ left: 10, right: 10 }}
+          dy={5}
         />
         <YAxis 
-          yAxisId="left" 
-          domain={[40, 200]} 
-          tick={{ fontSize: 12 }}
-          width={40}
+          domain={[30, 200]}
+          ticks={[30, 70, 110, 150, 190]}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          width={35}
         />
-        <YAxis 
-          yAxisId="right" 
-          orientation="right" 
-          domain={[40, 200]} 
-          tick={{ fontSize: 12 }}
-          width={40}
-        />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.375rem'
+            border: 'none',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            padding: '10px'
           }}
+          labelStyle={{ color: '#666' }}
+        />
+        <Area
+          type="monotone"
+          dataKey="bloodPressure"
+          stroke="none"
+          fill="url(#colorSBP)"
+          fillOpacity={1}
         />
         <Line 
-          yAxisId="left" 
-          type="monotone" 
-          dataKey="heartRate" 
-          stroke="#82ca9d" 
-          name="심박수(bpm)"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line 
-          yAxisId="right" 
           type="monotone" 
           dataKey="bloodPressure" 
-          stroke="#ffc658" 
+          stroke="#2196F3" 
           name="수축기 혈압(mmHg)"
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
+          activeDot={{ r: 6, strokeWidth: 0, fill: '#2196F3' }}
         />
         <Line 
-          yAxisId="right" 
           type="monotone" 
           dataKey="bloodPressureDiastolic" 
-          stroke="#ff8042" 
+          stroke="#90CAF9" 
           name="이완기 혈압(mmHg)"
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
+          activeDot={{ r: 6, strokeWidth: 0, fill: '#90CAF9' }}
         />
       </LineChart>
     ) : (
@@ -494,33 +643,60 @@ const oxygenSaturationChart = (
     {vitalSignsData.length > 0 ? (
       <LineChart
         data={vitalSignsData}
-        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+        margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <defs>
+          <linearGradient id="colorO2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#E3F2FD" stopOpacity={0.5}/>
+            <stop offset="95%" stopColor="#E3F2FD" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid 
+          stroke="#eee" 
+          vertical={false}
+          strokeDasharray="5 5"
+        />
         <XAxis 
           dataKey="time" 
-          tick={{ fontSize: 12 }}
-          height={30}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          padding={{ left: 10, right: 10 }}
+          dy={5}
         />
         <YAxis 
-          domain={[85, 100]} 
-          tick={{ fontSize: 12 }}
-          width={40}
+          domain={[90, 110]}
+          ticks={[90, 95, 100, 105, 110]}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          width={35}
         />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.375rem'
+            border: 'none',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            padding: '10px'
           }}
+          labelStyle={{ color: '#666' }}
+        />
+        <Area
+          type="monotone"
+          dataKey="oxygenSaturation"
+          stroke="none"
+          fill="url(#colorO2)"
+          fillOpacity={1}
         />
         <Line 
           type="monotone" 
           dataKey="oxygenSaturation" 
-          stroke="#8884d8" 
+          stroke="#2196F3" 
           name="산소포화도(%)"
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
+          activeDot={{ r: 6, strokeWidth: 0, fill: '#2196F3' }}
         />
       </LineChart>
     ) : (
@@ -535,33 +711,60 @@ const respirationRateChart = (
     {vitalSignsData.length > 0 ? (
       <LineChart
         data={vitalSignsData}
-        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+        margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <defs>
+          <linearGradient id="colorResp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#E3F2FD" stopOpacity={0.5}/>
+            <stop offset="95%" stopColor="#E3F2FD" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid 
+          stroke="#eee" 
+          vertical={false}
+          strokeDasharray="5 5"
+        />
         <XAxis 
           dataKey="time" 
-          tick={{ fontSize: 12 }}
-          height={30}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          padding={{ left: 10, right: 10 }}
+          dy={5}
         />
         <YAxis 
-          domain={[8, 40]} 
-          tick={{ fontSize: 12 }}
-          width={40}
+          domain={[0, 40]}
+          ticks={[0, 10, 20, 30, 40]}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: '#999', fontSize: 12 }}
+          width={35}
         />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.375rem'
+            border: 'none',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            padding: '10px'
           }}
+          labelStyle={{ color: '#666' }}
+        />
+        <Area
+          type="monotone"
+          dataKey="respirationRate"
+          stroke="none"
+          fill="url(#colorResp)"
+          fillOpacity={1}
         />
         <Line 
           type="monotone" 
           dataKey="respirationRate" 
-          stroke="#8884d8" 
+          stroke="#2196F3" 
           name="호흡수(/분)"
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
+          activeDot={{ r: 6, strokeWidth: 0, fill: '#2196F3' }}
         />
       </LineChart>
     ) : (
@@ -570,27 +773,26 @@ const respirationRateChart = (
   </ResponsiveContainer>
 );
 
-  return (
-    <div className="patient-details">
-      <button onClick={onBack} className="back-button">
-        <ArrowLeft size={24} />
-      </button>
-      <PatientInfoBanner patientInfo={patientInfo} error={error} />
-      <div className="data-header">
-        <h3>{patientInfo?.name || '환자'}의 생체 데이터</h3>
-        <button onClick={() => setShowBloodTest(!showBloodTest)} className="blood-test-button">
-          {showBloodTest ? '그래프만 보기' : '피검사 데이터 보기'}
-        </button>
-      </div>
-      <div className={`data-container ${showBloodTest ? 'show-blood-test' : ''}`}>
-      <div className="charts-grid">
+return (
+  <div className="patient-details">
+    <button onClick={onBack} className="back-button">
+      <ArrowLeft size={24} />
+    </button>
+    <PatientInfoBanner patientInfo={patientInfo} error={error} />
+    <div className="timeseries-container">  
+      시계열 데이터 영역  {/* 임시 텍스트 추가 */}
+      <br/>영역ㅁㄴㅇㄹ<br/>영ㅁㄴㅇㄻㄴㅇㄹ역<br/>영ㅁㄴㅇㅁㄴ역<br/>
+      영역<br/>영역<br/>ㅁㅁㄴㅇㄻㄴㅇ<br/>
+    </div>
+    <div className="data-container with-blood-test">
+    <div className="charts-grid">
         <div className="vital-chart">
-          <h4>체온 변화</h4>
-          {temperatureChart}
+          <h4>심박수</h4>
+          {heartRateChart}
         </div>
         <div className="vital-chart">
-          <h4>심박수 및 혈압</h4>
-          {heartRateBloodPressureChart}
+          <h4>혈압</h4>
+          {bloodPressureChart}
         </div>
         <div className="vital-chart">
           <h4>산소포화도</h4>
@@ -601,50 +803,47 @@ const respirationRateChart = (
           {respirationRateChart}
         </div>
       </div>
-      
-      {showBloodTest && (
-        <div className="blood-test-data">
-          <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
-        </div>
-      )}
-    </div>
-      <br/>
-      <h3>응급실 내원 기록</h3>
-      <div className="history-table-container">
-        {patientHistory.length === 0 ? (
-          <p>내원 기록 데이터가 없습니다.</p>
-        ) : (
-          <table className="history-table">
-            <thead>
-              <tr>
-                <th>입실 날짜</th>
-                <th>KTAS</th>
-                <th>체류 시간</th>
-                <th>배치 결과</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patientHistory.map((record, index) => (
-                <tr key={index}>
-                  <td>
-                  <button 
-                      className="date-button" 
-                      onClick={() => handleDateClick(record.date, record.stay_id)}  // 입실 날짜 클릭시 해당 record의 stay_id도 같이 전달해서 그 날짜 데이터
-                  >
-                    {record.date} 
-                    </button>
-                  </td>
-                  <td>{record.ktas}</td>
-                  <td>{record.stayDuration}</td>
-                  <td>{record.placement}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className="blood-test-container">
+        <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
       </div>
     </div>
-  );
+    <br/>
+    <h3>응급실 내원 기록</h3>
+    <div className="history-table-container">
+      {patientHistory.length === 0 ? (
+        <p>내원 기록 데이터가 없습니다.</p>
+      ) : (
+        <table className="history-table">
+          <thead>
+            <tr>
+              <th>입실 날짜</th>
+              <th>KTAS</th>
+              <th>체류 시간</th>
+              <th>배치 결과</th>
+            </tr>
+          </thead>
+          <tbody>
+            {patientHistory.map((record, index) => (
+              <tr key={index}>
+                <td>
+                  <button 
+                    className="date-button" 
+                    onClick={() => handleDateClick(record.date, record.stay_id)}
+                  >
+                    {record.date} 
+                  </button>
+                </td>
+                <td>{record.ktas}</td>
+                <td>{record.stayDuration}</td>
+                <td>{record.placement}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </div>
+);
 }
 
 export default Patient;

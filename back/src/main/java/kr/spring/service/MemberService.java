@@ -17,15 +17,16 @@ import com.sun.corba.se.spi.activation.Repository;
 @Service
 public class MemberService {
 
-    @Autowired
+	@Autowired
     private MemberRepository repository;
     
-    public List<MemberInterface> getAllMembers() {
-        return repository.findMemberList();
+    public List<Member> getAllMembers() {
+        return repository.findAll();
     }
 
-    public MemberInterface getMemberInfo(String username) {
-        return repository.findMemberInfo(username);
+    public Member getMemberInfo(String username) {
+    	Optional<Member> vo = repository.findById(username);
+        return vo.get();
     }
     
     public Member authenticate(String username, String password) {
