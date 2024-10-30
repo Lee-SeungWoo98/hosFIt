@@ -25,4 +25,5 @@ public interface MemberRepository extends JpaRepository<Member, String> {
 	Member findByUsernameAndPassword(String username, String password);
     
     
+    
 }

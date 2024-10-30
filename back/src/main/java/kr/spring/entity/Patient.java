@@ -45,13 +45,14 @@ public class Patient {
     @Column(name = "pregnancystatus")
     private String pregnancystatus;
     
-    
     @Column(name = "phonenumber")
     private Long PhoneNumber;
     
-    
     @Column(name = "residentnum")
     private String ResidentNum;
+    
+    @Column(name = "ICD")
+    private String Icd;
     
    
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

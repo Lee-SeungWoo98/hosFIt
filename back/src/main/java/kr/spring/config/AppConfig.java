@@ -2,6 +2,7 @@ package kr.spring.config;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
 import kr.spring.dto.PatientDTO;
 import kr.spring.entity.Patient;
@@ -16,5 +17,10 @@ public class AppConfig {
          .addMappings(mapper -> mapper.skip(PatientDTO::setVisits));
 
     	 return modelMapper;
+    }
+    
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

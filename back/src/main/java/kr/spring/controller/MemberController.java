@@ -44,20 +44,6 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
     }
-    
-    @GetMapping("/logout")
-    public ResponseEntity<Map<String, String>> MemberLogout(HttpSession session) {
-        Map<String, String> response = new HashMap<>();
-        
-        if (session != null) {
-            session.invalidate();  // 세션 무효화
-            response.put("message", "Logout successful");
-        } else {
-            response.put("message", "No session found");
-        }
-        
-        return ResponseEntity.ok(response);  // JSON 형태로 응답
-    }
 
     
     @GetMapping("/checkSession")
@@ -82,17 +68,37 @@ public class MemberController {
         }
     }
     
+    @GetMapping("/logout")
+    public ResponseEntity<Map<String, String>> MemberLogout(HttpSession session) {
+        Map<String, String> response = new HashMap<>();
+        
+        if (session != null) {
+            session.invalidate();  // 세션 무효화
+            response.put("message", "Logout successful");
+        } else {
+            response.put("message", "No session found");
+        }
+        
+        return ResponseEntity.ok(response);  // JSON 형태로 응답
+    }
+
+    	
+    	
+    	
+  
+    
     // 멤버 전체 조회 ( 이름, 직책, 부서, 전공 )
     @GetMapping("/memberList")
-    public @ResponseBody List<MemberInterface> memberList() {
+    public @ResponseBody List<Member> memberList() {
         return service.getAllMembers();
     }
     
     // 멤버 상세 조회 ( 이름, 직책, 부서, 전공 )
     @GetMapping("/memberInfo")
-    public @ResponseBody MemberInterface memberInfo(String username) {
-        return service.getMemberInfo("admin");
+    public @ResponseBody Member memberInfo(String username) {
+        return service.getMemberInfo(username);
     }
+    
     
     
     

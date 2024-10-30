@@ -26,9 +26,10 @@
   
   .label-container {
     margin-top: 18.5vh;
-    display: flex;
     justify-content: center;
     flex-wrap: wrap;
+    grid-template-columns: repeat(3, 1fr);
+    display: grid;
   }
   
   .label-item {
