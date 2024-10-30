@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,12 +28,13 @@ public class PatientController {
     private PatientService patientService;
     
    // @CrossOrigin
+    //환자리스트
     @GetMapping("/list")
-    public List<PatientDTO> getAllPatients() {
-        System.out.println("[PatientController - getAllPatients] Calling PatientService to get all patients");
-        return patientService.getAllPatients();
+    public Page<PatientDTO> getAllPatients(@RequestParam(defaultValue = "0") int page) {
+        System.out.println("[PatientController - getAllPatients] Fetching page: " + page);
+        return patientService.getAllPatients(page);
     }
-
+    //환자검색 
     @GetMapping("/search")
     public @ResponseBody List<PatientDTO> getPatients(@RequestParam(required = false) String name) {
         System.out.println("[PatientController - getPatients] Calling PatientService to search patients with name: " + name);
@@ -53,8 +55,8 @@ public class PatientController {
     }
     // 전체tas조회
     @GetMapping("/byStaystatus")
-    public List<Patient> getPatientsByStaystatus() {
-        return patientService.getPatientsByStaystatus();
+    public Map<String, Object> getPatientsByStaystatus(@RequestParam int page) { // page 파라미터를 추가
+        return patientService.getPatientsByStaystatus(page); // page 전달
     }
     // 환자 생체 데이터
     @GetMapping("/{stayId}/vitalsigns")
@@ -73,7 +75,11 @@ public class PatientController {
         } else {
             return ResponseEntity.ok(result);
         }
-
+    
+      
+        
+   
+        
     }
     
     
