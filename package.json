@@ -7,6 +7,7 @@
     "lucide-react": "^0.453.0",
     "react-chartjs-2": "^5.2.0",
     "react-smooth": "^4.0.1",
+    "shadcn-ui": "^0.9.2",
     "victory-vendor": "^37.3.0"
   }
 }
