@@ -5,6 +5,7 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import debounce from 'lodash/debounce';
 import axios from "axios";
 import Login from "./Components/Login";
 import MainPage from "./Components/MainPage";
@@ -114,34 +115,28 @@ function App() {
         ...(filters.tas && { tas: filters.tas }),
         ...(filters.painScore && { painScore: filters.painScore })
       });
-
+  
       const result = await axios.get(
         `http://localhost:8082/boot/patients/byStaystatus?${queryParams}`
       );
-
+      
       if (Array.isArray(result.data.patients)) {
-        // 각 환자 데이터에서 gender 기본값 설정
         const updatedPatients = result.data.patients.map(patient => {
           if (!patient) return null;
           return {
             ...patient,
-            gender: patient?.gender ?? 'N/A',  // gender 필드가 없으면 기본값 설정
-            name: patient?.name ?? 'Unknown',  // name 필드가 없으면 기본값 설정
+            gender: patient?.gender ?? 'N/A',
+            name: patient?.name ?? 'Unknown',
+            icd: patient?.visits?.[0]?.icd || patient?.icd || '-',  // icd 매핑 추가
           };
-        }).filter(patient => patient !== null); // null 값 제거
+        }).filter(patient => patient !== null);
+        
         setPatients(updatedPatients);
         setFilteredPatients(updatedPatients);
         setTotalPages(result.data.totalPages);
-      } else {
-        setPatients([]);
-        setFilteredPatients([]);
-        setTotalPages(1);
       }
     } catch (error) {
-      setError("데이터 로드 실패:" + error.message);
-      setPatients([]);
-      setFilteredPatients([]);
-      setTotalPages(1);
+      // ... 에러 처리
     } finally {
       setLoading(false);
     }
@@ -209,39 +204,35 @@ function App() {
   const handleSearch = async (term) => {
     setSearchTerm(term);
     setCurrentPage(0);
-    
-    if (term.trim()) {
-      try {
-        const queryParams = new URLSearchParams({
-          name: term,
-          page: 0,
-          ...filters
-        });
-
-        const result = await axios.get(
-          `http://localhost:8082/boot/patients/search?${queryParams}`
-        );
-        
-        // 각 환자 데이터에서 gender 기본값 설정
-        const updatedPatients = result.data.patients.map(patient => {
-          if (!patient) return null;
-          return {
-            ...patient,
-            gender: patient?.gender ?? 'N/A',  // gender 필드가 없으면 기본값 설정
-            name: patient?.name ?? 'Unknown',  // name 필드가 없으면 기본값 설정
-          };
-        }).filter(patient => patient !== null); // null 값 제거
+  
+    try {
+      const queryParams = new URLSearchParams({
+        page: 0,
+        ...(term?.trim() && { name: term.trim() }),
+        ...(filters.gender && { gender: filters.gender }),
+        ...(filters.tas && { tas: filters.tas }),
+        ...(filters.painScore && { painScore: filters.painScore })
+      });
+  
+      const result = await axios.get(
+        `http://localhost:8082/boot/patients/byStaystatus?${queryParams}`
+      );
+      
+      if (Array.isArray(result.data.patients)) {
+        const updatedPatients = result.data.patients.map(patient => ({
+          ...patient,
+          gender: patient?.gender ?? 'N/A',
+          name: patient?.name ?? 'Unknown',
+        })).filter(Boolean);
+  
         setPatients(updatedPatients);
         setFilteredPatients(updatedPatients);
         setTotalPages(result.data.totalPages);
-      } catch (error) {
-        setError("검색 실패:" + error.message);
-        setPatients([]);
-        setFilteredPatients([]);
-        setTotalPages(1);
+        setError(null);
       }
-    } else {
-      fetchData(0);
+    } catch (error) {
+      console.error("검색 실패:", error);
+      setError("검색 실패: " + error.message);
     }
   };
 

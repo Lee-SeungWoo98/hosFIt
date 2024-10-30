@@ -53,6 +53,20 @@ function List({
   totalPages,
   onPageChange,
 }) {
+
+  const [searchInputValue, setSearchInputValue] = useState('');
+  // 검색 실행 함수
+  const executeSearch = () => {
+    onSearch(searchInputValue);
+  };
+
+  // 엔터 키 처리
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      executeSearch();
+    }
+  };
+  
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -146,70 +160,59 @@ function List({
   const showPatientDetails = async (patient) => {
     console.log("상세보기 시작 - 환자 데이터:", patient);
     setLoadingDetails(true);
-    
+
     try {
-      // 1. 최신 방문의 stayId 가져오기
-      const visits = patient.visits || [];
-      const latestVisit = visits[visits.length - 1];
-      const stayId = latestVisit?.stayId;
-  
-      console.log("최신 방문 정보:", latestVisit);
-      console.log("stay_id:", stayId);
-  
+      // 환자 ID로 방문 정보 조회
+      const visitInfoResponse = await fetchVisitInfo(patient.subjectId);
+
+      if (
+        !visitInfoResponse ||
+        !visitInfoResponse.visits ||
+        visitInfoResponse.visits.length === 0
+      ) {
+        throw new Error("방문 정보가 없습니다.");
+      }
+
+      // 최신 방문 기록의 stayId로 검사 데이터 조회
+      const latestVisit =
+        visitInfoResponse.visits[visitInfoResponse.visits.length - 1];
+      const stayId = latestVisit.stayId || latestVisit.stay_id;
+
       if (!stayId) {
-        throw new Error("Stay ID not found");
+        throw new Error("Stay ID를 찾을 수 없습니다.");
       }
-  
-      // 2. Lab Tests와 Visit Info 동시 조회
-      const [labTestsResponse, visitInfoResponse] = await Promise.all([
-        fetchLabTests(stayId),
-        fetchVisitInfo(patient.subjectId)
-      ]);
-  
-      console.log("조회된 데이터:", {
-        labTests: labTestsResponse,
-        visitInfo: visitInfoResponse
-      });
-  
-      // 3. 데이터 유효성 검증
-      if (!Array.isArray(labTestsResponse)) {
-        throw new Error("Invalid lab tests data format");
-      }
-  
-      if (!visitInfoResponse || !Array.isArray(visitInfoResponse.visits)) {
-        throw new Error("Invalid visit info data format");
-      }
-  
-      // 4. Patient 컴포넌트에 전달할 기본 데이터 구성
+
+      const labTestsResponse = await fetchLabTests(stayId);
+
+      // 데이터 구조화
       const patientData = {
-        name: patient.name,
-        age: patient.age,
-        gender: patient.gender,
-        subjectId: patient.subjectId,
-        visits: visitInfoResponse.visits.map(visit => ({
-          stayId: visit.stayId,
-          visitDate: visit.visitDate,
-          losHours: parseFloat(visit.losHours || 0),
+        ...patient,
+        visits: visitInfoResponse.visits.map((visit) => ({
+          ...visit,
+          stayId: visit.stayId || visit.stay_id,
+          visitDate: visit.visitDate || visit.visit_date,
+          losHours: parseFloat(visit.losHours || visit.los_hours || 0),
           pain: parseInt(visit.pain || 0),
-          tas: parseInt(visit.tas || 0),
-          staystatus: parseInt(visit.staystatus || 0),
-          vitalSigns: (visit.vitalSigns || []).map(sign => ({
-            chartTime: sign.chartTime,
-            heartrate: parseFloat(sign.heartrate || 0),
-            resprate: parseFloat(sign.resprate || 0),
-            o2sat: parseFloat(sign.o2sat || 0),
-            sbp: parseFloat(sign.sbp || 0),
-            dbp: parseFloat(sign.dbp || 0),
-            temperature: parseFloat(sign.temperature || 0)
-          }))
-        }))
+          tas: parseInt(visit.tas || visit.TAS || 0),
+          statstatus: parseInt(visit.statstatus || 0),
+          vitalSigns: (visit.vitalSigns || visit.vital_signs || []).map(
+            (sign) => ({
+              chartTime: sign.chartTime || sign.chart_time,
+              heartrate: parseFloat(sign.heartrate || 0),
+              resprate: parseFloat(sign.resprate || 0),
+              o2sat: parseFloat(sign.o2sat || 0),
+              sbp: parseFloat(sign.sbp || 0),
+              dbp: parseFloat(sign.dbp || 0),
+              temperature: parseFloat(sign.temperature || 0),
+            })
+          ),
+        })),
       };
-  
-      // 5. 데이터 전달
-      onPatientSelect(patientData, labTestsResponse[0], visitInfoResponse);
-  
+
+      onPatientSelect(patientData, labTestsResponse, visitInfoResponse);
     } catch (error) {
       console.error("상세 정보 조회 실패:", error);
+      // 사용자에게 에러 메시지 표시
     } finally {
       setLoadingDetails(false);
     }
@@ -218,13 +221,18 @@ function List({
   const renderFilterDropdowns = () => (
     <div className="filter-dropdowns">
       <div className="dropdown-container search-container">
-        <div className="dropdown-trigger search-input-wrapper">
+        <div className="search-input-wrapper">
           <Search size={16} className="search-icon" />
           <input
             type="text"
             placeholder="Search by Patient ID or Name"
-            value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
+            value={searchInputValue}
+            onChange={(e) => setSearchInputValue(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                onSearch(e.target.value);
+              }
+            }}
             className="patient-search-input"
           />
         </div>

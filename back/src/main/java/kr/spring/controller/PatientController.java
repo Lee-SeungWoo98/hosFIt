@@ -1,10 +1,15 @@
 package kr.spring.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.criteria.Join;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,13 +32,19 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
     
-   // @CrossOrigin
-    //환자리스트
-    @GetMapping("/list")
-    public Page<PatientDTO> getAllPatients(@RequestParam(defaultValue = "0") int page) {
-        System.out.println("[PatientController - getAllPatients] Fetching page: " + page);
-        return patientService.getAllPatients(page);
-    }
+ 
+  
+//    @GetMapping("/list")
+//    public List<PatientDTO> getAllPatients(
+//            @RequestParam(required = false) String name,
+//            @RequestParam(required = false) Long gender,
+//            @RequestParam(required = false) Long TAS,
+//            @RequestParam(required = false) Long pain) {
+//
+//        System.out.println("[PatientController - getAllPatients] Calling PatientService to get patients with filters");
+//        return patientService.getPatientWithVisits(name, gender, TAS, pain);
+//    }
+
     //환자검색 
     @GetMapping("/search")
     public @ResponseBody List<PatientDTO> getPatients(@RequestParam(required = false) String name) {
@@ -54,10 +65,20 @@ public class PatientController {
         return patientService.getPatientsByTAS(tas);
     }
     // 전체tas조회
+ // PatientController.java
     @GetMapping("/byStaystatus")
-    public Map<String, Object> getPatientsByStaystatus(@RequestParam int page) { // page 파라미터를 추가
-        return patientService.getPatientsByStaystatus(page); // page 전달
+    public Map<String, Object> getPatientsByStaystatus(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) Long gender,
+        @RequestParam(required = false) Long TAS,
+        @RequestParam(required = false) Long pain
+    ) {
+        return patientService.getPatientsByStaystatus(page, name, gender, TAS, pain);
     }
+
+
+
     // 환자 생체 데이터
     @GetMapping("/{stayId}/vitalsigns")
     public List<VitalSigns> getPatientVitalSigns(@PathVariable Long stayId){
