@@ -68,13 +68,16 @@ function MainPage({
       });
   
       // 1. Lab Tests 데이터 구조화
-      const formattedLabTests = [{
-        blood_levels: labTestData.bloodLevels || [],
-        electrolyte_levels: labTestData.electrolyteLevels || [],
-        enzymes_metabolisms: labTestData.enzymesMetabolisms || [],
-        chemical_examinations_enzymes: labTestData.chemicalExaminationsEnzymes || [],
-        blood_gas_analysis: labTestData.bloodGasAnalysis || []
-      }];
+      let formattedLabTests = null;
+      if (labTestData && Array.isArray(labTestData) && labTestData.length > 0) {
+        formattedLabTests = [{
+          blood_levels: labTestData[0].bloodLevels || [],
+          electrolyte_levels: labTestData[0].electrolyteLevels || [],
+          enzymes_metabolisms: labTestData[0].enzymesMetabolisms || [],
+          chemical_examinations_enzymes: labTestData[0].chemicalExaminationsEnzymes || [],
+          blood_gas_analysis: labTestData[0].bloodGasAnalysis || []
+        }];
+      }
   
       // 2. Visit Info 데이터 포맷팅
       const formattedVisits = visitInfoData.visits.map(visit => ({

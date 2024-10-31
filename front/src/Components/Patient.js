@@ -512,7 +512,7 @@ const BloodTestResults = ({ labTests, gender }) => {
 };
 
 // 메인 Patient 컴포넌트
-function Patient({ patientData, labTests, visitInfo, onBack }) {
+function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -540,16 +540,41 @@ function Patient({ patientData, labTests, visitInfo, onBack }) {
     vitalSigns: visit.vitalSigns || []
   })).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) || [];
 
-  const handleDateClick = (date, stay_id) => {
-    const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
-    if (selectedVisit) {
-      setSelectedVisit(selectedVisit);
-      setPatientInfo(prev => ({
-        ...prev,
-        emergencyLevel: `Level ${selectedVisit.tas}`,
-        stayDuration: `${selectedVisit.losHours}시간`,
-        vitalSigns: selectedVisit.vitalSigns || []
-      }));
+  const handleDateClick = async (date, stay_id) => {
+    try {
+      // 피검사 데이터 다시 불러오기
+      const labTestsResponse = await fetchLabTests(stay_id);
+      console.log("선택한 날짜의 피검사 데이터:", labTestsResponse);
+  
+      // 선택한 방문 기록 찾기
+      const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
+      
+      if (selectedVisit) {
+        setSelectedVisit(selectedVisit);
+        
+        // 포맷팅된 피검사 데이터 생성
+        const formattedLabTests = labTestsResponse && Array.isArray(labTestsResponse) && labTestsResponse.length > 0 
+          ? [{
+              blood_levels: labTestsResponse[0].bloodLevels || [],
+              electrolyte_levels: labTestsResponse[0].electrolyteLevels || [],
+              enzymes_metabolisms: labTestsResponse[0].enzymesMetabolisms || [],
+              chemical_examinations_enzymes: labTestsResponse[0].chemicalExaminationsEnzymes || [],
+              blood_gas_analysis: labTestsResponse[0].bloodGasAnalysis || []
+            }]
+          : null;
+  
+        // patientInfo 업데이트 (피검사 데이터 포함)
+        setPatientInfo(prev => ({
+          ...prev,
+          emergencyLevel: `Level ${selectedVisit.tas}`,
+          stayDuration: `${selectedVisit.losHours}시간`,
+          vitalSigns: selectedVisit.vitalSigns || [],
+          bloodTestData: formattedLabTests  // 피검사 데이터 업데이트
+        }));
+      }
+    } catch (error) {
+      console.error("날짜 선택 시 데이터 로드 실패:", error);
+      setError("데이터 로드에 실패했습니다.");
     }
   };
 
