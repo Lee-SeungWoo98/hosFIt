@@ -247,50 +247,75 @@ const VitalSignChart = ({ data, config }) => {
 };
 
 // PatientInfoBanner 컴포넌트
-const PatientInfoBanner = ({ patientInfo, error }) => (
-  <div className="patient-info-banner">
-    {error ? (
-      <div className="error-message">데이터가 없어요.</div>
-    ) : (
-      <>
-        <div className="banner-item">
-          <span className="label">환자이름</span>
-          <div className="value-container">
-            <span className="value">{patientInfo?.name || '데이터가 없어요.'}</span>
+const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handlePlacementConfirm = (data) => {
+    // 여기서 서버로 데이터를 전송하는 로직 추가 예정
+    console.log("배치 결정:", data);
+    onPlacementConfirm(data);
+    setIsModalOpen(false);
+  };
+
+  return (
+    <div className="patient-info-banner">
+      {error ? (
+        <div className="error-message">데이터가 없어요.</div>
+      ) : (
+        <>
+          <div className="banner-item">
+            <span className="label">환자이름</span>
+            <div className="value-container">
+              <span className="value">{patientInfo?.name || '데이터가 없어요.'}</span>
+            </div>
           </div>
-        </div>
-        <div className="banner-item">
-          <span className="label">나이</span>
-          <div className="value-container">
-            <span className="value">{patientInfo?.age ? `${patientInfo.age}세` : '데이터가 없어요.'}</span>
+          <div className="banner-item">
+            <span className="label">나이</span>
+            <div className="value-container">
+              <span className="value">{patientInfo?.age ? `${patientInfo.age}세` : '데이터가 없어요.'}</span>
+            </div>
           </div>
-        </div>
-        <div className="banner-item">
-          <span className="label">KTAS</span>
-          <div className="value-container">
-            {patientInfo?.emergencyLevel ? (
-              <span className={`ktas-badge level-${patientInfo.emergencyLevel.split(' ')[1]}`}>
-                {`Level ${patientInfo.emergencyLevel.split(' ')[1]}`}
-              </span>
-            ) : '데이터가 없어요.'}
+          <div className="banner-item">
+            <span className="label">KTAS</span>
+            <div className="value-container">
+              {patientInfo?.emergencyLevel ? (
+                <span className={`ktas-badge level-${patientInfo.emergencyLevel.split(' ')[1]}`}>
+                  {`Level ${patientInfo.emergencyLevel.split(' ')[1]}`}
+                </span>
+              ) : '데이터가 없어요.'}
+            </div>
           </div>
-        </div>
-        <div className="banner-item">
-          <span className="label">체류 시간</span>
-          <div className="value-container">
-            <span className="value with-unit">{patientInfo?.stayDuration || '데이터가 없어요.'}</span>
+          <div className="banner-item">
+            <span className="label">체류 시간</span>
+            <div className="value-container">
+              <span className="value with-unit">{patientInfo?.stayDuration || '데이터가 없어요.'}</span>
+            </div>
           </div>
-        </div>
-        <div className="banner-item">
-          <span className="label">배치 추천</span>
-          <div className="value-container">
-            ㅁㅁㅁㅁㅁㅁ
+          <div className="banner-item">
+            <span className="label">배치 추천</span>
+            <div className="value-container placement-container">
+              ㅁㅁㅁㅁㅁㅁㅁㅁ
+            </div>
           </div>
-        </div>
-      </>
-    )}
-  </div>
-);
+          <div className="banner-item decision-button-container">
+            <button 
+              className="placement-decision-button"
+              onClick={() => setIsModalOpen(true)}
+            >
+              배치 결정
+            </button>
+          </div>
+          <PlacementModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handlePlacementConfirm}
+            aiRecommendation="ICU 배치 권장"
+          />
+        </>
+      )}
+    </div>
+  );
+};
 
 // BloodTestResults 컴포넌트
 const BloodTestResults = ({ labTests, gender }) => {
@@ -391,7 +416,14 @@ const BloodTestResults = ({ labTests, gender }) => {
     if (labTests[0][category.name] && labTests[0][category.name].length > 0) {
       const data = labTests[0][category.name][0];
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
+        // 피 검사 데이터를 뽑아올 때 수치보기 표에 reg_date가 표시돼서 안 보이게 해둠
+        if (key !== 'blood_idx' && 
+          key !== 'bloodIdx' && 
+          key !== 'reg_date' && 
+          key !== 'regDate' && 
+          key !== 'regdate' && 
+          key !== 'labtest' && 
+          value !== null) {
           const isNormal = checkNormalRange(key, value, gender);
           if (isNormal === false) {
             abnormalItems.push({ 
@@ -421,7 +453,7 @@ const BloodTestResults = ({ labTests, gender }) => {
           </button>
         </div>
       </div>
-
+ 
       <div className={`blood-test-content ${showRawData ? 'show-raw-data' : ''}`}>
         {showRawData ? (
           <>
@@ -439,16 +471,15 @@ const BloodTestResults = ({ labTests, gender }) => {
             <div className="raw-data">
               {categories.map(category => {
                 const categoryData = labTests[0][category.name];
-                if (categoryData && categoryData.length > 0) {
-                  const data = categoryData[0];
-                  return (
-                    <div 
-                      key={category.name} 
-                      className="category-section"
-                      ref={categoryRefs[category.name]}
-                      data-category={category.name}
-                    >
-                      <h3>{category.displayName}</h3>
+                return (
+                  <div 
+                    key={category.name} 
+                    className="category-section"
+                    ref={categoryRefs[category.name]}
+                    data-category={category.name}
+                  >
+                    <h3>{category.displayName}</h3>
+                    {categoryData && categoryData.length > 0 ? (
                       <table className="raw-data-table">
                         <thead>
                           <tr>
@@ -458,8 +489,14 @@ const BloodTestResults = ({ labTests, gender }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {Object.entries(data).map(([key, value]) => {
-                            if (key !== 'blood_idx' && key !== 'reg_date' && key !== 'labtest' && value !== null) {
+                          {Object.entries(categoryData[0]).map(([key, value]) => {
+                            if (key !== 'blood_idx' && 
+                              key !== 'bloodIdx' && 
+                              key !== 'reg_date' && 
+                              key !== 'regDate' && 
+                              key !== 'regdate' && 
+                              key !== 'labtest' && 
+                              value !== null) {
                               const isNormal = checkNormalRange(key, value, gender);
                               return (
                                 <tr 
@@ -481,10 +518,14 @@ const BloodTestResults = ({ labTests, gender }) => {
                           })}
                         </tbody>
                       </table>
-                    </div>
-                  );
-                }
-                return null;
+                    ) : (
+                      // 데이터가 없으면 아예 사라지고 탭도 안 눌려서 빈 배열이라도 카테고리는 표시되게 변경
+                      <div className="no-data-message" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                        {category.displayName}에 대한 결과가 없습니다.
+                      </div>
+                    )}
+                  </div>
+                );
               })}
             </div>
           </>
@@ -509,6 +550,75 @@ const BloodTestResults = ({ labTests, gender }) => {
       </div>
     </div>
   );
+ };
+
+ // PlacementModal 컴포넌트
+const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
+  const [doctorNote, setDoctorNote] = useState('');
+  const [selectedPlacement, setSelectedPlacement] = useState('');
+
+  const handleConfirm = () => {
+    onConfirm({
+      doctorNote,
+      placement: selectedPlacement
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="placement-modal">
+        <div className="modal-header">
+          <h2>환자 배치 결정</h2>
+          <button className="close-button" onClick={onClose}>&times;</button>
+        </div>
+        <div className="modal-content">
+          <div className="modal-section">
+            <div className="ai-recommendation">
+              <h3>AI 배치 추천</h3>
+              <div className="recommendation-box">
+                {aiRecommendation || 'AI 분석 중...'}
+              </div>
+            </div>
+          </div>
+          <div className="modal-section">
+            <h3>의사 소견</h3>
+            <textarea
+              value={doctorNote}
+              onChange={(e) => setDoctorNote(e.target.value)}
+              placeholder="의사 소견을 입력하세요..."
+              rows={4}
+              className="doctor-note"
+            />
+          </div>
+          <div className="modal-section">
+            <h3>배치 결정</h3>
+            <select
+              value={selectedPlacement}
+              onChange={(e) => setSelectedPlacement(e.target.value)}
+              className="placement-select"
+            >
+              <option value="">배치를 선택하세요</option>
+              <option value="ICU">ICU</option>
+              <option value="WARD">WARD</option>
+              <option value="DISCHARGE">DISCHARGE</option>
+            </select>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button 
+            className="confirm-button"
+            onClick={handleConfirm}
+            disabled={!selectedPlacement || !doctorNote}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // 메인 Patient 컴포넌트
@@ -528,6 +638,14 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     vitalSigns: latestVisit?.vitalSigns || [],
     bloodTestData: labTests
   });
+
+  // 배치결정 함수 추가요
+  const handlePlacementConfirm = (placementData) => {
+    // 여기서 서버로 데이터를 전송하고
+    console.log("배치 결정:", placementData);
+    // 성공 시 리스트로 돌아가기
+    onBack();
+  };
 
   // 방문 기록을 날짜 기준 내림차순으로 정렬
   const patientHistory = patientData?.visits?.map(visit => ({
@@ -631,9 +749,14 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       <button onClick={onBack} className="back-button">
         <ArrowLeft size={24} />
       </button>
-      <PatientInfoBanner patientInfo={patientInfo} error={error} />
+      <PatientInfoBanner
+      patientInfo={patientInfo}
+      error={error}
+      onPlacementConfirm={handlePlacementConfirm}
+      />
       <div className="timeseries-container">  
         시계열 데이터 영역
+        영역<br/>영역<br/>영역<br/>영역<br/>영역<br/>영역<br/>
       </div>
       <div className="data-container with-blood-test">
         <div className="charts-grid">

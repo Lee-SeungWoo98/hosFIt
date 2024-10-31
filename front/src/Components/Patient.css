@@ -39,7 +39,7 @@
   background-color: #ffffff;
   border: 1px solid #e5e9f0;
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
   margin-bottom: 24px;
   box-shadow: 0 2px 12px rgba(20, 20, 50, 0.06);
 }
@@ -86,6 +86,23 @@
 
 .banner-item .value.with-unit {
   color: #2196F3;
+}
+
+/* 구분선 추가 */
+.value.ai-recommendation {
+  position: relative;
+  padding-right: 1.5rem;  /* 구분선을 위한 여백 */
+}
+
+.value.ai-recommendation::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;  /* 구분선 높이 */
+  width: 1px;
+  background-color: #e5e9f0;  /* 다른 구분선과 같은 색상 */
 }
 
 .ktas-badge {
@@ -384,7 +401,7 @@
 /* Tab Navigation Styles */
 .category-tabs {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;
   background: #fff;
@@ -392,10 +409,11 @@
   top: 0;
   z-index: 100;
   margin-bottom: 12px;
+  margin-left: 22px;
 }
 
 .category-tab {
-  padding: 4px 12px;
+  padding: 4px 8px;
   border: 1px solid #e0e0e0;
   border-radius: 16px;
   background: #fff;
@@ -610,6 +628,218 @@
   background: #999;
 }
 
+.placement-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  gap: 1.5rem;  /* 간격 늘림 */
+  position: relative;  /* 구분선을 위한 position 설정 */
+}
+
+/* 모달 관련 부분들 */
+.modal-backdrop {
+  --bs-backdrop-bg: rgba(255, 255, 255, 0.3) !important;
+  --bs-backdrop-opacity: 1 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--bs-backdrop-zindex);
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bs-backdrop-bg) !important;
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placement-modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08);  /* 그림자 효과 더 연하게 */
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to right, #2563eb, #3b82f6);  /* 그라데이션 헤더 */
+  border-radius: 12px 12px 0 0;
+  color: white;
+}
+
+.modal-header h2 {
+  margin-top: 10px;
+  margin-left: 222px;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: white;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+  margin-bottom: 5px;
+  margin-right: 7px;
+}
+
+.close-button:hover {
+  opacity: 1;
+}
+
+/* 모달 콘텐츠 배경도 더 밝게 조정 */
+.modal-content {
+  padding: 2rem;
+  background-color: white;  /* #fafafa에서 white로 변경 */
+}
+
+.modal-section {
+  margin-bottom: 2rem;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.modal-section h3 {
+  color: #2563eb;  /* 포인트 컬러 */
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.ai-recommendation {
+  background-color: white;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.recommendation-box {
+  background-color: rgba(37, 99, 235, 0.05);  /* 포인트 컬러의 연한 배경 */
+  padding: 1.2rem;
+  border-radius: 6px;
+  color: #2563eb;  /* 포인트 컬러 */
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.doctor-note {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);  /* 포인트 컬러의 테두리 */
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  min-height: 100px;
+  transition: border-color 0.2s;
+}
+
+.doctor-note:focus {
+  outline: none;
+  border-color: #2563eb;  /* 포인트 컬러 */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.placement-select {
+  width: 100%;
+  padding: 0.875rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);  /* 포인트 컬러의 테두리 */
+  border-radius: 6px;
+  background-color: white;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.placement-select:focus {
+  outline: none;
+  border-color: #2563eb;  /* 포인트 컬러 */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.placement-select option {
+  padding: 0.875rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background-color: white;
+  border-radius: 0 0 12px 12px;
+}
+
+.confirm-button {
+  background-color: #2563eb;  /* 포인트 컬러 */
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: #1d4ed8;  /* 포인트 컬러의 어두운 버전 */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+.confirm-button:disabled {
+  background-color: #e5e7eb;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 배치 결정 버튼 컨테이너 스타일 */
+.decision-button-container {
+  display: flex;
+  align-items: center;  /* 세로 중앙 정렬 */
+  justify-content: center;  /* 가로 중앙 정렬 */
+  padding-top: 5px;  /* label 영역만큼 상단 여백 추가 */
+}
+
+/* 배치 결정 버튼 스타일도 업데이트 */
+.placement-decision-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+  white-space: nowrap;  /* 버튼 텍스트 줄바꿈 방지 */
+}
+
+.placement-decision-button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
 /* Responsive Styles */
 @media (max-width: 1024px) {
   .patient-info-banner {
@@ -660,4 +890,5 @@
     min-width: 0;
     flex-shrink: 0;
   }
+
 }
