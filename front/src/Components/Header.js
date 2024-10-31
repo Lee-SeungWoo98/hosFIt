@@ -1,10 +1,8 @@
-import React, { useState } from "react";
-import { Search } from "lucide-react";
-import "../Components/Ktas";
+import React from "react";
 import Ktas from "../Components/Ktas";
 import logoutIcon from './assets/images/logout.png';
 
-function Header({ onSearch, ktasData, username, onTASClick, logout, ktasFilter }) {  // ktasFilter 추가
+function Header({ onSearch, ktasData, predictionData, username, onTASClick, logout, ktasFilter }) {
   return (
     <div className="user-layout">
       <div className="user-sidebar">
@@ -24,8 +22,9 @@ function Header({ onSearch, ktasData, username, onTASClick, logout, ktasFilter }
         <div className="ktas-section">
           <Ktas 
             ktasData={ktasData} 
+            predictionData={predictionData}
             onTASClick={onTASClick} 
-            ktasFilter={ktasFilter}  // 추가된 부분
+            ktasFilter={ktasFilter}
           />
         </div>
       </div>

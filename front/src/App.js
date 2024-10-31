@@ -41,10 +41,12 @@ function App() {
   const [ktasFilter, setKtasFilter] = useState([]);
   const [labTests, setLabTests] = useState(null);
   const [visitInfo, setVisitInfo] = useState(null);
+  const [predictionData, setPredictionData] = useState(null);
   
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
   // 필터 상태
   const [filters, setFilters] = useState({
@@ -105,43 +107,7 @@ function App() {
   };
 
   // =========== 데이터 fetching 함수 ===========
-  const fetchData = async (page = 0) => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        page: page,
-        ...(searchTerm && { name: searchTerm }),
-        ...(filters.gender && { gender: filters.gender }),
-        ...(filters.tas && { tas: filters.tas }),
-        ...(filters.painScore && { painScore: filters.painScore })
-      });
-  
-      const result = await axios.get(
-        `http://localhost:8082/boot/patients/byStaystatus?${queryParams}`
-      );
-      
-      if (Array.isArray(result.data.patients)) {
-        const updatedPatients = result.data.patients.map(patient => {
-          if (!patient) return null;
-          return {
-            ...patient,
-            gender: patient?.gender ?? 'N/A',
-            name: patient?.name ?? 'Unknown',
-            icd: patient?.visits?.[0]?.icd || patient?.icd || '-',  // icd 매핑 추가
-          };
-        }).filter(patient => patient !== null);
-        
-        setPatients(updatedPatients);
-        setFilteredPatients(updatedPatients);
-        setTotalPages(result.data.totalPages);
-      }
-    } catch (error) {
-      // ... 에러 처리
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // KTAS 데이터 조회
   const fetchKtasData = async () => {
     try {
       const result = await axios.get(
@@ -163,33 +129,106 @@ function App() {
     }
   };
 
+  // AI 예측 데이터 조회
+  const fetchPredictionData = async () => {
+    try {
+      const result = await axios.get(
+        "http://localhost:8082/boot/patients/prediction"
+      );
+      setPredictionData(result.data);
+    } catch (error) {
+      console.error("예측 데이터 로드 실패:", error);
+      setPredictionData({
+        DISCHARGE: 35,
+        WARD: 45,
+        ICU: 20
+      });
+    }
+  };
+
+  // 환자 데이터 조회
+  const fetchData = async (page = 0) => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page,
+        ...(searchTerm && { name: searchTerm }),
+        ...(filters.gender && { gender: filters.gender }),
+        ...(filters.tas && { tas: filters.tas }),
+        ...(filters.painScore && { painScore: filters.painScore })
+      });
+  
+      const result = await axios.get(
+        `http://localhost:8082/boot/patients/byStaystatus?${queryParams}`
+      );
+      
+      if (Array.isArray(result.data.patients)) {
+        const updatedPatients = result.data.patients.map(patient => {
+          if (!patient) return null;
+  
+          let icd = '-';
+          if (patient.icd) {
+            icd = patient.icd;
+          } else if (patient.visits?.[0]?.icd) {
+            icd = patient.visits[0].icd;
+          } else if (patient.visits?.[0]?.patient?.icd) {
+            icd = patient.visits[0].patient.icd;
+          }
+          
+          return {
+            ...patient,
+            gender: patient?.gender ?? 'N/A',
+            name: patient?.name ?? 'Unknown',
+            icd: icd,
+            visits: patient.visits?.map(visit => ({
+              ...visit,
+              icd: visit.icd || patient.icd || visit.patient?.icd || '-'
+            }))
+          };
+        }).filter(patient => patient !== null);
+        
+        setPatients(updatedPatients);
+        setFilteredPatients(updatedPatients);
+        setTotalPages(result.data.totalPages);
+        setTotalElements(result.data.totalElements);
+      }
+    } catch (error) {
+      setError("데이터 로드 실패:" + error.message);
+      setPatients([]);
+      setFilteredPatients([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Lab Tests 데이터 조회
   const fetchLabTests = async (stay_id) => {
-    console.log(`fetchLabTests 호출됨: stay_id = ${stay_id}`);
     try {
       const result = await axios.get(
         `http://localhost:8082/boot/labtests/${stay_id}`
       );
-      setLabTests(result.data); // 피검사 데이터 설정
-      return result.data; // 데이터 반환
+      setLabTests(result.data);
+      return result.data;
     } catch (error) {
-      console.error("Lab tests 데이터 로드 실패:", error); // 오류 로그 출력
-      setLabTests(null); // 오류 시 null로 설정
-      return null; // 오류 발생 시 null 반환
+      console.error("Lab tests 데이터 로드 실패:", error);
+      setLabTests(null);
+      return null;
     }
   };
   
+  // 방문 정보 조회
   const fetchVisitInfo = async (subject_id) => {
-    console.log(`fetchVisitInfo 호출됨: subject_id = ${subject_id}`);
     try {
       const result = await axios.get(
         `http://localhost:8082/boot/patients/${subject_id}/visits`
       );
-      setVisitInfo(result.data); // 방문 정보 설정
-      return result.data; // 데이터 반환
+      setVisitInfo(result.data);
+      return result.data;
     } catch (error) {
-      console.error("Vital signs 데이터 로드 실패:", error); // 오류 로그 출력
-      setVisitInfo(null); // 오류 시 null로 설정
-      return null; // 오류 발생 시 null 반환
+      console.error("Vital signs 데이터 로드 실패:", error);
+      setVisitInfo(null);
+      return null;
     }
   };
 
@@ -275,7 +314,6 @@ function App() {
   // 초기 세션 체크
   useEffect(() => {
     checkSession();
-    console.log("체크했다.");
   }, []);
 
   // 데이터 자동 새로고침
@@ -285,6 +323,7 @@ function App() {
         try {
           await fetchData(currentPage);
           await fetchKtasData();
+          await fetchPredictionData();
         } catch (error) {
           console.error("데이터 로드 중 오류:", error);
         }
@@ -296,43 +335,57 @@ function App() {
     }
   }, [isAuthenticated]);
 
+  console.log("admin", labTests);
+
   // =========== 렌더링 ===========
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        {/* Suspense로 페이지 전환 시 깜빡임 방지 */}
+        <Route 
+          path="/login" 
+          element={
+            <React.Suspense fallback={null}>
+              <Login onLogin={handleLogin} />
+            </React.Suspense>
+          } 
+        />
         <Route
           path="/"
           element={
             isAuthenticated ? (
               position ? (
                 position === "일반" ? (
-                  <MainPage
-                    searchTerm={searchTerm}
-                    allPatients={patients}
-                    patients={filteredPatients}
-                    ktasData={ktasData}
-                    ktasFilter={ktasFilter}
-                    loading={loading}
-                    error={error}
-                    handleSearch={handleSearch}
-                    onTASClick={handleTASClick}
-                    onFilteredPatientsUpdate={handleFilteredPatientsUpdate}
-                    labTests={labTests}
-                    visitInfo={visitInfo}
-                    fetchLabTests={fetchLabTests}
-                    fetchVisitInfo={fetchVisitInfo}
-                    logout={logout}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
+                  <React.Suspense fallback={null}>
+                    <MainPage
+                      searchTerm={searchTerm}
+                      allPatients={patients}
+                      patients={filteredPatients}
+                      ktasData={ktasData}
+                      predictionData={predictionData}
+                      ktasFilter={ktasFilter}
+                      loading={loading}
+                      error={error}
+                      handleSearch={handleSearch}
+                      onTASClick={handleTASClick}
+                      onFilteredPatientsUpdate={handleFilteredPatientsUpdate}
+                      labTests={labTests}
+                      visitInfo={visitInfo}
+                      fetchLabTests={fetchLabTests}
+                      fetchVisitInfo={fetchVisitInfo}
+                      logout={logout}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalElements={totalElements}
+                      onPageChange={handlePageChange}
+                    />
+                  </React.Suspense>
                 ) : (
-                  <Navigate to="/admin" />
+                  <Navigate to="/admin" replace />
                 )
               ) : null
             ) : (
-              <Navigate to="/login" />
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -340,9 +393,11 @@ function App() {
           path="/admin"
           element={
             isAuthenticated && position === "관리자" ? (
-              <AdminAPP logout={logout} />
+              <React.Suspense fallback={null}>
+                <AdminAPP logout={logout} />
+              </React.Suspense>
             ) : (
-              <Navigate to="/login" />
+              <Navigate to="/login" replace />
             )
           }
         />
