@@ -8,6 +8,7 @@ import {
   Search,
 } from "lucide-react";
 
+// 필터 옵션 설정
 const filterOptions = {
   gender: {
     label: "Select Gender",
@@ -41,6 +42,7 @@ const filterOptions = {
 };
 
 function List({
+  loading,
   searchTerm,
   patients,
   onFilteredPatientsUpdate,
@@ -51,22 +53,11 @@ function List({
   onSearch,
   currentPage,
   totalPages,
+  totalElements,
   onPageChange,
 }) {
-
-  const [searchInputValue, setSearchInputValue] = useState('');
-  // 검색 실행 함수
-  const executeSearch = () => {
-    onSearch(searchInputValue);
-  };
-
-  // 엔터 키 처리
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      executeSearch();
-    }
-  };
-  
+  // =========== 상태 관리 ===========
+  const [searchInputValue, setSearchInputValue] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -78,24 +69,41 @@ function List({
     tas: "",
     painScore: "",
   });
+  // 데이터 업데이트 중 상태 관리 추가
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const resetAllFilters = () => {
+  const [activeTab, setActiveTab] = useState("all");
+
+  // =========== 이벤트 핸들러 ===========
+  /**
+   * 모든 필터를 초기화하고 초기 데이터를 불러오는 함수
+   * isUpdating 상태를 사용하여 데이터 로딩 중 깜빡임 방지
+   */
+  const resetAllFilters = async () => {
+    setIsUpdating(true);
     const resetFilters = {
       gender: "",
       tas: "",
       painScore: "",
     };
     setSelectedFilters(resetFilters);
-    onFilteredPatientsUpdate(resetFilters);
+    await onFilteredPatientsUpdate(resetFilters);
+    setIsUpdating(false);
   };
 
-  const handleFilterSelect = (type, value) => {
+  /**
+   * 필터 선택 처리 함수
+   * isUpdating 상태를 사용하여 데이터 로딩 중 깜빡임 방지
+   */
+  const handleFilterSelect = async (type, value) => {
+    setIsUpdating(true);
     const newFilters = {
       ...selectedFilters,
       [type]: value,
     };
     setSelectedFilters(newFilters);
-    onFilteredPatientsUpdate(newFilters);
+    await onFilteredPatientsUpdate(newFilters);
+    setIsUpdating(false);
     setOpenDropdown(null);
   };
 
@@ -145,6 +153,35 @@ function List({
 
     onFilteredPatientsUpdate({ ...selectedFilters, sort: { key, direction } });
   };
+
+  const renderLocationTabs = () => (
+    <div className="location-tabs">
+      <button
+        className={`location-tab ${activeTab === "all" ? "active" : ""}`}
+        onClick={() => setActiveTab("all")}
+      >
+        ALL
+      </button>
+      <button
+        className={`location-tab ${activeTab === "icu" ? "active" : ""}`}
+        onClick={() => setActiveTab("icu")}
+      >
+        ICU
+      </button>
+      <button
+        className={`location-tab ${activeTab === "ward" ? "active" : ""}`}
+        onClick={() => setActiveTab("ward")}
+      >
+        WARD
+      </button>
+      <button
+        className={`location-tab ${activeTab === "discharge" ? "active" : ""}`}
+        onClick={() => setActiveTab("discharge")}
+      >
+        DISCHARGE
+      </button>
+    </div>
+  );
 
   const renderSortIcon = (columnName) => {
     if (sortConfig.key === columnName) {
@@ -212,7 +249,6 @@ function List({
       onPatientSelect(patientData, labTestsResponse, visitInfoResponse);
     } catch (error) {
       console.error("상세 정보 조회 실패:", error);
-      // 사용자에게 에러 메시지 표시
     } finally {
       setLoadingDetails(false);
     }
@@ -220,88 +256,86 @@ function List({
 
   const renderFilterDropdowns = () => (
     <div className="filter-dropdowns">
-      <div className="dropdown-container search-container">
-        <div className="search-input-wrapper">
-          <Search size={16} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search by Patient ID or Name"
-            value={searchInputValue}
-            onChange={(e) => setSearchInputValue(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                onSearch(e.target.value);
-              }
-            }}
-            className="patient-search-input"
-          />
-        </div>
-      </div>
-
-      {Object.entries(filterOptions).map(([filterType, { label, options }]) => (
-        <div key={filterType} className="dropdown-container">
-          <button
-            className="dropdown-trigger"
-            onClick={() => toggleDropdown(filterType)}
-          >
-            {selectedFilters[filterType]
-              ? options.find((opt) => opt.value === selectedFilters[filterType])
-                  ?.label
-              : label}
-            <ChevronDown
-              size={16}
-              className={`dropdown-arrow ${
-                openDropdown === filterType ? "open" : ""
-              }`}
+      <div className="filters-left">
+        <div className="dropdown-container search-container">
+          <div className="search-input-wrapper">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by Patient ID or Name"
+              value={searchInputValue}
+              onChange={(e) => setSearchInputValue(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  onSearch(e.target.value);
+                }
+              }}
+              className="patient-search-input"
             />
-          </button>
-          {openDropdown === filterType && (
-            <div className="dropdown-content">
-              {options.map((option) => (
-                <div
-                  key={option.value}
-                  className={`dropdown-item ${
-                    selectedFilters[filterType] === option.value
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => handleFilterSelect(filterType, option.value)}
-                >
-                  {option.label}
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
-      ))}
-      <button
-        className="reset-filters-button"
-        onClick={resetAllFilters}
-        title="Reset Filters"
-      >
-        <RotateCcw size={18} />
-      </button>
+
+        {Object.entries(filterOptions).map(
+          ([filterType, { label, options }]) => (
+            <div key={filterType} className="dropdown-container">
+              <button
+                className="dropdown-trigger"
+                onClick={() => toggleDropdown(filterType)}
+              >
+                {selectedFilters[filterType]
+                  ? options.find(
+                      (opt) => opt.value === selectedFilters[filterType]
+                    )?.label
+                  : label}
+                <ChevronDown
+                  size={16}
+                  className={`dropdown-arrow ${
+                    openDropdown === filterType ? "open" : ""
+                  }`}
+                />
+              </button>
+              {openDropdown === filterType && (
+                <div className="dropdown-content">
+                  {options.map((option) => (
+                    <div
+                      key={option.value}
+                      className={`dropdown-item ${
+                        selectedFilters[filterType] === option.value
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleFilterSelect(filterType, option.value)
+                      }
+                    >
+                      {option.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        )}
+        <button
+          className="reset-filters-button"
+          onClick={resetAllFilters}
+          title="Reset Filters"
+        >
+          <RotateCcw size={18} />
+        </button>
+      </div>
+      <div className="total-count-filter">
+        (총 {(totalElements || 0).toLocaleString()}명)
+      </div>
     </div>
   );
 
   return (
     <div className="page-wrapper">
-      <div className="breadcrumb">
-        <a href="/">Home</a>
-      </div>
-
-      <div className="page-header">
-        <h1 className="page-title">
-          <span className="breadcrumb-separator">&lt;</span>
-          응급실 환자 리스트
-        </h1>
-        <span className="total-count">(총 {patients.length}명)</span>
-      </div>
-
       <div className="content-area">
+        {renderLocationTabs()}
         <div className="table-container">
           {renderFilterDropdowns()}
-
           <table>
             <thead>
               <tr>
@@ -365,7 +399,12 @@ function List({
             <tbody>
               {patients.length > 0 ? (
                 patients.map((patient) => (
-                  <tr key={patient.subjectId}>
+                  <tr
+                    key={patient.subjectId}
+                    style={{ opacity: loading ? 0.5 : 1 }}
+                  >
+                    {" "}
+                    {/* loading 상태일 때 opacity 조정 */}
                     <td>{patient.subjectId}</td>
                     <td>{patient.icd}</td>
                     <td>{patient.name}</td>
