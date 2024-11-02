@@ -78,10 +78,10 @@ const Dashboard = ({ loading }) => {
        }]
      },
      distribution: {
-       labels: ['ICU', 'Ward', 'Discharge'],
+       labels: ['ICU', '일반병동', '퇴원'],  //글자 수정
        datasets: [{
          data: [30, 25, 35],
-         backgroundColor: ['#2563eb', '#60a5fa', '#93c5fd']
+         backgroundColor: ['#3b82f6', '#22c55e', '#f97316']  // 색 변경 ICU(파),일반(초),퇴원(주)
        }]
      }
    }
