@@ -10,21 +10,32 @@
 }
 
 .admin-sidebar-header {
-  padding-bottom: 2rem;
+  padding-bottom: 1.2rem;  /*크기 줄임 */
   border-bottom: 1px solid var(--border-color);
 }
 
 .admin-sidebar-header h2 {
   color: var(--primary-color);
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+/* 로그아웃 아이콘 크기 조정 */
+.admin-sidebar .logout {
+  width: 12px;  /* 67% → 100% 비율 고려하여 축소 */
+  height: 12px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  margin-left: 6px;
 }
 
 .admin-user-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  font-size: 0.9rem;
 }
 
 .admin-user-name {
@@ -41,14 +52,15 @@
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .admin-nav-link {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 1rem;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem;
   color: var(--text-color);
   text-decoration: none;
   border-radius: 0.5rem;
@@ -67,6 +79,13 @@
 .admin-nav-link .admin-icon {
   width: 18px;
   height: 18px;
+}
+
+/* 사이드바 내 다른 아이콘들도 비율에 맞게 조정 */
+.admin-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {
