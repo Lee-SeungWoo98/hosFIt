@@ -1,5 +1,6 @@
 .admin-sidebar {
-  width: 280px;
+  width: 17vw;
+  max-width: 240px;
   background-color: var(--card-background);
   padding: 2rem;
   box-shadow: var(--shadow);
@@ -23,8 +24,8 @@
 
 /* 로그아웃 아이콘 크기 조정 */
 .admin-sidebar .logout {
-  width: 12px;  /* 67% → 100% 비율 고려하여 축소 */
-  height: 12px;
+  width: 16px;  /* 67% → 100% 비율 고려하여 축소 */
+  height: 16px;
   cursor: pointer;
   opacity: 0.8;
   transition: opacity 0.2s;
