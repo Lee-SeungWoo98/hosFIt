@@ -1,5 +1,10 @@
 /* Base styles and variables - 이미 :root는 전역이므로 그대로 유지 */
 :root {
+  --sidebar-width: 250px;
+  --header-height: 64px;
+  --primary-color: #2563eb;
+  --background-color: #f8fafc;
+  --card-background: #ffffff;
   --primary-color: #2563eb;
   --primary-dark: #1e40af;
   --primary-light: #60a5fa;
