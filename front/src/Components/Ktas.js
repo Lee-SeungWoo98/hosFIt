@@ -61,7 +61,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
    * KTAS 레이블 클릭 핸들러
    */
   const handleLabelClick = useCallback((entry) => {
-    if (entry.name !== "미사용") {
+    if (onTASClick && typeof onTASClick === 'function') {
       onTASClick(entry);
     }
   }, [onTASClick]);

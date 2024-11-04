@@ -50,4 +50,97 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
         @Param("pain") Long pain,
         Pageable pageable
     );
+    
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+            "p.pregnancystatus, p.phonenumber, p.residentnum, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.TAS, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
+            "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
+            "FROM patient p " +
+            "JOIN visit v ON p.subjectid = v.subjectid " +
+            "JOIN vitalsigns vs ON v.stayid = vs.stayid " +
+            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
+            "WHERE p.subjectid = :subjectId", nativeQuery = true)
+    List<PatientProjection> findPatientDataBySubjectId(@Param("subjectId") Long subjectId);
+    //오름차순 
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+            "p.pregnancystatus, p.phonenumber, p.residentnum, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.TAS, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
+            "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
+            "FROM patient p " +
+            "JOIN visit v ON p.subjectid = v.subjectid " +
+            "JOIN vitalsigns vs ON v.stayid = vs.stayid " +
+            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
+            "WHERE p.subjectid = :subjectId " +
+            "ORDER BY v.visitdate ASC", nativeQuery = true)
+    List<PatientProjection> findPatientDataBySubjectIdOrderByVisitDateAsc(@Param("subjectId") Long subjectId);
+
+    // 내림차순 정렬 쿼리
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+            "p.pregnancystatus, p.phonenumber, p.residentnum, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.TAS, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
+            "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
+            "FROM patient p " +
+            "JOIN visit v ON p.subjectid = v.subjectid " +
+            "JOIN vitalsigns vs ON v.stayid = vs.stayid " +
+            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
+            "WHERE p.subjectid = :subjectId " +
+            "ORDER BY v.visitdate DESC", nativeQuery = true)
+    List<PatientProjection> findPatientDataBySubjectIdOrderByVisitDateDesc(@Param("subjectId") Long subjectId);
+    
+   
+   // bystat 정렬 
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+            "p.pregnancystatus, p.phonenumber, p.residentnum, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.TAS, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
+            "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
+            "FROM patient p " +
+            "JOIN visit v ON p.subjectid = v.subjectid " +
+            "JOIN vitalsigns vs ON v.stayid = vs.stayid " +
+            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
+            "WHERE (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%')) " +
+            "AND (:gender IS NULL OR p.gender = :gender) " +
+            "AND (:TAS IS NULL OR v.TAS = :TAS) " +
+            "AND (:pain IS NULL OR v.pain = :pain) " +
+            "AND v.staystatus = 1 " +
+            "ORDER BY v.visitdate ASC", 
+            nativeQuery = true)
+    List<PatientProjection> findPatientsByStaystatusOrderByVisitDateAsc(
+        @Param("name") String name,
+        @Param("gender") Long gender,
+        @Param("TAS") Long TAS,
+        @Param("pain") Long pain,
+        Pageable pageable
+    );
+
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+            "p.pregnancystatus, p.phonenumber, p.residentnum, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.TAS, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
+            "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
+            "FROM patient p " +
+            "JOIN visit v ON p.subjectid = v.subjectid " +
+            "JOIN vitalsigns vs ON v.stayid = vs.stayid " +
+            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
+            "WHERE (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%')) " +
+            "AND (:gender IS NULL OR p.gender = :gender) " +
+            "AND (:TAS IS NULL OR v.TAS = :TAS) " +
+            "AND (:pain IS NULL OR v.pain = :pain) " +
+            "AND v.staystatus = 1 " +
+            "ORDER BY v.visitdate DESC", 
+            nativeQuery = true)
+    List<PatientProjection> findPatientsByStaystatusOrderByVisitDateDesc(
+        @Param("name") String name,
+        @Param("gender") Long gender,
+        @Param("TAS") Long TAS,
+        @Param("pain") Long pain,
+        Pageable pageable
+    );
+    
+    
+    
 }
+

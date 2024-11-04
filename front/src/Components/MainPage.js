@@ -159,8 +159,8 @@ function MainPage({
     return (
       <List
         searchTerm={searchTerm}
-        allPatients={allPatients}
-        patients={patients}
+        allPatients={allPatients}    
+        patients={patients}          
         ktasFilter={ktasFilter}
         onFilteredPatientsUpdate={onFilteredPatientsUpdate}
         labTests={labTests}
