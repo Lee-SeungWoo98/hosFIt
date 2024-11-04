@@ -7,7 +7,9 @@
 
 .admin-chart-card {
   background-color: var(--card-background);
-  padding: 1.5rem;
+  width: 45vw;  /* 화면 너비의 45% */
+  max-width: 700px; /* 최대 너비를 제한 */
+  padding: 1vw;  /* 패딩을 화면 비율에 맞춰 조정 */
   border-radius: 1rem;
   box-shadow: var(--shadow);
 }
