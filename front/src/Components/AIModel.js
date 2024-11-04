@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Save, Download, AlertTriangle, Info, RotateCw } from 'lucide-react';
+import { Save, Download, AlertTriangle, RotateCw } from 'lucide-react';
+import ScoreSettings from './ScoreSettings'; // 새로운 점수 설정 컴포넌트 경로 및 이름 수정
 import './styles/AIModel.css';
 
 const AIModel = ({ showNotification }) => {
-  const [scores, setScores] = useState({
-    icu: 75,
-    ward: 45,
-    discharge: 25,
-  });
   const [selectedPeriod, setSelectedPeriod] = useState("7");
 
   // 성능 데이터
@@ -53,19 +49,12 @@ const AIModel = ({ showNotification }) => {
     }
   ];
 
-  const handleScoreChange = (type, value) => {
-    setScores(prev => ({
-      ...prev,
-      [type]: parseInt(value) || ''
-    }));
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   const handleSaveSettings = () => {
     showNotification('설정이 저장되었습니다.', 'success');
-  };
-
-  const handleRefresh = () => {
-    window.location.reload();
   };
 
   const exportToCSV = () => {
@@ -80,7 +69,7 @@ const AIModel = ({ showNotification }) => {
         item.recall,
         item.changes,
         item.status
-      ].join(','))
+      ].join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -112,67 +101,10 @@ const AIModel = ({ showNotification }) => {
         </p>
       </div>
 
-      <section className="score-settings card">
-        <div className="section-header">
-          <h2>입실/퇴원 기준 점수 설정</h2>
-          <span className="last-modified">마지막 수정: 2024-10-24 15:30</span>
-        </div>
-
-        <div className="settings-grid">
-          <div className="settings-item">
-            <label>ICU 입실 기준점수</label>
-            <div className="input-wrapper">
-              <input
-                type="number"
-                value={scores.icu}
-                onChange={(e) => handleScoreChange('icu', e.target.value)}
-              />
-              <span className="unit">점</span>
-            </div>
-            <div className="input-hint">
-              <Info size={14} />
-              <span>75점 이상시 ICU 입실 권장</span>
-            </div>
-          </div>
-
-          <div className="settings-item">
-            <label>일반병동 입실 기준점수</label>
-            <div className="input-wrapper">
-              <input
-                type="number"
-                value={scores.ward}
-                onChange={(e) => handleScoreChange('ward', e.target.value)}
-              />
-              <span className="unit">점</span>
-            </div>
-            <div className="input-hint">
-              <Info size={14} />
-              <span>45~74점시 병동 입실 권장</span>
-            </div>
-          </div>
-
-          <div className="settings-item">
-            <label>퇴원 기준점수</label>
-            <div className="input-wrapper">
-              <input
-                type="number"
-                value={scores.discharge}
-                onChange={(e) => handleScoreChange('discharge', e.target.value)}
-              />
-              <span className="unit">점</span>
-            </div>
-            <div className="input-hint">
-              <Info size={14} />
-              <span>25점 이하시 퇴원 권장</span>
-            </div>
-          </div>
-        </div>
-
-        <button className="save-btn" onClick={handleSaveSettings}>
-          <Save size={16} />
-          설정 저장
-        </button>
-      </section>
+      {/* ScoreSettings 컴포넌트를 사용하여 점수 설정 섹션 표시 */}
+      <div className="score-settings-container mb-6"> 
+      <ScoreSettings onSave={handleSaveSettings} />
+      </div>
 
       <section className="model-section card">
         <div className="section-header">
