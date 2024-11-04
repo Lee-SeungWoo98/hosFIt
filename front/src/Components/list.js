@@ -221,17 +221,23 @@ function List({
         gender: "",
         tas: "",
         painScore: "",
-        sort: INITIAL_SORT,
+        sort: {
+          key: "visitDate",
+          direction: "desc"
+        }
       };
+      
+      // 모든 상태 초기화
       setSelectedFilters(resetFilters);
       setSortConfig(INITIAL_SORT);
-      setSearchInputValue(""); // 검색어도 초기화
-      onSearch(""); // 검색어 초기화를 서버에 반영
-
-      // 모든 필터 조건을 제거하고 초기 상태로
-      await onFilteredPatientsUpdate({
-        sort: INITIAL_SORT,
-      });
+      setSearchInputValue("");
+      
+      // 검색어 리셋
+      onSearch("");
+      
+      // 서버에 리셋된 필터 적용
+      await onFilteredPatientsUpdate(0, resetFilters);
+      
     } finally {
       setIsUpdating(false);
     }

@@ -28,9 +28,9 @@ import "./Components/SearchBar.css";
 const API_ENDPOINTS = {
   CHECK_SESSION: "http://localhost:8082/boot/member/checkSession",
   LOGOUT: "http://localhost:8082/boot/member/logout",
-  PATIENTS: "http://localhost:8082/boot/patients/byStaystatus",
+  PATIENTS: "http://localhost:8082/boot/patients/list",
   SEARCH_PATIENTS: "http://localhost:8082/boot/patients/search",  
-  BEDS: "http://localhost:8082/boot/patients/bybed",
+  BEDS: "http://localhost:8082/boot/patients/statistics/tas",
   PREDICTION: "http://localhost:8082/boot/patients/prediction",
   LAB_TESTS: "http://localhost:8082/boot/labtests",
   VISITS: "http://localhost:8082/boot/patients"
@@ -134,47 +134,37 @@ function App() {
       setLoading(true);
       const pageNumber = typeof page === 'object' ? 0 : page;
       
-      if (pageNumber < 0 || (totalPages > 0 && pageNumber >= totalPages)) {
-        return;
-      }
-  
       let url = `${API_ENDPOINTS.PATIENTS}?page=${pageNumber}`;
   
-      const params = [];
-      
       // 검색어 추가
-      if (searchTerm?.trim()) {
-        params.push(`name=${encodeURIComponent(searchTerm.trim())}`);
-      }
-  
-      // 정렬 조건 추가
-      if (currentFilters?.sort?.key) {
-        params.push(`sort=${currentFilters.sort.key}`);
-        params.push(`direction=${currentFilters.sort.direction || 'desc'}`);
+      if (searchTerm?.trim() || currentFilters.searchTerm) {
+        url += `&name=${encodeURIComponent(searchTerm?.trim() || currentFilters.searchTerm)}`;
       }
   
       // 필터 조건 추가
       if (currentFilters?.gender != null && currentFilters.gender !== '') {
-        params.push(`gender=${currentFilters.gender}`);
+        url += `&gender=${currentFilters.gender}`;
       }
   
-      if (currentFilters?.tas) {
-        params.push(`tas=${currentFilters.tas}`);
+      if (currentFilters?.tas && currentFilters.tas !== '') {
+        url += `&tas=${currentFilters.tas}`;
       }
   
-      if (currentFilters?.painScore) {
-        params.push(`pain=${currentFilters.painScore}`);
+      if (currentFilters?.painScore && currentFilters.painScore !== '') {
+        url += `&pain=${currentFilters.painScore}`;
       }
   
-      // URL 생성
-      if (params.length > 0) {
-        url += '&' + params.join('&');
+      // 정렬 조건은 항상 추가
+      if (currentFilters?.sort?.key) {
+        url += `&sort=${currentFilters.sort.key}&direction=${currentFilters.sort.direction || 'desc'}`;
       }
+  
+      console.log('Request URL:', url);  // 디버깅용
   
       const response = await axios.get(url);
   
-      if (response.data && response.data.patients) {
-        const formattedData = response.data.patients.map(formatPatientData).filter(Boolean);
+      if (response.data) {
+        const formattedData = response.data.patients?.map(formatPatientData).filter(Boolean) || [];
         setFilters(currentFilters);
         setPatients(formattedData);
         setFilteredPatients(formattedData);
@@ -182,6 +172,11 @@ function App() {
         setTotalElements(response.data.totalElements || formattedData.length);
         setCurrentPage(pageNumber);
         setError(null);
+      } else {
+        setPatients([]);
+        setFilteredPatients([]);
+        setTotalPages(1);
+        setTotalElements(0);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -266,26 +261,53 @@ function App() {
    * TAS 클릭 핸들러
    */
   const handleTASClick = useCallback(async (entry) => {
-    if (entry.name === "미사용") {
-      setKtasFilter([]);
-      const newFilters = { ...filters, tas: '' };
-      setFilters(newFilters);
-      await fetchFilteredData(0, newFilters);
-      return;
-    }
-  
-    const level = parseInt(entry.name.split(" ")[1]);
+    console.log("KTAS Click Entry:", entry);  // 디버깅용
     
-    setKtasFilter(prev => {
-      const newFilter = prev.length === 1 && prev[0] === level ? [] : [level];
+    try {
+      let level;
+      let newFilter = [];
+  
+      // "미사용" 클릭 또는 필터 초기화
+      if (entry.name === "미사용") {
+        setKtasFilter([]);
+        const newFilters = { ...filters, tas: '' };
+        setFilters(newFilters);
+        await fetchFilteredData(0, newFilters);
+        return;
+      }
+  
+      // KTAS 레벨 추출
+      if (typeof entry.name === 'string' && entry.name.includes('KTAS')) {
+        level = parseInt(entry.name.split(" ")[1]);
+      } else if (typeof entry.value === 'number') {
+        level = entry.value;
+      } else {
+        console.error("Invalid KTAS entry:", entry);
+        return;
+      }
+  
+      // 현재 필터와 비교하여 토글
+      const currentTas = filters.tas ? parseInt(filters.tas) : null;
+      const newTas = currentTas === level ? '' : level.toString();
+  
+      // 상태 업데이트
+      if (newTas) {
+        newFilter = [level];
+      }
+      
+      setKtasFilter(newFilter);
+      
       const newFilters = {
         ...filters,
-        tas: newFilter.length ? level.toString() : ''
+        tas: newTas
       };
+      
       setFilters(newFilters);
-      fetchFilteredData(0, newFilters);
-      return newFilter;
-    });
+      await fetchFilteredData(0, newFilters);
+  
+    } catch (error) {
+      console.error("KTAS 필터링 오류:", error);
+    }
   }, [filters, fetchFilteredData]);
 
   /**
@@ -293,12 +315,14 @@ function App() {
    */
   const handleSearch = useCallback(async (term) => {
     setSearchTerm(term);
-    if (term?.trim()) {
-      try {
-        await fetchFilteredData(0, filters);
-      } catch (error) {
-        console.error('Search failed:', error);
-      }
+    try {
+      // 검색어가 없을 때도 fetchFilteredData 호출
+      await fetchFilteredData(0, {
+        ...filters,
+        searchTerm: term?.trim() || ''  // 검색어 추가
+      });
+    } catch (error) {
+      console.error('Search failed:', error);
     }
   }, [filters, fetchFilteredData]);
 
@@ -410,29 +434,13 @@ function App() {
     checkSession();
   }, [checkSession]);
 
-  // 데이터 자동 새로고침
-  const fetchAllData = useCallback(async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      setLoading(true);
-      
-      // byStaystatus 요청만 수행하고, 나머지는 필요할 때만 호출하도록 변경
-      await fetchFilteredData(currentPage);
-  
-    } catch (error) {
-      console.error("데이터 로드 중 오류:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, currentPage, fetchFilteredData]); 
-  
   useEffect(() => {
-    if (!isAuthenticated) return;
-    let isSubscribed = true;  // cleanup을 위한 flag
+    let isSubscribed = true;
+    let timeoutId = null;
   
     const fetchData = async () => {
-      if (!isSubscribed) return;
+      if (!isAuthenticated || !isSubscribed) return;
+  
       try {
         setLoading(true);
         await Promise.all([
@@ -449,14 +457,22 @@ function App() {
       }
     };
   
+    // 초기 데이터 로드
     fetchData();
-    const intervalId = setInterval(fetchData, 600000);
   
+    // 10분마다 자동 새로고침
+    if (isAuthenticated) {
+      timeoutId = setInterval(fetchData, 600000);
+    }
+  
+    // cleanup 함수
     return () => {
       isSubscribed = false;
-      clearInterval(intervalId);
+      if (timeoutId) {
+        clearInterval(timeoutId);
+      }
     };
-  }, [isAuthenticated, fetchFilteredData, fetchKtasData, fetchPredictionData]);
+  }, [isAuthenticated, currentPage, fetchFilteredData, fetchKtasData, fetchPredictionData]);
 
   // =========== 라우팅 및 렌더링 ===========
   return (
