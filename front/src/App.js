@@ -1,7 +1,7 @@
 /**
  * App.js
- * 메인 애플리케이션 컴포넌트
- * 데이터 상태 관리 및 API 통신을 담당
+ * 환자 관리 애플리케이션의 메인 컴포넌트
+ * 환자 목록 조회, 상세 정보 조회, 배치 결정 등의 기능 제공
  */
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -29,6 +29,7 @@ const API_ENDPOINTS = {
   CHECK_SESSION: "http://localhost:8082/boot/member/checkSession",
   LOGOUT: "http://localhost:8082/boot/member/logout",
   PATIENTS: "http://localhost:8082/boot/patients/byStaystatus",
+  SEARCH_PATIENTS: "http://localhost:8082/boot/patients/search",  
   BEDS: "http://localhost:8082/boot/patients/bybed",
   PREDICTION: "http://localhost:8082/boot/patients/prediction",
   LAB_TESTS: "http://localhost:8082/boot/labtests",
@@ -44,6 +45,50 @@ const INITIAL_FILTERS = {
     key: 'visitDate',
     direction: 'desc'
   }
+};
+
+/**
+ * 환자 데이터 포맷팅 함수
+ * 서버에서 받은 데이터를 프론트엔드에서 사용할 형식으로 변환
+ */
+const formatPatientData = (patient) => {
+  if (!patient) return null;
+
+  // ICD 디버깅 로그
+  console.log('Patient data for ICD:', {
+    patientICD: patient.icd,
+    visitICD: patient.visits?.[0]?.icd,
+    visitPatientICD: patient.visits?.[0]?.patient?.icd
+  });
+
+  // ICD 결정 로직
+  let icd = '-';
+  if (patient.icd) {
+    icd = patient.icd;
+  } else if (patient.visits?.[0]?.icd) {
+    icd = patient.visits[0].icd;
+  } else if (patient.visits?.[0]?.patient?.icd) {
+    icd = patient.visits[0].patient.icd;
+  }
+
+  // 날짜 포맷팅 함수
+  const formatVisitDate = (dateArray) => {
+    if (!Array.isArray(dateArray) || dateArray.length < 5) return null;
+    const [year, month, day, hour, minute] = dateArray;
+    return new Date(year, month - 1, day, hour, minute);
+  };
+
+  return {
+    ...patient,
+    gender: patient?.gender ?? 'N/A',
+    name: patient?.name ?? 'Unknown',
+    icd: icd,
+    visits: patient.visits?.map(visit => ({
+      ...visit,
+      visitDate: formatVisitDate(visit.visitDate),
+      icd: visit.icd || icd || '-'
+    }))
+  };
 };
 
 function App() {
@@ -86,86 +131,72 @@ function App() {
    */
   const fetchFilteredData = useCallback(async (page = 0, currentFilters = filters) => {
     try {
-      const queryParams = new URLSearchParams({
-        page,
-        sort: currentFilters.sort?.key || 'visitDate',
-        direction: currentFilters.sort?.direction || 'desc',
-        ...(searchTerm && { name: searchTerm }),
-        ...(currentFilters.gender && { gender: currentFilters.gender }),
-        ...(currentFilters.tas && { tas: currentFilters.tas }),
-        ...(currentFilters.painScore && { painScore: currentFilters.painScore })
-      });
-
-      const result = await axios.get(
-        `${API_ENDPOINTS.PATIENTS}?${queryParams}`
-      );
-
-      if (Array.isArray(result.data.patients)) {
-        handleFetchDataSuccess(result.data);
+      setLoading(true);
+      const pageNumber = typeof page === 'object' ? 0 : page;
+      
+      if (pageNumber < 0 || (totalPages > 0 && pageNumber >= totalPages)) {
+        return;
+      }
+  
+      let url = `${API_ENDPOINTS.PATIENTS}?page=${pageNumber}`;
+  
+      const params = [];
+      
+      // 검색어 추가
+      if (searchTerm?.trim()) {
+        params.push(`name=${encodeURIComponent(searchTerm.trim())}`);
+      }
+  
+      // 정렬 조건 추가
+      if (currentFilters?.sort?.key) {
+        params.push(`sort=${currentFilters.sort.key}`);
+        params.push(`direction=${currentFilters.sort.direction || 'desc'}`);
+      }
+  
+      // 필터 조건 추가
+      if (currentFilters?.gender != null && currentFilters.gender !== '') {
+        params.push(`gender=${currentFilters.gender}`);
+      }
+  
+      if (currentFilters?.tas) {
+        params.push(`tas=${currentFilters.tas}`);
+      }
+  
+      if (currentFilters?.painScore) {
+        params.push(`pain=${currentFilters.painScore}`);
+      }
+  
+      // URL 생성
+      if (params.length > 0) {
+        url += '&' + params.join('&');
+      }
+  
+      const response = await axios.get(url);
+  
+      if (response.data && response.data.patients) {
+        const formattedData = response.data.patients.map(formatPatientData).filter(Boolean);
+        setFilters(currentFilters);
+        setPatients(formattedData);
+        setFilteredPatients(formattedData);
+        setTotalPages(response.data.totalPages || 1);
+        setTotalElements(response.data.totalElements || formattedData.length);
+        setCurrentPage(pageNumber);
+        setError(null);
       }
     } catch (error) {
-      handleFetchDataError(error);
+      console.error('Error fetching data:', error);
+      setError(error.message);
+      setPatients([]);
+      setFilteredPatients([]);
+    } finally {
+      setLoading(false);
     }
-  }, [searchTerm, filters]);
-
-  /**
- * 환자 데이터 포맷팅 함수
- * 서버에서 받은 환자 데이터를 프론트엔드에서 사용할 수 있는 형식으로 변환
- */
-const formatPatientData = (patient) => {
-  if (!patient) return null;
-
-  // ICD 결정
-  let icd = '-';
-  if (patient.icd) {
-    icd = patient.icd;
-  } else if (patient.visits?.[0]?.icd) {
-    icd = patient.visits[0].icd;
-  } else if (patient.visits?.[0]?.patient?.icd) {
-    icd = patient.visits[0].patient.icd;
-  }
-
-  return {
-    ...patient,
-    gender: patient?.gender ?? 'N/A',
-    name: patient?.name ?? 'Unknown',
-    icd: icd,
-    visits: patient.visits?.map(visit => ({
-      ...visit,
-      icd: visit.icd || icd || visit.patient?.icd || '-'
-    }))
-  };
-};
-
-  /**
-   * 데이터 조회 성공 처리
-   */
-  const handleFetchDataSuccess = useCallback((data) => {
-    const updatedPatients = data.patients
-      .map(formatPatientData)
-      .filter(Boolean);
-    
-    setPatients(updatedPatients);
-    setFilteredPatients(updatedPatients);
-    setTotalPages(data.totalPages);
-    setTotalElements(data.totalElements);
-    setError(null);
-  }, []);
-
-  /**
-   * 데이터 조회 실패 처리
-   */
-  const handleFetchDataError = useCallback((error) => {
-    setError("데이터 로드 실패:" + error.message);
-    setPatients([]);
-    setFilteredPatients([]);
-    setTotalPages(1);
-  }, []);
-
-  /**
+  }, [searchTerm, filters, totalPages]);
+  
+   /**
    * KTAS 데이터 조회
    */
-  const fetchKtasData = useCallback(async () => {
+   const fetchKtasData = useCallback(async () => {
     try {
       const result = await axios.get(API_ENDPOINTS.BEDS);
       const valueArray = Object.values(result.data);
@@ -201,91 +232,75 @@ const formatPatientData = (patient) => {
     }
   }, []);
 
+  /**
+   * 데이터 조회 성공 처리
+   */
+  const handleFetchDataSuccess = useCallback((data) => {
+    const updatedPatients = data.patients
+      .map(formatPatientData)
+      .filter(Boolean);
+    
+    setPatients(updatedPatients);
+    setFilteredPatients(updatedPatients);
+    setTotalPages(data.totalPages);
+    setTotalElements(data.totalElements);
+    setError(null);
+  }, []);
+
+  /**
+   * 데이터 조회 실패 처리
+   */
+  const handleFetchDataError = useCallback((error) => {
+    setError("데이터 로드 실패:" + error.message);
+    setPatients([]);
+    setFilteredPatients([]);
+    setTotalPages(1);
+  }, []);
+
+ 
+
+  
+
   // =========== 이벤트 핸들러 ===========
-  const handleFilterUpdate = useCallback(async (newFilters) => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        page: 0,
-      });
-  
-      // 검색어 추가
-      if (searchTerm?.trim()) {
-        queryParams.append('name', searchTerm.trim());
-      }
-  
-      // 정렬 조건 추가
-      if (newFilters.sort?.key) {
-        queryParams.append('sort', newFilters.sort.key);
-        queryParams.append('direction', newFilters.sort.direction || 'desc');
-      }
-  
-      // 필터 조건 추가
-      if (newFilters.gender) {
-        queryParams.append('gender', newFilters.gender);
-      }
-      if (newFilters.tas) {
-        queryParams.append('TAS', newFilters.tas);
-      }
-      if (newFilters.painScore) {
-        queryParams.append('painScore', newFilters.painScore);
-      }
-  
-      const response = await axios.get(
-        `${API_ENDPOINTS.PATIENTS}/byStaystatus?${queryParams.toString()}`
-      );
-  
-      if (response.data.patients) {
-        // 필터 상태 업데이트
-        setFilters(newFilters);
-        
-        // 데이터 업데이트
-        const formattedData = response.data.patients.map(formatPatientData).filter(Boolean);
-        setPatients(formattedData);
-        setFilteredPatients(formattedData);
-        setTotalPages(response.data.totalPages);
-        setTotalElements(response.data.totalElements);
-        setCurrentPage(0);
-      }
-    } catch (error) {
-      console.error('필터링 실패:', error);
-      setError("데이터 로드 실패: " + error.message);
-    } finally {
-      setLoading(false);
+  /**
+   * TAS 클릭 핸들러
+   */
+  const handleTASClick = useCallback(async (entry) => {
+    if (entry.name === "미사용") {
+      setKtasFilter([]);
+      const newFilters = { ...filters, tas: '' };
+      setFilters(newFilters);
+      await fetchFilteredData(0, newFilters);
+      return;
     }
-  }, [searchTerm, formatPatientData]);
-
-/**
- * TAS 클릭 핸들러
- */
-const handleTASClick = useCallback(async (entry) => {
-  if (entry.name === "미사용") {
-    setKtasFilter([]);
-    await handleFilterUpdate({ ...filters, tas: '' });
-    return;
-  }
-
-  const level = parseInt(entry.name.split(" ")[1]);
   
-  setKtasFilter(prev => {
-    const newFilter = prev.length === 1 && prev[0] === level ? [] : [level];
-    const newFilters = {
-      ...filters,
-      tas: newFilter.length ? level.toString() : ''
-    };
+    const level = parseInt(entry.name.split(" ")[1]);
+    
+    setKtasFilter(prev => {
+      const newFilter = prev.length === 1 && prev[0] === level ? [] : [level];
+      const newFilters = {
+        ...filters,
+        tas: newFilter.length ? level.toString() : ''
+      };
+      setFilters(newFilters);
+      fetchFilteredData(0, newFilters);
+      return newFilter;
+    });
+  }, [filters, fetchFilteredData]);
 
-    handleFilterUpdate(newFilters);
-    return newFilter;
-  });
-}, [filters, handleFilterUpdate]);
-
-/**
- * 검색 핸들러
- */
-const handleSearch = useCallback(async (term) => {
-  setSearchTerm(term);
-  await handleFilterUpdate({ ...filters });
-}, [filters, handleFilterUpdate]);
+  /**
+   * 검색 핸들러
+   */
+  const handleSearch = useCallback(async (term) => {
+    setSearchTerm(term);
+    if (term?.trim()) {
+      try {
+        await fetchFilteredData(0, filters);
+      } catch (error) {
+        console.error('Search failed:', error);
+      }
+    }
+  }, [filters, fetchFilteredData]);
 
   /**
    * 페이지 변경 핸들러
@@ -297,7 +312,7 @@ const handleSearch = useCallback(async (term) => {
     }
   }, [totalPages, fetchFilteredData]);
 
- // =========== 인증 관련 함수 ===========
+  // =========== 인증 관련 함수 ===========
   /**
    * 세션 체크 함수
    */
@@ -383,7 +398,7 @@ const handleSearch = useCallback(async (term) => {
       setVisitInfo(result.data);
       return result.data;
     } catch (error) {
-      console.error("Vital signs 데이터 로드 실패:", error);
+      console.error("방문 정보 데이터 로드 실패:", error);
       setVisitInfo(null);
       return null;
     }
@@ -396,27 +411,54 @@ const handleSearch = useCallback(async (term) => {
   }, [checkSession]);
 
   // 데이터 자동 새로고침
-  useEffect(() => {
-    if (isAuthenticated) {
-      const fetchAllData = async () => {
-        try {
-          await Promise.all([
-            fetchFilteredData(currentPage),
-            fetchKtasData(),
-            fetchPredictionData()
-          ]);
-        } catch (error) {
-          console.error("데이터 로드 중 오류:", error);
-        }
-      };
-
-      fetchAllData();
-      const intervalId = setInterval(fetchAllData, 600000); // 10분마다 갱신
-      return () => clearInterval(intervalId);
+  const fetchAllData = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      setLoading(true);
+      
+      // byStaystatus 요청만 수행하고, 나머지는 필요할 때만 호출하도록 변경
+      await fetchFilteredData(currentPage);
+  
+    } catch (error) {
+      console.error("데이터 로드 중 오류:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, currentPage, fetchFilteredData, fetchKtasData, fetchPredictionData]);
+  }, [isAuthenticated, currentPage, fetchFilteredData]); 
+  
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let isSubscribed = true;  // cleanup을 위한 flag
+  
+    const fetchData = async () => {
+      if (!isSubscribed) return;
+      try {
+        setLoading(true);
+        await Promise.all([
+          fetchFilteredData(currentPage),
+          fetchKtasData(),
+          fetchPredictionData()
+        ]);
+      } catch (error) {
+        console.error("데이터 로드 중 오류:", error);
+      } finally {
+        if (isSubscribed) {
+          setLoading(false);
+        }
+      }
+    };
+  
+    fetchData();
+    const intervalId = setInterval(fetchData, 600000);
+  
+    return () => {
+      isSubscribed = false;
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated, fetchFilteredData, fetchKtasData, fetchPredictionData]);
 
-  // =========== 렌더링 ===========
+  // =========== 라우팅 및 렌더링 ===========
   return (
     <Router>
       <Routes>
@@ -446,7 +488,7 @@ const handleSearch = useCallback(async (term) => {
                       error={error}
                       handleSearch={handleSearch}
                       onTASClick={handleTASClick}
-                      onFilteredPatientsUpdate={handleFilterUpdate}
+                      onFilteredPatientsUpdate={fetchFilteredData}
                       labTests={labTests}
                       visitInfo={visitInfo}
                       fetchLabTests={fetchLabTests}

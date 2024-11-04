@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Search,
 } from "lucide-react";
+import { debounce } from 'lodash';
 
 // =========== 상수 정의 ===========
 const SORT_DIRECTIONS = {
@@ -25,8 +26,8 @@ const FILTER_OPTIONS = {
     label: "Select Gender",
     options: [
       { value: "", label: "All" },
-      { value: "남", label: "남자" },
-      { value: "여", label: "여자" },
+      { value: 1, label: "남자" },
+      { value: 0, label: "여자" },
     ],
   },
   tas: {
@@ -34,7 +35,7 @@ const FILTER_OPTIONS = {
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 5 }, (_, i) => ({
-        value: String(i + 1),
+        value: i + 1,
         label: `Level ${i + 1}`,
       })),
     ],
@@ -44,12 +45,13 @@ const FILTER_OPTIONS = {
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 10 }, (_, i) => ({
-        value: String(i + 1),
+        value: i + 1,
         label: String(i + 1),
       })),
     ],
   },
 };
+
 
 const INITIAL_SORT = {
   key: "visitDate",
@@ -82,17 +84,25 @@ function List({
     tas: "",
     painScore: "",
   });
+  const memoizedPatients = useMemo(() => patients, [patients]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [displayedPatients, setDisplayedPatients] = useState(patients);
   const [activeTab, setActiveTab] = useState("all");
 
-  // =========== Effects ===========
-  // 환자 데이터 업데이트를 위한 effect
+  const debouncedSearch = useMemo(
+    () => debounce((value) => {
+      onSearch(value);
+    }, 500),
+    [onSearch]
+  );
+
+  // cleanup 함수 추가
   useEffect(() => {
-    if (!loading) {
-      setDisplayedPatients(patients);
-    }
-  }, [patients, loading]);
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  // =========== Effects ===========
 
   // 드롭다운 외부 클릭 감지
   useEffect(() => {
@@ -105,31 +115,26 @@ function List({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // =========== 메모이제이션 ===========
-  const memoizedPatients = useMemo(
-    () => displayedPatients,
-    [displayedPatients]
-  );
-
   /**
    * 날짜 포맷팅 함수
    */
   const formatDate = useCallback((date) => {
-    return new Date(date)
-      .toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .replace(/\. /g, ".")
-      .slice(0, -1);
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '-';
+    
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).replace(/\. /g, ".").slice(0, -1);
   }, []);
 
   /**
    * 시간 포맷팅 함수
    */
   const formatTime = useCallback((date) => {
-    return new Date(date).toLocaleTimeString("ko-KR", {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+    
+    return date.toLocaleTimeString("ko-KR", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -191,18 +196,20 @@ function List({
   const handleFilterSelect = useCallback(async (type, value) => {
     setIsUpdating(true);
     try {
+      const processedValue = value === "" ? "" : Number(value);
+      
       const newFilters = {
         ...selectedFilters,
-        [type]: value,
-        sort: sortConfig
+        [type]: processedValue
       };
       setSelectedFilters(newFilters);
-      await onFilteredPatientsUpdate(newFilters);
+      // 페이지 번호를 명시적으로 전달
+      await onFilteredPatientsUpdate(0, newFilters);
     } finally {
       setIsUpdating(false);
       setOpenDropdown(null);
     }
-  }, [selectedFilters, sortConfig, onFilteredPatientsUpdate]);
+  }, [selectedFilters, onFilteredPatientsUpdate]);
 
   /**
    * 필터 초기화 함수
@@ -301,10 +308,14 @@ function List({
                 type="text"
                 placeholder="Search by Patient ID or Name"
                 value={searchInputValue}
-                onChange={(e) => setSearchInputValue(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    onSearch(e.target.value);
+                onChange={(e) => {
+                  setSearchInputValue(e.target.value);
+                  debouncedSearch(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onSearch(searchInputValue);
                   }
                 }}
                 className="patient-search-input"
@@ -383,53 +394,150 @@ function List({
     ]
   );
 
-  /**
-   * 환자 목록 테이블 행 렌더링
-   */
-  const renderPatientRow = useCallback(
-    (patient) => (
-      <tr
-        key={patient.subjectId}
-        className="patient-row"
-        style={{
-          opacity: isUpdating ? 0.6 : 1,
-          transition: "opacity 0.3s ease",
-        }}
+  // 환자 행 렌더링 부분 수정
+const renderPatientRow = useCallback((patient) => (
+  <tr
+    key={patient.subjectId}
+    className="patient-row"
+    style={{
+      opacity: isUpdating ? 0.6 : 1,
+      transition: "opacity 0.3s ease",
+    }}
+  >
+    <td>{patient.subjectId}</td>
+    <td>{patient.icd || '-'}</td>
+    <td>{patient.name}</td>
+    <td>{patient.gender}</td>
+    <td>{patient.age}</td>
+    <td>
+      {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
+        <>
+          {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
+          <br />
+          <span>
+            {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
+          </span>
+        </>
+      ) : '-'}
+    </td>
+    <td>{patient.visits?.[0]?.pain || "-"}</td>
+    <td>{patient.visits?.[0]?.tas || "-"}</td>
+    <td>{patient.ai_tas || "-"}</td>
+    <td className="abnormal-count-cell">
+      {calculateAbnormalCount(patient.labTests, patient.gender)}건
+    </td>
+    <td>
+      <button
+        onClick={() => showPatientDetails(patient)}
+        className="details-button"
+        disabled={loadingDetails}
       >
-        <td>{patient.subjectId}</td>
-        <td>{patient.icd}</td>
-        <td>{patient.name}</td>
-        <td>{patient.gender}</td>
-        <td>{patient.age}</td>
-        <td>
-          {patient.visits?.length > 0 && (
-            <>
-              {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
-              <br />
-              <span>
-                {formatTime(
-                  patient.visits[patient.visits.length - 1].visitDate
-                )}
-              </span>
-            </>
-          )}
-        </td>
-        <td>{patient.visits?.[0]?.pain || "-"}</td>
-        <td>{patient.visits?.[0]?.tas || "-"}</td>
-        <td>{patient.ai_tas || "-"}</td>
-        <td>
-          <button
-            onClick={() => showPatientDetails(patient)}
-            className="details-button"
-            disabled={loadingDetails}
-          >
-            {loadingDetails ? "로딩 중..." : "상세 보기"}
-          </button>
-        </td>
-      </tr>
-    ),
-    [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails]
-  );
+        {loadingDetails ? "로딩 중..." : "상세 보기"}
+      </button>
+    </td>
+  </tr>
+), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails]);
+
+  const calculateAbnormalCount = useCallback((labTests, gender) => {
+    // console.log("Calculating abnormal count:", { labTests, gender });
+
+    if (!labTests) {
+      console.log("No labTests data");
+      return 0;
+    }
+
+    let abnormalCount = 0;
+
+    try {
+      // labTests 데이터 구조 확인
+      // console.log("labTests structure:", JSON.stringify(labTests, null, 2));
+
+      Object.entries(labTests).forEach(([category, tests]) => {
+        if (Array.isArray(tests) && tests.length > 0) {
+          tests.forEach((test) => {
+            Object.entries(test).forEach(([key, value]) => {
+              if (ranges[key] && value !== null) {
+                const isNormal = checkNormalRange(key, value, gender);
+                if (isNormal === false) {
+                  console.log("Abnormal found:", { key, value, gender });
+                  abnormalCount++;
+                }
+              }
+            });
+          });
+        }
+      });
+
+      // console.log("Final abnormal count:", abnormalCount);
+      return abnormalCount;
+    } catch (error) {
+      console.error("Error calculating abnormal count:", error);
+      return 0;
+    }
+  }, []);
+
+  const ranges = {
+    // Blood Levels
+    hemoglobin: { male: [13.5, 17.5], female: [12.0, 16.0] },
+    platelet_count: [150000, 450000],
+    wbc: [4000, 11000],
+    rbc: { male: [4.5, 5.9], female: [4.1, 5.1] },
+    sedimentation_rate: { male: [0, 15], female: [0, 20] },
+
+    // Electrolyte Levels
+    sodium: [135, 145],
+    potassium: [3.5, 5.0],
+    chloride: [96, 106],
+
+    // Enzymes & Metabolism
+    ck: [22, 198],
+    ckmb: [0, 25],
+    creatinine: [0.7, 1.3],
+    ggt: [8, 61],
+    glucose: [70, 100],
+    inrpt: [0.8, 1.2],
+    lactate: [0.5, 2.2],
+    ld: [140, 280],
+    lipase: [13, 60],
+    magnesium: [1.7, 2.2],
+    ntpro_bnp: [0, 125],
+    ddimer: [0, 500],
+
+    // Chemical Examinations & Enzymes
+    acetone: [0, 0],
+    alt: [7, 56],
+    albumin: [3.4, 5.4],
+    alkaline_phosphatase: [44, 147],
+    ammonia: [15, 45],
+    amylase: [28, 100],
+    ast: [8, 48],
+    beta_hydroxybutyrate: [0, 0.6],
+    bicarbonate: [22, 29],
+    bilirubin: [0.3, 1.2],
+    crp: [0, 3.0],
+    calcium: [8.6, 10.3],
+    co2: [23, 29],
+
+    // Blood Gas Analysis
+    po2: [80, 100],
+    ph: [7.35, 7.45],
+    pco2: [35, 45],
+  };
+
+  // 정상 범위 체크 함수
+  const checkNormalRange = (category, value, gender) => {
+    const range = ranges[category];
+    if (!range) return null;
+
+    const numValue = parseFloat(value);
+
+    if (range.male && range.female) {
+      const genderRange = gender === "남" ? range.male : range.female;
+      return numValue >= genderRange[0] && numValue <= genderRange[1];
+    }
+
+    return numValue >= range[0] && numValue <= range[1];
+  };
 
   // =========== 메인 렌더링 ===========
   return (
@@ -514,6 +622,7 @@ function List({
                   { key: "pain", label: "통증 점수" },
                   { key: "tas", label: "KTAS" },
                   { key: "ai_tas", label: "AI_TAS" },
+                  { key: "abnormal", label: "비정상" },
                 ].map(({ key, label }) => (
                   <th
                     key={key}
