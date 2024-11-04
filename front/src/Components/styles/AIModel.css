@@ -1,138 +1,206 @@
-/* ===== 공통 스타일 ===== */
-.wrapper {
-  padding: 2vw;
-  background-color: #fff; /* 기본 배경 색상 */
+/* 기본 스타일 */
+.ai-model-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #f8fafc;
 }
 
-/* ===== 헤더 스타일 ===== */
-.header-info {
+/* 페이지 헤더 */
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2vh;
-  color: #666; /* 텍스트 색상 */
-  font-size: 0.9rem; /* 텍스트 크기 */
-}
-
-.refresh-btn {
-  color: #2563eb;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-/* ===== 알림 박스 스타일 ===== */
-.notice-box {
-  background-color: #fff9db;
-  border: 1px solid #ffd43b;
-  border-radius: 4px;
-  padding: 1rem;
-  margin-bottom: 2vh;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.notice-icon {
-  color: #f59f00;
-  width: 1.2rem;
-  height: 1.2rem;
-  margin-top: 0.2rem;
-}
-
-/* ===== 점수 섹션 스타일 ===== */
-.score-section {
-  margin-top: 2vh;
-}
-
-.score-section h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-/* ===== 입력 박스 스타일 ===== */
-.input-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.input-box input {
-  width: 100%;
-  max-width: 400px;
-  padding: 0.5rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-/* ===== 버튼 스타일 ===== */
-.save-btn {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 1vh;
-}
-
-.save-btn:hover {
-  background-color: #1d4ed8;
-}
-
-/* ===== 모델 섹션 스타일 ===== */
-.model-section {
-  margin-top: 4vh;
-}
-
-.model-section h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
   margin-bottom: 1rem;
 }
 
-/* ===== 성능 섹션 ===== */
-.model-performance {
-  background-color: var(--card-background);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: var(--shadow);
+.last-update {
+  color: #64748b;
+  font-size: 0.875rem;
 }
 
-.performance-header {
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  color: #1e40af;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background-color: #f8fafc;
+}
+
+/* 알림 박스 */
+.notice-box {
+  background-color: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notice-icon {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.notice-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+/* 카드 컴포넌트 공통 스타일 */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+/* 섹션 헤더 */
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
 }
 
-/* ===== 반응형 스타일 ===== */
-@media (max-width: 768px) {
-  .settings-header,
-  .performance-header,
-  .history-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  /* 테이블 스타일 */
-  .table-wrapper {
-    overflow-x: auto;
-  }
+.section-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
 }
 
-@media screen and (min-width: 1920px) {
-  .ai-model-container {
-    max-width: 1600px;
+.last-modified {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* 설정 그리드 */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-item label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper input {
+  width: 100px;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+.unit {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.input-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #2563eb;
+  font-size: 0.75rem;
+}
+
+/* 버튼 스타일 */
+.save-btn, .csv-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+}
+
+.save-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.csv-btn {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.csv-btn:hover {
+  background-color: #f8fafc;
+}
+
+/* 차트 영역 */
+.chart-wrapper {
+  width: 100%;
+  height: 350px;
+  margin-top: 1rem;
+}
+
+/* 드롭다운 스타일 */
+.period-select {
+  padding: 0.375rem 2rem 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: white;
+  color: #475569;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 1rem;
   }
 
-  .score-input {
-    max-width: 400px;
+  .score-inputs-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .input-control input {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
   }
 }
