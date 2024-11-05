@@ -29,6 +29,10 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     const usedBeds = ktasData?.usedBeds || 0;
     const unusedBeds = totalBeds > 0 ? totalBeds - usedBeds : 0;
 
+    console.log("total : ", totalBeds);
+    console.log("use : ", usedBeds);
+    console.log("unuse : ", unusedBeds);
+
     // KTAS 레벨별 데이터 매핑
     const tasData = ktasData?.ktasRatios?.map((ratio, index) => ({
       name: `KTAS ${index + 1}`,

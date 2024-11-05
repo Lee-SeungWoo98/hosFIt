@@ -5,21 +5,20 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-  RotateCcw,
-  Search,
+  ChevronLeft,   // 페이징에서 사용
+  ChevronRight,  // 페이징에서 사용
+  RotateCcw,     // 필터 초기화 버튼
+  Search,        // 검색 아이콘
+  ChevronDown,   // 드롭 다운
+  // ChevronUp,     // 정렬 아이콘용
 } from "lucide-react";
-import { debounce } from 'lodash';
 
 // =========== 상수 정의 ===========
-const SORT_DIRECTIONS = {
-  NONE: "none",
-  ASC: "asc",
-  DESC: "desc",
-};
+// const SORT_DIRECTIONS = {
+//   NONE: "none",
+//   ASC: "asc",
+//   DESC: "desc",
+// };
 
 const FILTER_OPTIONS = {
   gender: {
@@ -52,12 +51,12 @@ const FILTER_OPTIONS = {
   },
 };
 
-
-const INITIAL_SORT = {
-  key: "visitDate",
-  direction: SORT_DIRECTIONS.DESC,
-  clickCount: 0,
-};
+// 초기 정렬 상태
+// const INITIAL_SORT = {
+//   key: "visitDate",
+//   direction: SORT_DIRECTIONS.DESC,
+//   clickCount: 0,
+// };
 
 function List({
   loading,
@@ -73,34 +72,26 @@ function List({
   totalPages,
   totalElements,
   onPageChange,
+  labTests,
+  visitInfo,
 }) {
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [sortConfig, setSortConfig] = useState(INITIAL_SORT);
+  // const [sortConfig, setSortConfig] = useState(INITIAL_SORT);  //  정렬 상태 관리
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState({
     gender: "",
     tas: "",
     painScore: "",
+    searchTerm: ""  
   });
   const memoizedPatients = useMemo(() => patients, [patients]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
 
-  const debouncedSearch = useMemo(
-    () => debounce((value) => {
-      onSearch(value);
-    }, 500),
-    [onSearch]
-  );
-
-  // cleanup 함수 추가
-  useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
+  console.log("혈액", labTests);
+  console.log("바이탈", visitInfo);
 
   // =========== Effects ===========
 
@@ -145,50 +136,50 @@ function List({
   /**
    * 정렬 처리 함수
    */
-  const handleSort = useCallback(
-    async (key) => {
-      let newDirection = SORT_DIRECTIONS.DESC;
-      let newClickCount = 1;
-      let newKey = key;
+  // const handleSort = useCallback(
+  //   async (key) => {
+  //     let newDirection = SORT_DIRECTIONS.DESC;
+  //     let newClickCount = 1;
+  //     let newKey = key;
 
-      if (sortConfig.key === key) {
-        newClickCount = (sortConfig.clickCount + 1) % 3;
+  //     if (sortConfig.key === key) {
+  //       newClickCount = (sortConfig.clickCount + 1) % 3;
 
-        switch (newClickCount) {
-          case 0: // 세 번째 클릭: 최신순으로 리셋
-            newKey = "visitDate";
-            newDirection = SORT_DIRECTIONS.DESC;
-            break;
-          case 1: // 첫 번째 클릭: 내림차순
-            newDirection = SORT_DIRECTIONS.DESC;
-            break;
-          case 2: // 두 번째 클릭: 오름차순
-            newDirection = SORT_DIRECTIONS.ASC;
-            break;
-        }
-      }
+  //       switch (newClickCount) {
+  //         case 0: // 세 번째 클릭: 최신순으로 리셋
+  //           newKey = "visitDate";
+  //           newDirection = SORT_DIRECTIONS.DESC;
+  //           break;
+  //         case 1: // 첫 번째 클릭: 내림차순
+  //           newDirection = SORT_DIRECTIONS.DESC;
+  //           break;
+  //         case 2: // 두 번째 클릭: 오름차순
+  //           newDirection = SORT_DIRECTIONS.ASC;
+  //           break;
+  //       }
+  //     }
 
-      setIsUpdating(true);
-      setSortConfig({
-        key: newKey,
-        direction: newDirection,
-        clickCount: newClickCount,
-      });
+  //     setIsUpdating(true);
+  //     setSortConfig({
+  //       key: newKey,
+  //       direction: newDirection,
+  //       clickCount: newClickCount,
+  //     });
 
-      try {
-        await onFilteredPatientsUpdate({
-          ...selectedFilters,
-          sort: {
-            key: newKey,
-            direction: newDirection,
-          },
-        });
-      } finally {
-        setIsUpdating(false);
-      }
-    },
-    [sortConfig, selectedFilters, onFilteredPatientsUpdate]
-  );
+  //     try {
+  //       await onFilteredPatientsUpdate({
+  //         ...selectedFilters,
+  //         sort: {
+  //           key: newKey,
+  //           direction: newDirection,
+  //         },
+  //       });
+  //     } finally {
+  //       setIsUpdating(false);
+  //     }
+  //   },
+  //   [sortConfig, selectedFilters, onFilteredPatientsUpdate]
+  // );
 
   /**
    * 필터 선택 처리 함수
@@ -197,19 +188,19 @@ function List({
     setIsUpdating(true);
     try {
       const processedValue = value === "" ? "" : Number(value);
-      
       const newFilters = {
         ...selectedFilters,
-        [type]: processedValue
+        [type]: processedValue,
+        searchTerm: searchInputValue,
       };
       setSelectedFilters(newFilters);
-      // 페이지 번호를 명시적으로 전달
+      // 새로운 필터 적용 시 첫 페이지부터 시작
       await onFilteredPatientsUpdate(0, newFilters);
     } finally {
       setIsUpdating(false);
       setOpenDropdown(null);
     }
-  }, [selectedFilters, onFilteredPatientsUpdate]);
+  }, [selectedFilters, searchInputValue, onFilteredPatientsUpdate]);
 
   /**
    * 필터 초기화 함수
@@ -221,19 +212,12 @@ function List({
         gender: "",
         tas: "",
         painScore: "",
-        sort: {
-          key: "visitDate",
-          direction: "desc"
-        }
+        searchTerm: "",  
       };
       
       // 모든 상태 초기화
       setSelectedFilters(resetFilters);
-      setSortConfig(INITIAL_SORT);
       setSearchInputValue("");
-      
-      // 검색어 리셋
-      onSearch("");
       
       // 서버에 리셋된 필터 적용
       await onFilteredPatientsUpdate(0, resetFilters);
@@ -241,7 +225,7 @@ function List({
     } finally {
       setIsUpdating(false);
     }
-  }, [onFilteredPatientsUpdate, onSearch]);
+  }, [onFilteredPatientsUpdate]);
 
   /**
    * 드롭다운 토글 함수
@@ -285,19 +269,19 @@ function List({
   /**
    * 정렬 아이콘 렌더링
    */
-  const renderSortIcon = useCallback(
-    (columnName) => {
-      if (sortConfig.key === columnName) {
-        if (sortConfig.direction === SORT_DIRECTIONS.ASC) {
-          return <ChevronUp className="sort-icon" size={14} />;
-        } else if (sortConfig.direction === SORT_DIRECTIONS.DESC) {
-          return <ChevronDown className="sort-icon" size={14} />;
-        }
-      }
-      return null;
-    },
-    [sortConfig]
-  );
+  // const renderSortIcon = useCallback(
+  //   (columnName) => {
+  //     if (sortConfig.key === columnName) {
+  //       if (sortConfig.direction === SORT_DIRECTIONS.ASC) {
+  //         return <ChevronUp className="sort-icon" size={14} />;
+  //       } else if (sortConfig.direction === SORT_DIRECTIONS.DESC) {
+  //         return <ChevronDown className="sort-icon" size={14} />;
+  //       }
+  //     }
+  //     return null;
+  //   },
+  //   [sortConfig]
+  // );
 
   /**
    * 필터 드롭다운 렌더링
@@ -314,14 +298,16 @@ function List({
                 type="text"
                 placeholder="Search by Patient ID or Name"
                 value={searchInputValue}
-                onChange={(e) => {
-                  setSearchInputValue(e.target.value);
-                  debouncedSearch(e.target.value);
-                }}
+                onChange={(e) => setSearchInputValue(e.target.value)}  // debounce 호출 제거
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    onSearch(searchInputValue);
+                    // 검색어와 함께 현재 필터 상태도 전달
+                    const newFilters = {
+                      ...selectedFilters,
+                      searchTerm: e.target.value
+                    };
+                    onFilteredPatientsUpdate(0, newFilters);
                   }
                 }}
                 className="patient-search-input"
@@ -444,43 +430,47 @@ const renderPatientRow = useCallback((patient) => (
   </tr>
 ), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails]);
 
-  const calculateAbnormalCount = useCallback((labTests, gender) => {
-    // console.log("Calculating abnormal count:", { labTests, gender });
+const calculateAbnormalCount = useCallback((labTests, gender) => {
 
-    if (!labTests) {
-      console.log("No labTests data");
-      return 0;
-    }
+  if (!labTests) {
+    console.log("LabTests 데이터가 없습니다.");
+    return 0;
+  }
+  console.log("LabTests 데이터:", labTests); // 추가된 부분
 
-    let abnormalCount = 0;
+  let abnormalCount = 0;
+  
+  // Patient.js와 동일한 카테고리 검사
+  const categories = [
+    'blood_levels',
+    'electrolyte_levels',
+    'enzymes_metabolisms',
+    'chemical_examinations_enzymes',
+    'blood_gas_analysis'
+  ];
 
-    try {
-      // labTests 데이터 구조 확인
-      // console.log("labTests structure:", JSON.stringify(labTests, null, 2));
-
-      Object.entries(labTests).forEach(([category, tests]) => {
-        if (Array.isArray(tests) && tests.length > 0) {
-          tests.forEach((test) => {
-            Object.entries(test).forEach(([key, value]) => {
-              if (ranges[key] && value !== null) {
-                const isNormal = checkNormalRange(key, value, gender);
-                if (isNormal === false) {
-                  console.log("Abnormal found:", { key, value, gender });
-                  abnormalCount++;
-                }
-              }
-            });
-          });
+  categories.forEach(category => {
+    if (labTests[category] && labTests[category].length > 0) {
+      const data = labTests[category][0];
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'blood_idx' && 
+          key !== 'bloodIdx' && 
+          key !== 'reg_date' && 
+          key !== 'regDate' && 
+          key !== 'regdate' && 
+          key !== 'labtest' && 
+          value !== null) {
+          const isNormal = checkNormalRange(key, value, gender);
+          if (isNormal === false) {
+            abnormalCount++;
+          }
         }
       });
-
-      // console.log("Final abnormal count:", abnormalCount);
-      return abnormalCount;
-    } catch (error) {
-      console.error("Error calculating abnormal count:", error);
-      return 0;
     }
-  }, []);
+  });
+  console.log("Abnormal Count:", abnormalCount); // 추가된 부분
+  return abnormalCount;
+}, []);
 
   const ranges = {
     // Blood Levels
@@ -538,12 +528,12 @@ const renderPatientRow = useCallback((patient) => (
     const numValue = parseFloat(value);
 
     if (range.male && range.female) {
-      const genderRange = gender === "남" ? range.male : range.female;
-      return numValue >= genderRange[0] && numValue <= genderRange[1];
+        const genderRange = gender === '남' ? range.male : range.female;
+        return numValue >= genderRange[0] && numValue <= genderRange[1];
     }
 
     return numValue >= range[0] && numValue <= range[1];
-  };
+};
 
   // =========== 메인 렌더링 ===========
   return (
@@ -572,19 +562,8 @@ const renderPatientRow = useCallback((patient) => (
             background-color: rgba(0, 0, 0, 0.05);
           }
           .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
             opacity: ${loading ? 1 : 0};
             pointer-events: ${loading ? "auto" : "none"};
-            transition: opacity 0.3s ease;
           }
         `}
       </style>
@@ -608,7 +587,7 @@ const renderPatientRow = useCallback((patient) => (
           className="table-container"
           style={{
             position: "relative",
-            opacity: isUpdating ? 0.6 : 1,
+            opacity: isUpdating || loading ? 0.6 : 1,
             transition: "opacity 0.3s ease",
           }}
         >
@@ -630,12 +609,14 @@ const renderPatientRow = useCallback((patient) => (
                   { key: "ai_tas", label: "AI_TAS" },
                   { key: "abnormal", label: "비정상" },
                 ].map(({ key, label }) => (
-                  <th
-                    key={key}
-                    onClick={() => handleSort(key)}
-                    className="sortable-header"
-                  >
-                    {label} {renderSortIcon(key)}
+                  // <th
+                  //   key={key}
+                  //   onClick={() => handleSort(key)}
+                  //   className="sortable-header"
+                  // >
+                  <th>
+                    {/* {label} {renderSortIcon(key)} */}
+                    {label}
                   </th>
                 ))}
                 <th>상세 정보</th>
@@ -658,8 +639,20 @@ const renderPatientRow = useCallback((patient) => (
           {memoizedPatients.length > 0 && (
             <div className="pagination">
               <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 0}
+                onClick={async () => {
+                  if (!isUpdating) {  // 이미 업데이트 중이면 무시
+                    setIsUpdating(true);
+                    try {
+                      const nextPage = currentPage - 1;
+                      if (nextPage >= 0) {
+                        await onPageChange(nextPage);
+                      }
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }
+                }}
+                disabled={currentPage === 0 || isUpdating}
                 className="pagination-arrow"
               >
                 <ChevronLeft />
@@ -668,8 +661,17 @@ const renderPatientRow = useCallback((patient) => (
                 {currentPage + 1} / {totalPages}
               </span>
               <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage + 1 >= totalPages}
+                onClick={async () => {
+                  if (!isUpdating) {  // 이미 업데이트 중이면 무시
+                    setIsUpdating(true);
+                    try {
+                      await onPageChange(currentPage + 1);
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }
+                }}
+                disabled={currentPage + 1 >= totalPages || isUpdating}
                 className="pagination-arrow"
               >
                 <ChevronRight />
@@ -678,7 +680,7 @@ const renderPatientRow = useCallback((patient) => (
           )}
 
           {/* 로딩 오버레이는 데이터 업데이트 중에만 표시 */}
-          {isUpdating && (
+          {(isUpdating || loading) && (
             <div
               className="loading-overlay"
               style={{
