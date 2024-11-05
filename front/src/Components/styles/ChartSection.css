@@ -1,84 +1,80 @@
+/* ChartSection.css */
+
+.dashboard-top-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 상단 3개의 카드 */
+  gap: 2vw;
+  margin-bottom: 2vh;
+  width: 100%;
+}
+
+.top-card {
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  padding: 2vw;
+  box-shadow: var(--shadow);
+  height: auto;
+  min-height: 15vh; /* 최소 높이 */
+  width: 100%; /* 너비 100%로 확장 */
+}
+
 .admin-charts-container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* 반응형 열 구성 */
+  gap: 2vw;
+  margin: 2vh 0;
+  width: 100%;
 }
 
 .admin-chart-card {
-  background-color: var(--card-background);
-  width: 45vw;  /* 화면 너비의 45% */
-  max-width: 700px; /* 최대 너비를 제한 */
-  padding: 1vw;  /* 패딩을 화면 비율에 맞춰 조정 */
-  border-radius: 1rem;
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  padding: 2vw;
   box-shadow: var(--shadow);
+  height: auto;
+  min-height: 30vh; /* 최소 높이 */
+  width: 100%; /* 차트 카드가 전체 너비 사용 */
 }
 
-.admin-chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.admin-chart-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.admin-chart-wrapper {
+.chart-wrapper {
   position: relative;
-  height: 300px;
+  height: auto;
+  width: 100%;
+  min-height: 25vh; /* 최소 높이 */
 }
 
-.admin-chart-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.admin-chart-period {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  background-color: var(--card-background);
-  color: var(--text-color);
-  font-size: 0.875rem;
-}
-
-.admin-chart-download {
-  padding: 0.5rem;
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.admin-chart-download:hover {
-  background-color: var(--background-color);
-}
-
+/* 미디어 쿼리 - 태블릿 이하 화면 */
 @media (max-width: 1024px) {
-  .admin-charts-container {
-      grid-template-columns: 1fr;
+  .dashboard-top-cards {
+    grid-template-columns: 1fr;
   }
 
-  .admin-chart-wrapper {
-      height: 250px;
+  .admin-charts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    min-height: 20vh; /* 작은 화면에서 차트 높이 축소 */
   }
 }
 
+/* 모바일 화면 */
 @media (max-width: 768px) {
+  .admin-charts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-chart-card {
+    min-height: 20vh; /* 최소 높이 반응형으로 조절 */
+  }
+  
   .admin-chart-header {
-      flex-direction: column;
-      gap: 1rem;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .admin-chart-actions {
-      width: 100%;
-      justify-content: flex-end;
+    width: 100%;
+    justify-content: flex-end;
   }
 }
