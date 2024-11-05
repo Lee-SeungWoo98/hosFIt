@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+/**
+ * MainPage.js
+ * 메인 페이지 컴포넌트
+ * 환자 목록과 상세 정보를 표시하는 메인 인터페이스
+ */
+import React, { useState, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import List from "./list";
 import Patient from "./Patient";
-import axios from "axios";
-import debounce from "lodash/debounce";
 
 function MainPage({
   searchTerm,
   allPatients,
   patients,
   ktasData,
+  predictionData,
   ktasFilter,
   loading,
   error,
@@ -24,10 +28,15 @@ function MainPage({
   logout,
   currentPage,
   totalPages,
+  totalElements,
   onPageChange
 }) {
+  // =========== 상태 관리 ===========
   const location = useLocation();
-  const username = location.state?.username || "익명 사용자";
+  const username = useMemo(() => 
+    location.state?.username || "익명 사용자",
+    [location.state]
+  );
 
   const [selectedPatient, setSelectedPatient] = useState({
     patientData: null,
@@ -35,7 +44,11 @@ function MainPage({
     visitInfo: null,
   });
 
-  const formatVitalSigns = (vitalSigns) => {
+  // =========== 데이터 포맷팅 함수 ===========
+  /**
+   * 활력징후 데이터 포맷팅
+   */
+  const formatVitalSigns = useCallback((vitalSigns) => {
     if (!Array.isArray(vitalSigns)) return [];
     return vitalSigns.map(sign => ({
       ...sign,
@@ -47,81 +60,66 @@ function MainPage({
       dbp: parseFloat(sign.dbp || 0),
       temperature: parseFloat(sign.temperature || 0)
     }));
-  };
+  }, []);
 
-  const formatVisit = (visit) => ({
-    ...visit,
-    visit_date: visit.visit_date ? new Date(visit.visit_date).toISOString() : null,
-    los_hours: parseFloat(visit.los_hours || 0),
-    stay_id: visit.stay_id,
-    tas: parseInt(visit.tas || 0),
-    staystatus: parseInt(visit.staystatus || 0),
-    vitalSigns: formatVitalSigns(visit.vital_signs || visit.vitalSigns)
-  });
+  /**
+   * Lab Tests 데이터 포맷팅
+   */
+  const formatLabTestsData = useCallback((labTestData) => {
+    if (!labTestData?.length) return null;
+    
+    return [{
+      blood_levels: labTestData[0].bloodLevels || [],
+      electrolyte_levels: labTestData[0].electrolyteLevels || [],
+      enzymes_metabolisms: labTestData[0].enzymesMetabolisms || [],
+      chemical_examinations_enzymes: labTestData[0].chemicalExaminationsEnzymes || [],
+      blood_gas_analysis: labTestData[0].bloodGasAnalysis || []
+    }];
+  }, []);
 
-  const handlePatientSelect = async (patientData, labTestData, visitInfoData) => {
+  /**
+   * 방문 데이터 포맷팅
+   */
+  const formatVisitsData = useCallback((visits) => {
+    return (visits || []).map(visit => ({
+      ...visit,
+      visitDate: visit.visitDate,
+      losHours: parseFloat(visit.losHours || 0),
+      pain: parseInt(visit.pain || 0),
+      tas: parseInt(visit.tas || 0),
+      statstatus: parseInt(visit.statstatus || 0),
+      vitalSigns: (visit.vitalSigns || []).map(sign => ({
+        chartTime: sign.chartTime,
+        heartrate: parseFloat(sign.heartrate || 0),
+        resprate: parseFloat(sign.resprate || 0),
+        o2sat: parseFloat(sign.o2sat || 0),
+        sbp: parseFloat(sign.sbp || 0),
+        dbp: parseFloat(sign.dbp || 0),
+        temperature: parseFloat(sign.temperature || 0)
+      }))
+    }));
+  }, []);
+
+  // =========== 이벤트 핸들러 ===========
+  /**
+   * 환자 선택 처리
+   */
+  const handlePatientSelect = useCallback(async (patientData, labTestData, visitInfoData) => {
     try {
-      console.log("Patient Select 데이터:", {
-        patientData,
-        labTestData,
-        visitInfoData
-      });
-  
-      // 1. Lab Tests 데이터 구조화
-      let formattedLabTests = null;
-      if (labTestData && Array.isArray(labTestData) && labTestData.length > 0) {
-        formattedLabTests = [{
-          blood_levels: labTestData[0].bloodLevels || [],
-          electrolyte_levels: labTestData[0].electrolyteLevels || [],
-          enzymes_metabolisms: labTestData[0].enzymesMetabolisms || [],
-          chemical_examinations_enzymes: labTestData[0].chemicalExaminationsEnzymes || [],
-          blood_gas_analysis: labTestData[0].bloodGasAnalysis || []
-        }];
-      }
-  
-      // 2. Visit Info 데이터 포맷팅
-      const formattedVisits = visitInfoData.visits.map(visit => ({
-        ...visit,
-        visitDate: visit.visitDate,
-        losHours: parseFloat(visit.losHours || 0),
-        pain: parseInt(visit.pain || 0),
-        tas: parseInt(visit.tas || 0),
-        staystatus: parseInt(visit.staystatus || 0),
-        vitalSigns: (visit.vitalSigns || []).map(sign => ({
-          chartTime: sign.chartTime,
-          heartrate: parseFloat(sign.heartrate || 0),
-          resprate: parseFloat(sign.resprate || 0),
-          o2sat: parseFloat(sign.o2sat || 0),
-          sbp: parseFloat(sign.sbp || 0),
-          dbp: parseFloat(sign.dbp || 0),
-          temperature: parseFloat(sign.temperature || 0)
-        }))
-      }));
-  
-      const formattedVisitInfo = {
-        ...visitInfoData,
-        visits: formattedVisits
-      };
-  
-      // 3. 환자 데이터 구조화
-      const formattedPatientData = {
+      const formattedLabTests = formatLabTestsData(labTestData);
+      const formattedVisits = formatVisitsData(visitInfoData.visits);
+      
+      const formattedPatient = {
         ...patientData,
         visits: formattedVisits
       };
-  
-      console.log("변환된 데이터:", {
-        patientData: formattedPatientData,
-        labTests: formattedLabTests,
-        visitInfo: formattedVisitInfo
-      });
-  
-      // 4. 상태 업데이트
+
       setSelectedPatient({
-        patientData: formattedPatientData,
+        patientData: formattedPatient,
         labTests: formattedLabTests,
-        visitInfo: formattedVisitInfo
+        visitInfo: { ...visitInfoData, visits: formattedVisits }
       });
-  
+
     } catch (error) {
       console.error("handlePatientSelect 에러:", error);
       setSelectedPatient({
@@ -130,14 +128,54 @@ function MainPage({
         visitInfo: null
       });
     }
-  };
+  }, [formatLabTestsData, formatVisitsData]);
 
-  const handleBack = () => {
+  /**
+   * 뒤로가기 처리
+   */
+  const handleBack = useCallback(() => {
     setSelectedPatient({
       patientData: null,
       labTests: null,
       visitInfo: null
     });
+  }, []);
+
+  // =========== 렌더링 ===========
+  const renderContent = () => {
+    if (selectedPatient.patientData) {
+      return (
+        <Patient
+          patientData={selectedPatient.patientData}
+          labTests={selectedPatient.labTests}
+          visitInfo={selectedPatient.visitInfo}
+          onBack={handleBack}
+          fetchLabTests={fetchLabTests}
+          fetchVisitInfo={fetchVisitInfo}
+        />
+      );
+    }
+
+    return (
+      <List
+        searchTerm={searchTerm}
+        allPatients={allPatients}    
+        patients={patients}          
+        ktasFilter={ktasFilter}
+        onFilteredPatientsUpdate={onFilteredPatientsUpdate}
+        labTests={labTests}
+        visitInfo={visitInfo}
+        fetchLabTests={fetchLabTests}
+        fetchVisitInfo={fetchVisitInfo}
+        onPatientSelect={handlePatientSelect}
+        onSearch={handleSearch}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onPageChange={onPageChange}
+        loading={loading}
+      />
+    );
   };
 
   return (
@@ -149,42 +187,17 @@ function MainPage({
         onTASClick={onTASClick}
         logout={logout}
         ktasFilter={ktasFilter}
+        predictionData={predictionData}
       />
       <div className="main-content">
-        {loading ? (
-          <p>로딩 중...</p>
-        ) : error ? (
-          <p>{error}</p>
-        ) : selectedPatient.patientData ? (
-          <Patient
-            patientData={selectedPatient.patientData}
-            labTests={selectedPatient.labTests}
-            visitInfo={selectedPatient.visitInfo}
-            onBack={handleBack}
-            fetchLabTests={fetchLabTests}
-            fetchVisitInfo={fetchVisitInfo}
-          />
+        {error ? (
+          <div className="error-message">{error}</div>
         ) : (
-          <List
-            searchTerm={searchTerm}
-            allPatients={allPatients}
-            patients={patients}
-            ktasFilter={ktasFilter}
-            onFilteredPatientsUpdate={onFilteredPatientsUpdate}
-            labTests={labTests}
-            visitInfo={visitInfo}
-            fetchLabTests={fetchLabTests}
-            fetchVisitInfo={fetchVisitInfo}
-            onPatientSelect={handlePatientSelect}
-            onSearch={handleSearch}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
+          renderContent()
         )}
       </div>
     </div>
   );
 }
 
-export default MainPage;
+export default React.memo(MainPage);

@@ -1,4 +1,9 @@
-import React, { useState } from "react";
+/**
+ * List.js
+ * 환자 목록 컴포넌트
+ * 정렬, 필터링, 검색 기능을 제공하는 환자 데이터 테이블
+ */
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,26 +12,32 @@ import {
   RotateCcw,
   Search,
 } from "lucide-react";
+import { debounce } from 'lodash';
 
-// 필터 옵션 설정
-const filterOptions = {
+// =========== 상수 정의 ===========
+const SORT_DIRECTIONS = {
+  NONE: "none",
+  ASC: "asc",
+  DESC: "desc",
+};
+
+const FILTER_OPTIONS = {
   gender: {
     label: "Select Gender",
     options: [
       { value: "", label: "All" },
-      { value: "남", label: "남자" },
-      { value: "여", label: "여자" },
+      { value: 1, label: "남자" },
+      { value: 0, label: "여자" },
     ],
   },
   tas: {
     label: "Select KTAS",
     options: [
       { value: "", label: "All" },
-      { value: "1", label: "Level 1" },
-      { value: "2", label: "Level 2" },
-      { value: "3", label: "Level 3" },
-      { value: "4", label: "Level 4" },
-      { value: "5", label: "Level 5" },
+      ...Array.from({ length: 5 }, (_, i) => ({
+        value: i + 1,
+        label: `Level ${i + 1}`,
+      })),
     ],
   },
   painScore: {
@@ -34,11 +45,18 @@ const filterOptions = {
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 10 }, (_, i) => ({
-        value: String(i + 1),
+        value: i + 1,
         label: String(i + 1),
       })),
     ],
   },
+};
+
+
+const INITIAL_SORT = {
+  key: "visitDate",
+  direction: SORT_DIRECTIONS.DESC,
+  clickCount: 0,
 };
 
 function List({
@@ -59,401 +77,573 @@ function List({
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: null,
-  });
+  const [sortConfig, setSortConfig] = useState(INITIAL_SORT);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState({
     gender: "",
     tas: "",
     painScore: "",
   });
-  // 데이터 업데이트 중 상태 관리 추가
+  const memoizedPatients = useMemo(() => patients, [patients]);
   const [isUpdating, setIsUpdating] = useState(false);
-
   const [activeTab, setActiveTab] = useState("all");
+
+  const debouncedSearch = useMemo(
+    () => debounce((value) => {
+      onSearch(value);
+    }, 500),
+    [onSearch]
+  );
+
+  // cleanup 함수 추가
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  // =========== Effects ===========
+
+  // 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /**
+   * 날짜 포맷팅 함수
+   */
+  const formatDate = useCallback((date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '-';
+    
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).replace(/\. /g, ".").slice(0, -1);
+  }, []);
+
+  /**
+   * 시간 포맷팅 함수
+   */
+  const formatTime = useCallback((date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+    
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }, []);
 
   // =========== 이벤트 핸들러 ===========
   /**
-   * 모든 필터를 초기화하고 초기 데이터를 불러오는 함수
-   * isUpdating 상태를 사용하여 데이터 로딩 중 깜빡임 방지
+   * 정렬 처리 함수
    */
-  const resetAllFilters = async () => {
-    setIsUpdating(true);
-    const resetFilters = {
-      gender: "",
-      tas: "",
-      painScore: "",
-    };
-    setSelectedFilters(resetFilters);
-    await onFilteredPatientsUpdate(resetFilters);
-    setIsUpdating(false);
-  };
+  const handleSort = useCallback(
+    async (key) => {
+      let newDirection = SORT_DIRECTIONS.DESC;
+      let newClickCount = 1;
+      let newKey = key;
+
+      if (sortConfig.key === key) {
+        newClickCount = (sortConfig.clickCount + 1) % 3;
+
+        switch (newClickCount) {
+          case 0: // 세 번째 클릭: 최신순으로 리셋
+            newKey = "visitDate";
+            newDirection = SORT_DIRECTIONS.DESC;
+            break;
+          case 1: // 첫 번째 클릭: 내림차순
+            newDirection = SORT_DIRECTIONS.DESC;
+            break;
+          case 2: // 두 번째 클릭: 오름차순
+            newDirection = SORT_DIRECTIONS.ASC;
+            break;
+        }
+      }
+
+      setIsUpdating(true);
+      setSortConfig({
+        key: newKey,
+        direction: newDirection,
+        clickCount: newClickCount,
+      });
+
+      try {
+        await onFilteredPatientsUpdate({
+          ...selectedFilters,
+          sort: {
+            key: newKey,
+            direction: newDirection,
+          },
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [sortConfig, selectedFilters, onFilteredPatientsUpdate]
+  );
 
   /**
    * 필터 선택 처리 함수
-   * isUpdating 상태를 사용하여 데이터 로딩 중 깜빡임 방지
    */
-  const handleFilterSelect = async (type, value) => {
+  const handleFilterSelect = useCallback(async (type, value) => {
     setIsUpdating(true);
-    const newFilters = {
-      ...selectedFilters,
-      [type]: value,
-    };
-    setSelectedFilters(newFilters);
-    await onFilteredPatientsUpdate(newFilters);
-    setIsUpdating(false);
-    setOpenDropdown(null);
-  };
-
-  const toggleDropdown = (dropdownName) => {
-    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
-  };
-
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    } else if (sortConfig.key === key && sortConfig.direction === "desc") {
-      direction = null;
+    try {
+      const processedValue = value === "" ? "" : Number(value);
+      
+      const newFilters = {
+        ...selectedFilters,
+        [type]: processedValue
+      };
+      setSelectedFilters(newFilters);
+      // 페이지 번호를 명시적으로 전달
+      await onFilteredPatientsUpdate(0, newFilters);
+    } finally {
+      setIsUpdating(false);
+      setOpenDropdown(null);
     }
+  }, [selectedFilters, onFilteredPatientsUpdate]);
 
-    setSortConfig({ key, direction });
-
-    if (direction === null) {
-      onPageChange(currentPage);
-      return;
+  /**
+   * 필터 초기화 함수
+   */
+  const resetAllFilters = useCallback(async () => {
+    setIsUpdating(true);
+    try {
+      const resetFilters = {
+        gender: "",
+        tas: "",
+        painScore: "",
+        sort: {
+          key: "visitDate",
+          direction: "desc"
+        }
+      };
+      
+      // 모든 상태 초기화
+      setSelectedFilters(resetFilters);
+      setSortConfig(INITIAL_SORT);
+      setSearchInputValue("");
+      
+      // 검색어 리셋
+      onSearch("");
+      
+      // 서버에 리셋된 필터 적용
+      await onFilteredPatientsUpdate(0, resetFilters);
+      
+    } finally {
+      setIsUpdating(false);
     }
+  }, [onFilteredPatientsUpdate, onSearch]);
 
-    // 정렬은 현재 페이지의 데이터에 대해서만 수행
-    const sortedList = [...patients].sort((a, b) => {
-      let aValue = a[key];
-      let bValue = b[key];
+  /**
+   * 드롭다운 토글 함수
+   */
+  const toggleDropdown = useCallback((dropdownName) => {
+    setOpenDropdown((prev) => (prev === dropdownName ? null : dropdownName));
+  }, []);
 
-      if (key === "losHours") {
-        aValue = a.visits?.[0]?.losHours || 0;
-        bValue = b.visits?.[0]?.losHours || 0;
-      } else if (key === "tas") {
-        aValue = a.visits?.[0]?.tas || 0;
-        bValue = b.visits?.[0]?.tas || 0;
-      } else if (key === "pain") {
-        aValue = a.visits?.[0]?.pain || 0;
-        bValue = b.visits?.[0]?.pain || 0;
-      } else if (key === "visitDate" && a.visits?.length && b.visits?.length) {
-        aValue = new Date(a.visits[a.visits.length - 1].visitDate).getTime();
-        bValue = new Date(b.visits[b.visits.length - 1].visitDate).getTime();
+  /**
+   * 환자 상세정보 조회 함수
+   */
+  const showPatientDetails = useCallback(
+    async (patient) => {
+      setLoadingDetails(true);
+      try {
+        const visitInfoResponse = await fetchVisitInfo(patient.subjectId);
+        if (!visitInfoResponse?.visits?.length) {
+          throw new Error("방문 정보가 없습니다.");
+        }
+
+        const latestVisit =
+          visitInfoResponse.visits[visitInfoResponse.visits.length - 1];
+        const stayId = latestVisit.stayId || latestVisit.stay_id;
+
+        if (!stayId) {
+          throw new Error("Stay ID를 찾을 수 없습니다.");
+        }
+
+        const labTestsResponse = await fetchLabTests(stayId);
+        onPatientSelect(patient, labTestsResponse, visitInfoResponse);
+      } catch (error) {
+        console.error("상세 정보 조회 실패:", error);
+      } finally {
+        setLoadingDetails(false);
       }
-
-      if (direction === "asc") {
-        return aValue > bValue ? 1 : -1;
-      }
-      return aValue < bValue ? 1 : -1;
-    });
-
-    onFilteredPatientsUpdate({ ...selectedFilters, sort: { key, direction } });
-  };
-
-  const renderLocationTabs = () => (
-    <div className="location-tabs">
-      <button
-        className={`location-tab ${activeTab === "all" ? "active" : ""}`}
-        onClick={() => setActiveTab("all")}
-      >
-        ALL
-      </button>
-      <button
-        className={`location-tab ${activeTab === "icu" ? "active" : ""}`}
-        onClick={() => setActiveTab("icu")}
-      >
-        ICU
-      </button>
-      <button
-        className={`location-tab ${activeTab === "ward" ? "active" : ""}`}
-        onClick={() => setActiveTab("ward")}
-      >
-        WARD
-      </button>
-      <button
-        className={`location-tab ${activeTab === "discharge" ? "active" : ""}`}
-        onClick={() => setActiveTab("discharge")}
-      >
-        DISCHARGE
-      </button>
-    </div>
+    },
+    [fetchVisitInfo, fetchLabTests, onPatientSelect]
   );
 
-  const renderSortIcon = (columnName) => {
-    if (sortConfig.key === columnName) {
-      if (sortConfig.direction === "asc") {
-        return <ChevronUp className="sort-icon" size={14} />;
-      } else if (sortConfig.direction === "desc") {
-        return <ChevronDown className="sort-icon" size={14} />;
+  // =========== 렌더링 함수 ===========
+  /**
+   * 정렬 아이콘 렌더링
+   */
+  const renderSortIcon = useCallback(
+    (columnName) => {
+      if (sortConfig.key === columnName) {
+        if (sortConfig.direction === SORT_DIRECTIONS.ASC) {
+          return <ChevronUp className="sort-icon" size={14} />;
+        } else if (sortConfig.direction === SORT_DIRECTIONS.DESC) {
+          return <ChevronDown className="sort-icon" size={14} />;
+        }
       }
-    }
-    return null;
-  };
+      return null;
+    },
+    [sortConfig]
+  );
 
-  const showPatientDetails = async (patient) => {
-    console.log("상세보기 시작 - 환자 데이터:", patient);
-    setLoadingDetails(true);
+  /**
+   * 필터 드롭다운 렌더링
+   */
+  const renderFilterDropdowns = useCallback(
+    () => (
+      <div className="filter-dropdowns">
+        <div className="filters-left">
+          {/* 검색 입력 */}
+          <div className="dropdown-container search-container">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by Patient ID or Name"
+                value={searchInputValue}
+                onChange={(e) => {
+                  setSearchInputValue(e.target.value);
+                  debouncedSearch(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onSearch(searchInputValue);
+                  }
+                }}
+                className="patient-search-input"
+              />
+            </div>
+          </div>
+
+          {/* 필터 드롭다운 */}
+          {Object.entries(FILTER_OPTIONS).map(
+            ([filterType, { label, options }]) => (
+              <div key={filterType} className="dropdown-container">
+                <button
+                  className={`dropdown-trigger ${
+                    openDropdown === filterType ? "active" : ""
+                  }`}
+                  onClick={() => toggleDropdown(filterType)}
+                >
+                  {selectedFilters[filterType]
+                    ? options.find(
+                        (opt) => opt.value === selectedFilters[filterType]
+                      )?.label
+                    : label}
+                  <ChevronDown
+                    size={16}
+                    className={`dropdown-arrow ${
+                      openDropdown === filterType ? "open" : ""
+                    }`}
+                  />
+                </button>
+                {openDropdown === filterType && (
+                  <div className="dropdown-content">
+                    {options.map((option) => (
+                      <div
+                        key={option.value}
+                        className={`dropdown-item ${
+                          selectedFilters[filterType] === option.value
+                            ? "selected"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleFilterSelect(filterType, option.value)
+                        }
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          )}
+
+          {/* 필터 초기화 버튼 */}
+          <button
+            className="reset-filters-button"
+            onClick={resetAllFilters}
+            title="Reset Filters"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
+        <div className="total-count-filter">
+          (총 {(totalElements || 0).toLocaleString()}명)
+        </div>
+      </div>
+    ),
+    [
+      searchInputValue,
+      openDropdown,
+      selectedFilters,
+      totalElements,
+      onSearch,
+      handleFilterSelect,
+      resetAllFilters,
+      toggleDropdown,
+    ]
+  );
+
+  // 환자 행 렌더링 부분 수정
+const renderPatientRow = useCallback((patient) => (
+  <tr
+    key={patient.subjectId}
+    className="patient-row"
+    style={{
+      opacity: isUpdating ? 0.6 : 1,
+      transition: "opacity 0.3s ease",
+    }}
+  >
+    <td>{patient.subjectId}</td>
+    <td>{patient.icd || '-'}</td>
+    <td>{patient.name}</td>
+    <td>{patient.gender}</td>
+    <td>{patient.age}</td>
+    <td>
+      {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
+        <>
+          {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
+          <br />
+          <span>
+            {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
+          </span>
+        </>
+      ) : '-'}
+    </td>
+    <td>{patient.visits?.[0]?.pain || "-"}</td>
+    <td>{patient.visits?.[0]?.tas || "-"}</td>
+    <td>{patient.ai_tas || "-"}</td>
+    <td className="abnormal-count-cell">
+      {calculateAbnormalCount(patient.labTests, patient.gender)}건
+    </td>
+    <td>
+      <button
+        onClick={() => showPatientDetails(patient)}
+        className="details-button"
+        disabled={loadingDetails}
+      >
+        {loadingDetails ? "로딩 중..." : "상세 보기"}
+      </button>
+    </td>
+  </tr>
+), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails]);
+
+  const calculateAbnormalCount = useCallback((labTests, gender) => {
+    // console.log("Calculating abnormal count:", { labTests, gender });
+
+    if (!labTests) {
+      console.log("No labTests data");
+      return 0;
+    }
+
+    let abnormalCount = 0;
 
     try {
-      // 환자 ID로 방문 정보 조회
-      const visitInfoResponse = await fetchVisitInfo(patient.subjectId);
+      // labTests 데이터 구조 확인
+      // console.log("labTests structure:", JSON.stringify(labTests, null, 2));
 
-      if (
-        !visitInfoResponse ||
-        !visitInfoResponse.visits ||
-        visitInfoResponse.visits.length === 0
-      ) {
-        throw new Error("방문 정보가 없습니다.");
-      }
+      Object.entries(labTests).forEach(([category, tests]) => {
+        if (Array.isArray(tests) && tests.length > 0) {
+          tests.forEach((test) => {
+            Object.entries(test).forEach(([key, value]) => {
+              if (ranges[key] && value !== null) {
+                const isNormal = checkNormalRange(key, value, gender);
+                if (isNormal === false) {
+                  console.log("Abnormal found:", { key, value, gender });
+                  abnormalCount++;
+                }
+              }
+            });
+          });
+        }
+      });
 
-      // 최신 방문 기록의 stayId로 검사 데이터 조회
-      const latestVisit =
-        visitInfoResponse.visits[visitInfoResponse.visits.length - 1];
-      const stayId = latestVisit.stayId || latestVisit.stay_id;
-
-      if (!stayId) {
-        throw new Error("Stay ID를 찾을 수 없습니다.");
-      }
-
-      const labTestsResponse = await fetchLabTests(stayId);
-
-      // 데이터 구조화
-      const patientData = {
-        ...patient,
-        visits: visitInfoResponse.visits.map((visit) => ({
-          ...visit,
-          stayId: visit.stayId || visit.stay_id,
-          visitDate: visit.visitDate || visit.visit_date,
-          losHours: parseFloat(visit.losHours || visit.los_hours || 0),
-          pain: parseInt(visit.pain || 0),
-          tas: parseInt(visit.tas || visit.TAS || 0),
-          statstatus: parseInt(visit.statstatus || 0),
-          vitalSigns: (visit.vitalSigns || visit.vital_signs || []).map(
-            (sign) => ({
-              chartTime: sign.chartTime || sign.chart_time,
-              heartrate: parseFloat(sign.heartrate || 0),
-              resprate: parseFloat(sign.resprate || 0),
-              o2sat: parseFloat(sign.o2sat || 0),
-              sbp: parseFloat(sign.sbp || 0),
-              dbp: parseFloat(sign.dbp || 0),
-              temperature: parseFloat(sign.temperature || 0),
-            })
-          ),
-        })),
-      };
-
-      onPatientSelect(patientData, labTestsResponse, visitInfoResponse);
+      // console.log("Final abnormal count:", abnormalCount);
+      return abnormalCount;
     } catch (error) {
-      console.error("상세 정보 조회 실패:", error);
-    } finally {
-      setLoadingDetails(false);
+      console.error("Error calculating abnormal count:", error);
+      return 0;
     }
+  }, []);
+
+  const ranges = {
+    // Blood Levels
+    hemoglobin: { male: [13.5, 17.5], female: [12.0, 16.0] },
+    platelet_count: [150000, 450000],
+    wbc: [4000, 11000],
+    rbc: { male: [4.5, 5.9], female: [4.1, 5.1] },
+    sedimentation_rate: { male: [0, 15], female: [0, 20] },
+
+    // Electrolyte Levels
+    sodium: [135, 145],
+    potassium: [3.5, 5.0],
+    chloride: [96, 106],
+
+    // Enzymes & Metabolism
+    ck: [22, 198],
+    ckmb: [0, 25],
+    creatinine: [0.7, 1.3],
+    ggt: [8, 61],
+    glucose: [70, 100],
+    inrpt: [0.8, 1.2],
+    lactate: [0.5, 2.2],
+    ld: [140, 280],
+    lipase: [13, 60],
+    magnesium: [1.7, 2.2],
+    ntpro_bnp: [0, 125],
+    ddimer: [0, 500],
+
+    // Chemical Examinations & Enzymes
+    acetone: [0, 0],
+    alt: [7, 56],
+    albumin: [3.4, 5.4],
+    alkaline_phosphatase: [44, 147],
+    ammonia: [15, 45],
+    amylase: [28, 100],
+    ast: [8, 48],
+    beta_hydroxybutyrate: [0, 0.6],
+    bicarbonate: [22, 29],
+    bilirubin: [0.3, 1.2],
+    crp: [0, 3.0],
+    calcium: [8.6, 10.3],
+    co2: [23, 29],
+
+    // Blood Gas Analysis
+    po2: [80, 100],
+    ph: [7.35, 7.45],
+    pco2: [35, 45],
   };
 
-  const renderFilterDropdowns = () => (
-    <div className="filter-dropdowns">
-      <div className="filters-left">
-        <div className="dropdown-container search-container">
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by Patient ID or Name"
-              value={searchInputValue}
-              onChange={(e) => setSearchInputValue(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  onSearch(e.target.value);
-                }
-              }}
-              className="patient-search-input"
-            />
-          </div>
-        </div>
+  // 정상 범위 체크 함수
+  const checkNormalRange = (category, value, gender) => {
+    const range = ranges[category];
+    if (!range) return null;
 
-        {Object.entries(filterOptions).map(
-          ([filterType, { label, options }]) => (
-            <div key={filterType} className="dropdown-container">
-              <button
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown(filterType)}
-              >
-                {selectedFilters[filterType]
-                  ? options.find(
-                      (opt) => opt.value === selectedFilters[filterType]
-                    )?.label
-                  : label}
-                <ChevronDown
-                  size={16}
-                  className={`dropdown-arrow ${
-                    openDropdown === filterType ? "open" : ""
-                  }`}
-                />
-              </button>
-              {openDropdown === filterType && (
-                <div className="dropdown-content">
-                  {options.map((option) => (
-                    <div
-                      key={option.value}
-                      className={`dropdown-item ${
-                        selectedFilters[filterType] === option.value
-                          ? "selected"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        handleFilterSelect(filterType, option.value)
-                      }
-                    >
-                      {option.label}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        )}
-        <button
-          className="reset-filters-button"
-          onClick={resetAllFilters}
-          title="Reset Filters"
-        >
-          <RotateCcw size={18} />
-        </button>
-      </div>
-      <div className="total-count-filter">
-        (총 {(totalElements || 0).toLocaleString()}명)
-      </div>
-    </div>
-  );
+    const numValue = parseFloat(value);
 
+    if (range.male && range.female) {
+      const genderRange = gender === "남" ? range.male : range.female;
+      return numValue >= genderRange[0] && numValue <= genderRange[1];
+    }
+
+    return numValue >= range[0] && numValue <= range[1];
+  };
+
+  // =========== 메인 렌더링 ===========
   return (
     <div className="page-wrapper">
+      <style>
+        {`
+          .table-container {
+            transition: opacity 0.3s ease;
+            position: relative;
+          }
+          .patient-row {
+            transition: opacity 0.3s ease;
+          }
+          .filter-dropdowns {
+            transition: opacity 0.3s ease;
+          }
+          .dropdown-content {
+            transition: all 0.2s ease;
+          }
+          .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease;
+          }
+          .sortable-header:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+          }
+          .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: ${loading ? 1 : 0};
+            pointer-events: ${loading ? "auto" : "none"};
+            transition: opacity 0.3s ease;
+          }
+        `}
+      </style>
+
       <div className="content-area">
-        {renderLocationTabs()}
-        <div className="table-container">
+        {/* 위치 탭 */}
+        <div className="location-tabs">
+          {["all", "icu", "ward", "discharge"].map((tab) => (
+            <button
+              key={tab}
+              className={`location-tab ${activeTab === tab ? "active" : ""}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* 테이블 컨테이너 */}
+        <div
+          className="table-container"
+          style={{
+            position: "relative",
+            opacity: isUpdating ? 0.6 : 1,
+            transition: "opacity 0.3s ease",
+          }}
+        >
           {renderFilterDropdowns()}
+
+          {/* 환자 목록 테이블 */}
           <table>
             <thead>
               <tr>
-                <th
-                  onClick={() => handleSort("subjectId")}
-                  className="sortable-header"
-                >
-                  PID {renderSortIcon("subjectId")}
-                </th>
-                <th
-                  onClick={() => handleSort("icd")}
-                  className="sortable-header"
-                >
-                  ICD {renderSortIcon("icd")}
-                </th>
-                <th
-                  onClick={() => handleSort("name")}
-                  className="sortable-header"
-                >
-                  이름 {renderSortIcon("name")}
-                </th>
-                <th
-                  onClick={() => handleSort("gender")}
-                  className="sortable-header"
-                >
-                  성별 {renderSortIcon("gender")}
-                </th>
-                <th
-                  onClick={() => handleSort("age")}
-                  className="sortable-header"
-                >
-                  나이 {renderSortIcon("age")}
-                </th>
-                <th
-                  onClick={() => handleSort("visitDate")}
-                  className="sortable-header"
-                >
-                  입실 시간 {renderSortIcon("visitDate")}
-                </th>
-                <th
-                  onClick={() => handleSort("pain")}
-                  className="sortable-header"
-                >
-                  통증 점수 {renderSortIcon("pain")}
-                </th>
-                <th
-                  onClick={() => handleSort("tas")}
-                  className="sortable-header"
-                >
-                  KTAS {renderSortIcon("tas")}
-                </th>
-                <th
-                  onClick={() => handleSort("ai_tas")}
-                  className="sortable-header"
-                >
-                  AI_TAS {renderSortIcon("ai_tas")}
-                </th>
+                {[
+                  { key: "subjectId", label: "PID" },
+                  { key: "icd", label: "ICD" },
+                  { key: "name", label: "이름" },
+                  { key: "gender", label: "성별" },
+                  { key: "age", label: "나이" },
+                  { key: "visitDate", label: "입실 시간" },
+                  { key: "pain", label: "통증 점수" },
+                  { key: "tas", label: "KTAS" },
+                  { key: "ai_tas", label: "AI_TAS" },
+                  { key: "abnormal", label: "비정상" },
+                ].map(({ key, label }) => (
+                  <th
+                    key={key}
+                    onClick={() => handleSort(key)}
+                    className="sortable-header"
+                  >
+                    {label} {renderSortIcon(key)}
+                  </th>
+                ))}
                 <th>상세 정보</th>
               </tr>
             </thead>
             <tbody>
-              {patients.length > 0 ? (
-                patients.map((patient) => (
-                  <tr
-                    key={patient.subjectId}
-                    style={{ opacity: loading ? 0.5 : 1 }}
-                  >
-                    {" "}
-                    {/* loading 상태일 때 opacity 조정 */}
-                    <td>{patient.subjectId}</td>
-                    <td>{patient.icd}</td>
-                    <td>{patient.name}</td>
-                    <td>{patient.gender}</td>
-                    <td>{patient.age}</td>
-                    <td>
-                      {patient.visits?.length > 0 ? (
-                        <>
-                          {new Date(
-                            patient.visits[patient.visits.length - 1].visitDate
-                          )
-                            .toLocaleDateString("ko-KR", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                            })
-                            .replace(/\. /g, ".")
-                            .slice(0, -1)}{" "}
-                          <br />
-                          <span>
-                            {new Date(
-                              patient.visits[
-                                patient.visits.length - 1
-                              ].visitDate
-                            ).toLocaleTimeString("ko-KR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: false,
-                            })}
-                          </span>
-                        </>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td>{patient.visits?.[0]?.pain || "-"}</td>
-                    <td>{patient.visits?.[0]?.tas || "-"}</td>
-                    <td>{patient.ai_tas || "-"}</td>
-                    <td>
-                      <button
-                        onClick={() => showPatientDetails(patient)}
-                        className="details-button"
-                        disabled={loadingDetails}
-                      >
-                        {loadingDetails ? "로딩 중..." : "상세 보기"}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+              {memoizedPatients.length > 0 ? (
+                memoizedPatients.map(renderPatientRow)
               ) : (
                 <tr>
                   <td colSpan="10" className="no-data-message">
@@ -464,7 +654,8 @@ function List({
             </tbody>
           </table>
 
-          {patients.length > 0 && (
+          {/* 페이지네이션 */}
+          {memoizedPatients.length > 0 && (
             <div className="pagination">
               <button
                 onClick={() => onPageChange(currentPage - 1)}
@@ -485,10 +676,32 @@ function List({
               </button>
             </div>
           )}
+
+          {/* 로딩 오버레이는 데이터 업데이트 중에만 표시 */}
+          {isUpdating && (
+            <div
+              className="loading-overlay"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(255, 255, 255, 0.5)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 1000,
+                transition: "opacity 0.3s ease",
+              }}
+            >
+              <div className="loading-spinner" />
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export default List;
+export default React.memo(List);

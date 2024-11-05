@@ -160,6 +160,12 @@
   gap: 1.5rem;
 }
 
+/* data-container 관련 스타일 */
+.data-container.with-blood-test {
+  position: relative;
+  z-index: 1; /* 낮은 z-index 설정 */
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -168,22 +174,55 @@
 }
 
 /* Updated Chart Styles */
+/* Vital Chart Styles */
 .vital-chart {
-  background: #fff;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   height: 300px;
   position: relative;
-  border: 1px solid #f0f0f0;
+  border: 1px solid #edf2f7;
 }
 
 .vital-chart h4 {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #666;
-  margin: 0 0 1rem 0;
-  height: 20px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 1.11rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 1.25rem 0;
+  height: 24px;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin-top: -17px;
+  padding-top: 11px;
+}
+
+/* Chart specific styles */
+.vital-chart .recharts-line-curve {
+  stroke: #2b6cb0;
+  stroke-width: 2;
+}
+
+.vital-chart .recharts-area {
+  fill: rgba(144, 205, 244, 0.15);
+}
+
+.vital-chart .recharts-tooltip {
+  background: white !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 8px 12px;
+}
+
+.vital-chart .recharts-cartesian-grid line {
+  stroke: #edf2f7;
+}
+
+.vital-chart .recharts-cartesian-axis-tick-value {
+  font-size: 12px;
+  fill: #718096;
 }
 
 /* Blood Test Container and Related Styles */
@@ -210,11 +249,6 @@
   padding-bottom: 15px;
   border-bottom: 1px solid #eee;
   flex-shrink: 0;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
 }
 
 .blood-test-content {
@@ -252,7 +286,7 @@
   font-family: 'Pretendard', sans-serif;
   color: #000000;
   align-items: center;
-  margin-left: 136px;
+  margin-left: 111px;
   padding-bottom: 2px;
 }
 
@@ -317,6 +351,7 @@
 
 .raw-data-table th,
 .raw-data-table td {
+  font-family: 'Pretendard', sans-serif;
   padding: 8px;
   border: 1px solid #ddd;
   font-size: 0.9rem;
@@ -324,6 +359,7 @@
 }
 
 .raw-data-table th {
+  font-family: 'Pretendard', sans-serif;
   background-color: #f5f5f5;
   font-weight: 600;
   text-align: center;
@@ -400,16 +436,17 @@
 
 /* Tab Navigation Styles */
 .category-tabs {
+  font-family: 'Pretendard', sans-serif;
   display: flex;
-  gap: 8px;
+  gap: 11px;
   padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;
   background: #fff;
   position: sticky;
   top: 0;
   z-index: 100;
-  margin-bottom: 12px;
-  margin-left: 22px;
+  margin-bottom: 5px;
+  margin-left: 7px;
 }
 
 .category-tab {
@@ -529,52 +566,219 @@
   stroke: #82ca9d;
 }
 
+/* 상위 컨테이너들도 overflow: visible로 설정 */
+.patient-details,
+.data-container,
+.data-container.with-blood-test {
+  overflow: visible !important;
+}
+
 /* History Table Styles */
 .history-table-container {
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #e5e9f0;
+  border-radius: 12px;
   margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  background: white;
+  overflow: visible !important;
+  position: relative;
 }
 
+/* History Table Container & Basic Table Styles */
 .history-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.history-table th,
-.history-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
+/* Header Styles */
 .history-table th {
-  background-color: #f5f5f5;
-  font-weight: bold;
-  position: sticky;
+  background-color: #f8fafd;
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 16px;
+  position: relative;
   top: 0;
   z-index: 10;
+  border-bottom: 2px solid #e5e9f0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: visible; /* 추가 */
 }
 
+
+/* 헤더 내용을 감싸는 컨테이너 */
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px -10px;
+  padding: 6px 10px;
+  justify-content: flex-end;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+}
+
+/* Cell Styles */
+.history-table td {
+  font-family: 'Pretendard', sans-serif;
+  padding: 16px;
+  color: #4a5568;
+  border-bottom: 1px solid #edf2f7;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+/* 헤더 내용을 감싸는 컨테이너 - 첫 번째 th만 오른쪽 정렬 */
+.history-table th:first-child .header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px -30px;
+  padding: 6px 10px;
+  justify-content: center;  /* 오른쪽 정렬 추가 */
+  width: 130%;  /* 전체 너비 사용 */
+}
+
+/* Row Hover Effect */
 .history-table tbody tr:hover {
-  background-color: #f9f9f9;
+  background-color: #f8fafd;
+  transition: background-color 0.2s ease;
 }
 
+.history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Date Button Styles */
 .date-button {
   background: none;
   border: none;
-  color: #3f51b5;
-  text-decoration: underline;
+  color: #2d3748;
+  text-decoration: none;
   cursor: pointer;
-  padding: 0;
+  margin: -6px -10px;
+  padding: 6px 10px;
   font: inherit;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  position: relative;
 }
 
 .date-button:hover {
-  color: #1a237e;
+  background-color: #f3f4f6;
+  color: #1a202c;
 }
+
+.date-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(92, 92, 92, 0.15);
+}
+
+.date-button:active {
+  background-color: #e2e8f0;
+}
+
+.date-button::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background-color: #e2e8f0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.date-button:hover::after {
+  opacity: 1;
+}
+
+/* Tooltip Styles */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* 물음표 아이콘 */
+.info-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: help;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+}
+
+/* 툴팁 텍스트 */
+.tooltip-text {
+  position: fixed;
+  visibility: hidden;
+  background-color: #f8f9fa;
+  color: #333333;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 99999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+  transform: translateX(-50%);
+  border: 1px solid #e9ecef;
+  font-weight: 599;
+  background-image: linear-gradient(to bottom, #f1f3f5, #e9ecef);
+}
+
+.tooltip-text[data-show="true"] {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 툴팁 화살표 */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #e9ecef transparent transparent transparent;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+}
+
+/* 툴팁 컨테이너 */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+}
+
+/* 호버 효과 */
+.tooltip-container:hover .info-icon {
+  background-color: #cbd5e0;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
 
 /* Utility Classes */
 .highlighted-row {
@@ -898,6 +1102,8 @@
     flex-direction: column;
   }
 
+
+
   .charts-grid {
     width: 100%;
     grid-template-columns: 1fr;
@@ -925,5 +1131,77 @@
     min-width: 0;
     flex-shrink: 0;
   }
+
+/* ? 아이콘 부분 */
+.tooltip-wrapper {
+  position: relative;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  z-index: 1001;  /* 추가 */
+}
+
+.info-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: help;
+  transition: all 0.2s ease;
+  position: relative;  /* 추가 */
+  z-index: 1001;  /* 추가 */
+}
+
+.tooltip-content {
+  
+  position: relative;
+  visibility: hidden;
+  opacity: 0;
+  background-color: #2d3748;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: normal;
+  white-space: nowrap;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  z-index: 1002;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  min-width: max-content;
+  display: inline-block;
+}
+
+.tooltip-content::before {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background-color: #2d3748;
+}
+
+/* 호버 효과 수정 */
+.tooltip-wrapper:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  display: block;  /* 추가 */
+}
+
+.tooltip-wrapper:hover .info-icon {
+  background-color: #cbd5e0;
+  color: #2d3748;
+}
 
 }

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect  } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
 import './Patient.css';
@@ -130,6 +130,13 @@ const koreanNames = {
   pco2: "이산화탄소분압(PCO2)"
 };
 
+// 날짜 포맷팅 함수  // Patiet만 건드리려고 App에서 복붙
+const formatVisitDate = (dateArray) => {
+  if (!Array.isArray(dateArray) || dateArray.length < 5) return null;
+  const [year, month, day, hour, minute] = dateArray;
+  return new Date(year, month - 1, day, hour, minute);
+};
+
 // 유틸리티 함수들
 const checkNormalRange = (category, value, gender) => {
   const range = ranges[category];
@@ -210,12 +217,13 @@ const VitalSignChart = ({ data, config }) => {
               }}
               labelStyle={{ color: '#666' }}
             />
+            {/* 현재 데이터 값 아래의 하늘색 영역 추가 */}
             <Area
               type="monotone"
               dataKey={dataKey}
               stroke="none"
-              fill={`url(#color${dataKey})`}
-              fillOpacity={1}
+              fill="#E3F2FD"  // 연한 하늘색
+              fillOpacity={0.5} // 투명도 조절
             />
             <Line 
               type="monotone" 
@@ -625,6 +633,37 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const tooltipContainer = document.querySelector('.tooltip-container');
+    const tooltipText = document.querySelector('.tooltip-text');
+    const infoIcon = document.querySelector('.info-icon');
+    const historyTable = document.querySelector('.history-table');
+    
+    if (tooltipContainer && tooltipText && infoIcon && historyTable) {
+      const handleMouseEnter = () => {
+        const iconRect = infoIcon.getBoundingClientRect();
+        const tableRect = historyTable.getBoundingClientRect();
+        
+        // 테이블의 상단에서 충분히 위로 올라간 위치에 툴팁 배치
+        tooltipText.style.left = `${iconRect.left + (iconRect.width / 2)}px`;
+        tooltipText.style.top = `${tableRect.top - tooltipText.offsetHeight - 3}px`;
+        tooltipText.setAttribute('data-show', 'true');
+      };
+  
+      const handleMouseLeave = () => {
+        tooltipText.removeAttribute('data-show');
+      };
+  
+      tooltipContainer.addEventListener('mouseenter', handleMouseEnter);
+      tooltipContainer.addEventListener('mouseleave', handleMouseLeave);
+  
+      return () => {
+        tooltipContainer.removeEventListener('mouseenter', handleMouseEnter);
+        tooltipContainer.removeEventListener('mouseleave', handleMouseLeave);
+      };
+    }
+  }, []);
+
   // 가장 최근 방문 데이터로 초기화
   const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
   
@@ -647,7 +686,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
 
   // 방문 기록을 날짜 기준 내림차순으로 정렬
   const patientHistory = patientData?.visits?.map(visit => ({
-    date: new Date(visit.visitDate).toLocaleDateString(),
+    date: formatVisitDate(visit.visitDate)?.toLocaleDateString() || 'Invalid Date', // 날짜 포맷 수정
     originalDate: visit.visitDate,
     stay_id: visit.stayId,
     ktas: visit.tas,
@@ -711,8 +750,8 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       title: "심박수",
       dataKey: "heartRate",
       dataName: "심박수(bpm)",
-      yDomain: [30, 150],
-      yTicks: [30, 60, 90, 120, 150]
+      yDomain: [30, 120],
+      yTicks: [30, 60, 90, 120]
     },
     bloodPressure: {
       title: "혈압",
@@ -740,6 +779,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       yDomain: [0, 40],
       yTicks: [0, 10, 20, 30, 40]
     }
+
   };
 
   return (
@@ -770,8 +810,6 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
           <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
         </div>
       </div>
-      <br/>
-      <h3>응급실 내원 기록</h3>
       <div className="history-table-container">
         {patientHistory.length === 0 ? (
           <p>내원 기록 데이터가 없습니다.</p>
@@ -779,7 +817,17 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
           <table className="history-table">
             <thead>
               <tr>
-                <th>입실 날짜</th>
+                <th>
+                  <div className="header-content">
+                    과거 입실 날짜
+                    <div className="tooltip-container">  {/* wrapper를 container로 변경 */}
+                      <span className="info-icon">?</span>
+                      <span className="tooltip-text">  {/* content를 text로 변경 */}
+                        과거 입실 날짜를 클릭해 해당 날짜의 데이터 보기
+                      </span>
+                    </div>
+                  </div>
+                </th>
                 <th>KTAS</th>
                 <th>체류 시간</th>
                 <th>배치 결과</th>
@@ -789,11 +837,11 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
               {patientHistory.map((record, index) => (
                 <tr key={index}>
                   <td>
-                    <button 
-                      className="date-button" 
+                    <button
+                      className="date-button"
                       onClick={() => handleDateClick(record.date, record.stay_id)}
                     >
-                      {record.date} 
+                      {record.date}
                     </button>
                   </td>
                   <td>{record.ktas}</td>
