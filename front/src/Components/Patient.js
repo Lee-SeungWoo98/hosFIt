@@ -292,7 +292,7 @@ const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
             </div>
           </div>
           <div className="banner-item">
-            <span className="label">배치 추천</span>
+            <span className="label">AI TAS 추천</span>
             <div className="value-container placement-container">
               ㅁㅁㅁㅁㅁㅁㅁㅁ
             </div>
@@ -575,12 +575,10 @@ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
           <button className="close-button" onClick={onClose}>&times;</button>
         </div>
         <div className="modal-content">
-          <div className="modal-section">
-            <div className="ai-recommendation">
-              <h3>AI 배치 추천</h3>
-              <div className="recommendation-box">
-                {aiRecommendation || 'AI 분석 중...'}
-              </div>
+          <div className="ai-recommendation">
+            <h3>AI TAS 추천 :</h3>
+            <div className="recommendation-box">
+              {aiRecommendation || 'AI 분석 중...'}
             </div>
           </div>
           <div className="modal-section">

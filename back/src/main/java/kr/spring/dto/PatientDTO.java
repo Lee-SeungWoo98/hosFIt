@@ -16,7 +16,7 @@ public class PatientDTO {
 		public PatientDTO() {
     }
 
-	 	private Long subjectId;
+		private Long subjectId;
 	    private String name;
 	    private String gender;
 	    private String birthdate;
@@ -25,5 +25,15 @@ public class PatientDTO {
 	    private String pregnancystatus;
 	    private Long phoneNumber;
 	    private String residentNum;
-	    private List<VisitDTO> visits;  // 방문 기록 정보 리스트
+	    private String icd;
+	    private List<VisitDTO> visits; // List<Visit>에서 List<VisitDTO>로 변경
+
+	    // getter, setter
+	    public List<VisitDTO> getVisits() {
+	        return visits;
+	    }
+
+	    public void setVisits(List<VisitDTO> visits) {
+	        this.visits = visits;
+	    }   // 방문 기록 정보 리스트
 }

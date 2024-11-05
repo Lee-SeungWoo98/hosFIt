@@ -27,4 +27,7 @@ public class ExaminationController {
         }
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(response);
     }
+    
+    // vital + aitas
+    
 }

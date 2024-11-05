@@ -637,9 +637,104 @@
   position: relative;  /* 구분선을 위한 position 설정 */
 }
 
+.close-button {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s;
+  padding: 0.5rem;
+}
+
+.close-button:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+
+
+/* AI 추천 섹션 */
+.ai-recommendation {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(to right, rgba(37, 99, 235, 0.02), rgba(37, 99, 235, 0.05));
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;  /* 패딩 약간 증가 */
+  gap: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  margin-bottom: 1.5rem;  /* 하단 마진 증가 */
+}
+
+.ai-recommendation h3 {
+  font-size: 0.9rem;
+  color: #2563eb;
+  margin: 0;
+  font-weight: 600;
+  min-width: fit-content;
+}
+
+.recommendation-box {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: none;
+  flex: 1;
+}
+
+/* 입력 필드 스타일 */
+.doctor-note {
+  width: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 8px;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.6;
+  background: white;
+  transition: all 0.2s;
+}
+
+.doctor-note:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05);
+}
+
+/* 셀렉트 박스 스타일 */
+.placement-select {
+  width: 100%;
+  padding: 0.875rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1e293b;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.placement-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05);
+}
+
+.placement-select option {
+  padding: 0.875rem;
+  font-size: 1rem;
+}
+
 /* 모달 관련 부분들 */
 .modal-backdrop {
-  --bs-backdrop-bg: rgba(255, 255, 255, 0.3) !important;
+  --bs-backdrop-bg: rgba(255, 255, 255, 0.5) !important;
   --bs-backdrop-opacity: 1 !important;
   position: fixed;
   top: 0;
@@ -650,165 +745,105 @@
   width: 100vw;
   height: 100vh;
   background-color: var(--bs-backdrop-bg) !important;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* 모달 컨테이너 */
 .placement-modal {
   background-color: white;
-  border-radius: 12px;
-  width: 600px;
-  max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08);  /* 그림자 효과 더 연하게 */
+  border-radius: 20px;
+  width: 800px;
+  max-width: 95vw;
+  height: 80vh;
+  max-height: 800px;
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(37, 99, 235, 0.1);
 }
 
-.modal-header {
+/* 컨텐츠 영역 */
+.modal-content {
   padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  background-color: #f8fafc;
+  display: grid;
+  gap: 1.5rem;
+  flex: 1; 
+  overflow-y: auto;
+}
+
+/* 모달 헤더 */
+.modal-header {
+  padding: 2rem 1.5rem;
+  background: linear-gradient(to right, rgba(37, 99, 235, 0.03), rgba(37, 99, 235, 0.07));
+  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  background: linear-gradient(to right, #2563eb, #3b82f6);  /* 그라데이션 헤더 */
-  border-radius: 12px 12px 0 0;
-  color: white;
+  position: relative;
 }
 
 .modal-header h2 {
-  margin-top: 10px;
-  margin-left: 222px;
+  color: #1e293b;
   font-size: 1.5rem;
-  font-weight: 500;
+  font-weight: 600;
+  margin: 0.5rem 0;  /* 상하 마진 추가 */
 }
 
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: white;
-  opacity: 0.85;
-  transition: opacity 0.2s;
-  margin-bottom: 5px;
-  margin-right: 7px;
-}
-
-.close-button:hover {
-  opacity: 1;
-}
-
-/* 모달 콘텐츠 배경도 더 밝게 조정 */
-.modal-content {
-  padding: 2rem;
-  background-color: white;  /* #fafafa에서 white로 변경 */
-}
-
-.modal-section {
-  margin-bottom: 2rem;
-  background-color: white;
+/* 푸터 영역 */
+.modal-footer {
   padding: 1.5rem;
-  border-radius: 8px;
+  background: linear-gradient(to right, rgba(37, 99, 235, 0.02), rgba(37, 99, 235, 0.05));
+  border-top: 1px solid rgba(37, 99, 235, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 의사 소견 & 배치 결정 컨테이너 */
+.modal-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.05);
   border: 1px solid rgba(37, 99, 235, 0.1);
+  margin-bottom: 1rem;
 }
 
 .modal-section h3 {
-  color: #2563eb;  /* 포인트 컬러 */
+  font-size: 0.9rem;
+  color: #2563eb;
   margin-bottom: 1rem;
-  font-size: 1.1rem;
   font-weight: 600;
-}
-
-.ai-recommendation {
-  background-color: white;
-  border: 1px solid rgba(37, 99, 235, 0.1);
-  border-radius: 8px;
-  padding: 1.5rem;
-}
-
-.recommendation-box {
-  background-color: rgba(37, 99, 235, 0.05);  /* 포인트 컬러의 연한 배경 */
-  padding: 1.2rem;
-  border-radius: 6px;
-  color: #2563eb;  /* 포인트 컬러 */
-  font-weight: 500;
-  text-align: center;
-  border: 1px solid rgba(37, 99, 235, 0.1);
-}
-
-.doctor-note {
-  width: 100%;
-  padding: 1rem;
-  border: 1px solid rgba(37, 99, 235, 0.2);  /* 포인트 컬러의 테두리 */
-  border-radius: 6px;
-  resize: vertical;
-  font-family: inherit;
-  min-height: 100px;
-  transition: border-color 0.2s;
-}
-
-.doctor-note:focus {
-  outline: none;
-  border-color: #2563eb;  /* 포인트 컬러 */
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.placement-select {
-  width: 100%;
-  padding: 0.875rem;
-  border: 1px solid rgba(37, 99, 235, 0.2);  /* 포인트 컬러의 테두리 */
-  border-radius: 6px;
-  background-color: white;
-  font-size: 1rem;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.placement-select:focus {
-  outline: none;
-  border-color: #2563eb;  /* 포인트 컬러 */
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.placement-select option {
-  padding: 0.875rem;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  background-color: white;
-  border-radius: 0 0 12px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .confirm-button {
-  background-color: #2563eb;  /* 포인트 컬러 */
+  background-color: #2563eb;
   color: white;
   border: none;
   padding: 0.875rem 2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
 }
 
 .confirm-button:hover:not(:disabled) {
-  background-color: #1d4ed8;  /* 포인트 컬러의 어두운 버전 */
+  background-color: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .confirm-button:disabled {
-  background-color: #e5e7eb;
+  background-color: #e2e8f0;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 /* 배치 결정 버튼 컨테이너 스타일 */

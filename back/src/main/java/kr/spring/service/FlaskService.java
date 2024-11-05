@@ -4,15 +4,18 @@ package kr.spring.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import kr.spring.dto.AiDTO;
 import kr.spring.dto.FlaDTO;
 import kr.spring.entity.AiTAS;
 import kr.spring.entity.Visit;
+import kr.spring.repository.AiTASProjection;
 import kr.spring.repository.AiTASRepository;
 import kr.spring.repository.FlaskRepository;
 
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -62,14 +65,35 @@ public class FlaskService {
     public List<FlaDTO> getPatientData(int subjectId) {
         return flaskRepository.getPatientData(subjectId);
     }
+    // ATTAS만
+//	public AiTAS getAiTAS(String charnum) {
+//		// TODO Auto-generated method stub
+//		return aiTASRepository.findAllByChartnum(charnum);
+//	}
 
-	public AiTAS getAiTAS(Long stayId) {
+	public List<AiTASProjection> getAiTASAll() {
 		// TODO Auto-generated method stub
-		return aiTASRepository.findByStayId(stayId);
+		  return aiTASRepository.findAllProjectedBy();
 	}
+	
+	
+	// aitas vital
+	private AiDTO convertToAiDTO(AiTAS aiTAS) {
+	    AiDTO aiDTO = new AiDTO();
+	    aiDTO.setChartNum(aiTAS.getChartNum());  // Chartnum 설정
+	     // Temperature 설정
+	    aiDTO.setId(aiTAS.getId());  // ID 설정
+	    aiDTO.setLevel1(aiTAS.getLevel1());  // Level1 설정
+	    aiDTO.setLevel2(aiTAS.getLevel2());  // Level2 설정
+	    aiDTO.setLevel3(aiTAS.getLevel3());  // Level3 설정
 
-	public List<AiTAS> getAiTASAll() {
-		// TODO Auto-generated method stub
-		return aiTASRepository.findAll();
+	    return aiDTO;
+	}
+	//  AI TAS + VITAL
+	public List<AiDTO> getAllAichart(String chartNum) {
+	    List<AiTAS> aiTASList = aiTASRepository.findAllByChartNum(chartNum);
+	    return aiTASList.stream()
+	                    .map(this::convertToAiDTO) // AiTAS -> AiDTO 변환
+	                    .collect(Collectors.toList());
 	}
 }

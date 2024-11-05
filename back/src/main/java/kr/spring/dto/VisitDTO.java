@@ -1,5 +1,6 @@
 package kr.spring.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,23 +25,14 @@ public class VisitDTO {
   
  
     private Long stayId;
-
-  
-    private Patient patient;
-
-   
     private Long pain;
-
     private String losHours;
-
-    private Long TAS;
-
- 
+    private Long tas;
     private Long arrivalTransport;
-
-  
     private Long label;
+    private LocalDateTime visitDate;
     
-    private LocalDateTime  VisitDate;
+    private List<VitalSignsDTO> vitalSigns;  // 생체 신호 정보 리스트
+    private List<AiDTO> AiTAS;   // AI 분석 결과 리스트
 
 }
