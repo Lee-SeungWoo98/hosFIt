@@ -36,7 +36,7 @@ public class Visit implements Serializable {
     private String losHours;
 
     @Column(name = "TAS")
-    private Long TAS;
+    private Long tas;
 
     @Column(name = "arrivaltransport")
     private Long arrivalTransport;

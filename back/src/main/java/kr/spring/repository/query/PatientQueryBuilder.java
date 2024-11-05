@@ -22,7 +22,7 @@ import kr.spring.entity.Visit;
 @Component
 public class PatientQueryBuilder {
    
-   public Specification<Patient> buildSpecification(String name, Long gender, Long TAS, Long pain) {
+   public Specification<Patient> buildSpecification(String name, Long gender, Long tas, Long pain) {
        return (root, query, builder) -> {
            List<Predicate> predicates = new ArrayList<>();
            Join<Patient, Visit> visitJoin = root.join("visits", JoinType.INNER);
@@ -36,8 +36,8 @@ public class PatientQueryBuilder {
                predicates.add(builder.equal(root.get("gender"), gender));
            }
            
-           if (TAS != null) {
-               predicates.add(builder.equal(visitJoin.get("TAS"), TAS));
+           if (tas != null) {
+               predicates.add(builder.equal(visitJoin.get("tas"), tas));
            }
            
            if (pain != null) {
@@ -76,9 +76,9 @@ public class PatientQueryBuilder {
    }
    
    private void addTASPredicate(List<Predicate> predicates, CriteriaBuilder builder, 
-           Join<Patient, Visit> visitJoin, Long TAS) {
-       if (TAS != null) {
-           predicates.add(builder.equal(visitJoin.get("TAS"), TAS));
+           Join<Patient, Visit> visitJoin, Long tas) {
+       if (tas != null) {
+           predicates.add(builder.equal(visitJoin.get("tas"), tas));
        }
    }
    

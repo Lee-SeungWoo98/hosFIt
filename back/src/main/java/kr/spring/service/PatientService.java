@@ -39,8 +39,8 @@ import kr.spring.repository.VisitRepository;
 import kr.spring.repository.VitalSignsRepository;
 @Service
 public class PatientService {
-   
-   @Autowired
+	
+	@Autowired
     private VitalSignsService vitalSignsService;
 
     @Autowired
@@ -48,7 +48,6 @@ public class PatientService {
     
     @Autowired
     private VitalSignsRepository vitalSignsRepository;
-    @Autowired
     private VisitRepository visitRepository;
     
     @Autowired
@@ -107,7 +106,7 @@ public class PatientService {
                 stayId,
                 row.getPain(),
                 row.getLosHours(),
-                row.getTAS(),
+                row.getTas(),
                 row.getArrivalTransport(),
                 row.getLabel(),
                 row.getVisitDate(),
@@ -132,7 +131,7 @@ public class PatientService {
             // AiTAS 정보 (Optional)
             if (row.getChartNum() != null) {
                 AiDTO aiData = new AiDTO(
-                   
+                	
                     row.getChartNum(),
                     row.getId(),  
                     row.getLevel1(),
@@ -154,39 +153,39 @@ public class PatientService {
         this.visitRepository = visitRepository;
     }
     //필터링 + 페이징 
-    public Map<String, Object> getPatientsByStaystatus(int page, String name, Long gender, Long TAS, Long pain) {
-       PageRequest pageable = PageRequest.of(page, 10);
+    public Map<String, Object> getPatientsByStaystatus(int page, String name, Long gender, Long tas, Long pain) {
+    	PageRequest pageable = PageRequest.of(page, 10);
 
-       Specification<Patient> spec = (root, query, builder) -> {
-           Join<Patient, Visit> visitJoin = root.join("visits", JoinType.INNER);
-           List<javax.persistence.criteria.Predicate> predicates = new ArrayList<>();
-           
-           // TAS 필터링
-           if (TAS != null) {
-               predicates.add(builder.equal(visitJoin.get("TAS"), TAS));
-           }
-           
-           // staystatus 조건
-           predicates.add(builder.equal(visitJoin.get("staystatus"), 1));
-           
-           // 나머지 필터 조건들
-           if (name != null && !name.trim().isEmpty()) {
-               predicates.add(builder.like(builder.lower(root.get("name")), 
-                   "%" + name.toLowerCase() + "%"));
-           }
-           if (gender != null) {
-               predicates.add(builder.equal(root.get("gender"), gender));
-           }
-           if (pain != null) {
-               predicates.add(builder.equal(visitJoin.get("pain"), pain));
-           }
-           
-           query.orderBy(builder.asc(root.get("subjectId")));
-           
-           return builder.and(predicates.toArray(new javax.persistence.criteria.Predicate[0]));
-       };
+    	Specification<Patient> spec = (root, query, builder) -> {
+    	    Join<Patient, Visit> visitJoin = root.join("visits", JoinType.INNER);
+    	    List<javax.persistence.criteria.Predicate> predicates = new ArrayList<>();
+    	    
+    	    // TAS 필터링
+    	    if (tas != null) {
+    	        predicates.add(builder.equal(visitJoin.get("tas"), tas));
+    	    }
+    	    
+    	    // staystatus 조건
+    	    predicates.add(builder.equal(visitJoin.get("staystatus"), 1));
+    	    
+    	    // 나머지 필터 조건들
+    	    if (name != null && !name.trim().isEmpty()) {
+    	        predicates.add(builder.like(builder.lower(root.get("name")), 
+    	            "%" + name.toLowerCase() + "%"));
+    	    }
+    	    if (gender != null) {
+    	        predicates.add(builder.equal(root.get("gender"), gender));
+    	    }
+    	    if (pain != null) {
+    	        predicates.add(builder.equal(visitJoin.get("pain"), pain));
+    	    }
+    	    
+    	    query.orderBy(builder.asc(root.get("subjectId")));
+    	    
+    	    return builder.and(predicates.toArray(new javax.persistence.criteria.Predicate[0]));
+    	};
 
-       Page<Patient> pageResult = patientRepository.findAll(spec, pageable);
+    	Page<Patient> pageResult = patientRepository.findAll(spec, pageable);
         
         // DTO 변환 시 TAS 필터링 한번 더 확인
         Map<String, Object> response = new HashMap<>();
@@ -195,7 +194,7 @@ public class PatientService {
                 PatientDTO patientDTO = modelMapper.map(patient, PatientDTO.class);
                 // TAS 조건에 맞는 visit만 필터링
                 List<VisitDTO> visitDTOs = patient.getVisits().stream()
-                    .filter(visit -> TAS == null || visit.getTAS().equals(TAS))
+                    .filter(visit -> tas == null || visit.getTas().equals(tas))
                     .map(visit -> modelMapper.map(visit, VisitDTO.class))
                     .collect(Collectors.toList());
                 patientDTO.setVisits(visitDTOs);
@@ -209,8 +208,8 @@ public class PatientService {
         return response;
     }
  // TAS 값을 기준으로 환자 목록 반환
-    public List<Patient> getPatientsByTAS(Long TAS) {
-        return patientRepository.findDistinctByVisitsTASAndStaystatus(TAS);
+    public List<Patient> getPatientsByTas(Long tas) {
+        return patientRepository.findDistinctByVisitsTasAndStaystatus(tas);
     }
 
     public Map<String, Object> getPatientsByStaystatus(int page) {
@@ -224,30 +223,30 @@ public class PatientService {
         return response;
     }
 
-   
-   public Map<Integer, Long> getPatientsByTas() {
-         System.out.println("[PatientService - getPatientsByTas] Service method called");
-           List<Object[]> result = patientRepository.countPatientsByTas();
-           Map<Integer, Long> tasCountMap = new HashMap<>();
+	
+	public Map<Integer, Long> getPatientsByTas() {
+		   System.out.println("[PatientService - getPatientsByTas] Service method called");
+	        List<Object[]> result = patientRepository.countPatientsByTas();
+	        Map<Integer, Long> tasCountMap = new HashMap<>();
 
-           // SQL 쿼리 결과를 Map에 저장
-           for (Object[] row : result) {
-               Integer tas = ((Number) row[0]).intValue();
-               Long count = (Long) row[1];
-               tasCountMap.put(tas, count);
-           }
+	        // SQL 쿼리 결과를 Map에 저장
+	        for (Object[] row : result) {
+	            Integer tas = ((Number) row[0]).intValue();
+	            Long count = (Long) row[1];
+	            tasCountMap.put(tas, count);
+	        }
 
-           // tas 1부터 5까지의 값을 반환, 없으면 0 처리
-           for (int i = 1; i <= 5; i++) {
-               tasCountMap.putIfAbsent(i, 0L);  // 없는 tas 값은 0으로 처리
-           }
+	        // tas 1부터 5까지의 값을 반환, 없으면 0 처리
+	        for (int i = 1; i <= 5; i++) {
+	            tasCountMap.putIfAbsent(i, 0L);  // 없는 tas 값은 0으로 처리
+	        }
 
-           return tasCountMap;
-       }
-   // 환자 생체 데이터
+	        return tasCountMap;
+	    }
+	// 환자 생체 데이터
     public List<VitalSigns> getVitalSigns(Long stayId) {
-       Visit visit = visitRepository.findByStayId(stayId);
-      return vitalSignsRepository.findByVisit(visit);
+    	Visit visit = visitRepository.findByStayId(stayId);
+		return vitalSignsRepository.findByVisit(visit);
     }
     
     

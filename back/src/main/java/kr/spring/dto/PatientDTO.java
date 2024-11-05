@@ -26,7 +26,6 @@ public class PatientDTO {
 	    private Long phoneNumber;
 	    private String residentNum;
 	    private String icd;
-	    
 	    private List<VisitDTO> visits; // List<Visit>에서 List<VisitDTO>로 변경
 
 	    // getter, setter

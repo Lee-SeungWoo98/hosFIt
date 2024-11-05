@@ -31,13 +31,13 @@ public class PatientController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long gender,
-            @RequestParam(required = false) Long TAS,
+            @RequestParam(required = false) Long tas,
             @RequestParam(required = false) Long pain) {
         
         log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
-                name, gender, TAS, pain, page);
+                name, gender, tas, pain, page);
         
-        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, TAS, pain);
+        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
         return ResponseEntity.ok(result);
     }
 
@@ -91,7 +91,7 @@ public class PatientController {
             @PathVariable("tasLevel") Long tas) {
         
         log.info("Fetching patients with TAS level: {}", tas);
-        List<Patient> patients = patientService.getPatientsByTAS(tas);
+        List<Patient> patients = patientService.getPatientsByTas(tas);
         return ResponseEntity.ok(patients);
     }
 }

@@ -17,11 +17,12 @@ public interface PatientProjection {
 	    String getPregnancystatus();
 	    Long getPhoneNumber();
 	    String getResidentNum();
+	    String getIcd();
 
 	    Long getStayId();
 	    Long getPain();
 	    String getLosHours();
-	    Long getTAS();
+	    Long getTas();
 	    Long getArrivalTransport();
 	    Long getLabel();
 	    LocalDateTime getVisitDate();

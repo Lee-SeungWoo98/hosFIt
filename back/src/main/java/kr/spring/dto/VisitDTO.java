@@ -27,7 +27,7 @@ public class VisitDTO {
     private Long stayId;
     private Long pain;
     private String losHours;
-    private Long TAS;
+    private Long tas;
     private Long arrivalTransport;
     private Long label;
     private LocalDateTime visitDate;
