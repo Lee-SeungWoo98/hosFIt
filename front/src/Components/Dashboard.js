@@ -1,104 +1,94 @@
-import React from 'react';
-import SummaryCards from './SummaryCards';
-import ChartSection from './ChartSection';
-import AlertSection from './AlertSection';
-import LoadingSpinner from './LoadingSpinner';
-import { Chart, registerables } from 'chart.js';
-import './styles/Dashboard.css';
+import React, { useState } from "react";
+import { TrendingUp } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { useScores } from "./ScoreContext";
+import "./styles/Dashboard.css";
 
-// Chart.js 등록
-Chart.register(...registerables);
+const Dashboard = ({ loading, onTabChange }) => {
+  // onTabChange prop 추가
+  const { scores } = useScores();
 
-// 공통 차트 옵션
-const commonChartOptions = {
- responsive: true,
- maintainAspectRatio: false,
- plugins: {
-   legend: {
-     position: 'top',
-     labels: {
-       usePointStyle: true,
-       padding: 20,
-       font: { size: 12 }
-     }
-   },
-   tooltip: {
-     backgroundColor: 'white',
-     titleColor: '#1f2937',
-     bodyColor: '#1f2937',
-     borderColor: '#e5e7eb',
-     borderWidth: 1,
-     padding: 12,
-     boxPadding: 6,
-     usePointStyle: true,
-     callbacks: {
-       label: function(context) {
-         return ` ${context.formattedValue}%`;
-       }
-     }
-   }
- }
-};
+  // AI 모델 관리 탭으로 이동하는 핸들러
+  const handleSettingsClick = () => {
+    onTabChange("model"); // 사이드바의 AI 모델 관리 탭 활성화
+  };
 
-const Dashboard = ({ loading }) => {
- const dashboardData = {
-   summaryCards: [
-     {
-       title: '모델 정확도',
-       value: '94.5%',
-       trend: 'up',
-       trendValue: '1.2%',
-       subText: '최근 30일'
-     },
-     {
-       title: 'ICU 입실률',
-       value: '15.2%',
-       trend: 'down',
-       trendValue: '0.8%',
-       subText: '목표: 20%'
-     },
-     {
-       title: '총 예측 건수',
-       value: '2,480',
-       trend: 'up',
-       trendValue: '12.5%',
-       subText: '이번 달'
-     }
-   ],
-   chartData: {
-     monthly: {
-       labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월'],
-       datasets: [{
-         label: 'ICU 입실률',
-         data: [15.2, 14.8, 16.1, 15.5, 14.9, 15.2, 16.0, 15.7, 15.9, 15.2],
-         borderColor: '#2563eb',
-         backgroundColor: 'rgba(37, 99, 235, 0.1)',
-         tension: 0.4,
-         fill: true
-       }]
-     },
-     distribution: {
-       labels: ['ICU', '일반병동', '퇴원'],  //글자 수정
-       datasets: [{
-         data: [30, 25, 35],
-         backgroundColor: ['#3b82f6', '#22c55e', '#f97316']  // 색 변경 ICU(파),일반(초),퇴원(주)
-       }]
-     }
-   }
- };
+  return (
+    <div className="dashboard-container">
+      <div className="dashboard-header">
+        <div className="header-title">
+          <h1>대시보드</h1>
+          <span className="last-update">
+            마지막 업데이트: 2024-10-25 10:30:00
+          </span>
+        </div>
+        <button className="refresh-button">새로고침</button>
+      </div>
 
- return (
-   <div className="admin-dashboard">
-     {loading && <div className="admin-dashboard-loading"><LoadingSpinner /></div>}
-     <SummaryCards data={dashboardData.summaryCards} />
-     <ChartSection 
-       monthlyData={dashboardData.chartData.monthly}
-       distributionData={dashboardData.chartData.distribution}
-       options={commonChartOptions}
-     />
-     <AlertSection />
-   </div>
- );
+      <div className="metrics-grid">
+        {/* AI 퇴실배치 일치도 */}
+        <div className="metric-card">
+          <div className="metric-header">
+            <h3>AI 퇴실배치 일치도</h3>
+            <div className="trend-badge positive">
+              <TrendingUp size={16} />
+              <span>1.2%</span>
+            </div>
+          </div>
+          <div className="metric-value">85.5%</div>
+          <div className="metric-target">목표: 90%</div>
+        </div>
+
+        {/* 일일 응급실 내원 환자 */}
+        <div className="metric-card">
+          <div className="metric-header">
+            <h3>일일 응급실 내원 환자</h3>
+            <div className="trend-badge positive">
+              <TrendingUp size={16} />
+              <span>12.5%</span>
+            </div>
+          </div>
+          <div className="metric-value">127명</div>
+          <div className="metric-target">전일 대비</div>
+        </div>
+
+        {/* 입실기준 점수 */}
+        <div className="metric-card">
+          <div className="metric-header">
+            <h3>입실기준 점수</h3>
+            <button className="settings-button" onClick={handleSettingsClick}>
+              설정
+            </button>
+          </div>
+
+          <div className="scores-grid">
+            <div className="score-box icu">
+              <span className="score-label">ICU</span>
+              <div className="score-value">≥ {scores.icu}</div>
+              <span className="score-unit">점</span>
+            </div>
+
+            <div className="score-box ward">
+              <span className="score-label">일반병동</span>
+              <div className="score-value">{scores.ward}</div>
+              <span className="score-unit">점</span>
+            </div>
+
+            <div className="score-box discharge">
+              <span className="score-label">퇴원</span>
+              <div className="score-value">≤ {scores.discharge}</div>
+              <span className="score-unit">점</span>
+            </div>
+          </div>
+
+          <div className="settings-note">
+            <AlertCircle size={16} />
+            <span>설정 변경은 AI 모델 관리에서 가능합니다</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;
