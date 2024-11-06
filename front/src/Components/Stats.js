@@ -55,17 +55,17 @@ export default function Stats() {
       {/* 주요 지표 */}
       <div className="stats-summary">
         <div className="stat-item">
-          <span className="stat-label">평균 ICU 입실률</span>
+          <span className="stat-label">연도별 월별 응급실 몇명 이용</span>
           <div className="stat-value blue">15.2%</div>
           <div className="stat-trend increase">↑ 2.1%</div>
         </div>
         <div className="stat-item">
-          <span className="stat-label">평균 재실일수</span>
+          <span className="stat-label">연도별 평균일치도</span>
           <div className="stat-value green">4.5일</div>
           <div className="stat-trend decrease">↓ 0.5일</div>
         </div>
         <div className="stat-item">
-          <span className="stat-label">모델 정확도</span>
+          <span className="stat-label">대충 뭐가 들어갈까나</span>
           <div className="stat-value blue">94.5%</div>
           <div className="stat-trend increase">↑ 1.2%</div>
         </div>
