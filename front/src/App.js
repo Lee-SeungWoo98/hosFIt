@@ -175,7 +175,7 @@ function App() {
         usedBeds: totalBed - valueArray.reduce((acc, cur) => acc + cur, 0),
         ktasRatios: valueArray,
       });
-      console.log("왜 마이너스 => ", totalBed);
+      // console.log("왜 마이너스 => ", totalBed);
     } catch (error) {
       console.error("KTAS 데이터 로드 실패:", error);
       setKtasData({
@@ -393,8 +393,8 @@ function App() {
     return () => clearInterval(autoRefresh);
   }, [isAuthenticated, currentPage]);
 
-  console.log("혈액A", labTests);
-  console.log("바이탈A", visitInfo);
+  // console.log("App_labTests", labTests);
+  // console.dir("App_fetchLabTests", fetchLabTests);
   // =========== 렌더링 ===========
   return (
     <Router>

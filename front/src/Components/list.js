@@ -58,6 +58,7 @@ const FILTER_OPTIONS = {
 //   clickCount: 0,
 // };
 
+
 function List({
   loading,
   searchTerm,
@@ -89,9 +90,10 @@ function List({
   const memoizedPatients = useMemo(() => patients, [patients]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [abnormalCounts, setAbnormalCounts] = useState({});
 
-  console.log("혈액", labTests);
-  console.log("바이탈", visitInfo);
+  // console.log("혈액", labTests);
+  // console.log("바이탈", visitInfo);
 
   // =========== Effects ===========
 
@@ -416,7 +418,7 @@ const renderPatientRow = useCallback((patient) => (
     <td>{patient.visits?.[0]?.tas || "-"}</td>
     <td>{patient.ai_tas || "-"}</td>
     <td className="abnormal-count-cell">
-      {calculateAbnormalCount(patient.labTests, patient.gender)}건
+      {abnormalCounts[patient.subjectId] || ""}
     </td>
     <td>
       <button
@@ -428,49 +430,71 @@ const renderPatientRow = useCallback((patient) => (
       </button>
     </td>
   </tr>
-), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails]);
+), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
 
-const calculateAbnormalCount = useCallback((labTests, gender) => {
+const calculateAbnormalCount = useCallback(async (patient) => {
+  try {
+    // 환자의 가장 최근 방문 기록에서 stay_id 가져오기
+    const latestVisit = patient.visits?.[patient.visits.length - 1];
+    if (!latestVisit?.stayId) {
+      return 0;
+    }
 
-  if (!labTests) {
-    console.log("LabTests 데이터가 없습니다.");
+    // fetchLabTests로 해당 환자의 검사 데이터 가져오기
+    const labTestsData = await fetchLabTests(latestVisit.stayId);
+    if (!labTestsData || !Array.isArray(labTestsData) || labTestsData.length === 0) {
+      return 0;
+    }
+
+    let abnormalCount = 0;
+    const formattedLabTests = {
+      blood_levels: labTestsData[0]?.bloodLevels || [],
+      electrolyte_levels: labTestsData[0]?.electrolyteLevels || [],
+      enzymes_metabolisms: labTestsData[0]?.enzymesMetabolisms || [],
+      chemical_examinations_enzymes: labTestsData[0]?.chemicalExaminationsEnzymes || [],
+      blood_gas_analysis: labTestsData[0]?.bloodGasAnalysis || []
+    };
+
+    // 각 카테고리별로 비정상 수치 계산
+    Object.values(formattedLabTests).forEach(category => {
+      if (category && category.length > 0) {
+        const data = category[0];
+        Object.entries(data).forEach(([key, value]) => {
+          if (key !== 'blood_idx' && 
+              key !== 'bloodIdx' && 
+              key !== 'reg_date' && 
+              key !== 'regDate' && 
+              key !== 'regdate' && 
+              key !== 'labtest' && 
+              value !== null) {
+            const isNormal = checkNormalRange(key, value, patient.gender);
+            if (isNormal === false) {
+              abnormalCount++;
+            }
+          }
+        });
+      }
+    });
+
+    return abnormalCount;
+  } catch (error) {
+    console.error("Error calculating abnormal count:", error);
     return 0;
   }
-  console.log("LabTests 데이터:", labTests); // 추가된 부분
+}, [fetchLabTests]);
 
-  let abnormalCount = 0;
-  
-  // Patient.js와 동일한 카테고리 검사
-  const categories = [
-    'blood_levels',
-    'electrolyte_levels',
-    'enzymes_metabolisms',
-    'chemical_examinations_enzymes',
-    'blood_gas_analysis'
-  ];
-
-  categories.forEach(category => {
-    if (labTests[category] && labTests[category].length > 0) {
-      const data = labTests[category][0];
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'blood_idx' && 
-          key !== 'bloodIdx' && 
-          key !== 'reg_date' && 
-          key !== 'regDate' && 
-          key !== 'regdate' && 
-          key !== 'labtest' && 
-          value !== null) {
-          const isNormal = checkNormalRange(key, value, gender);
-          if (isNormal === false) {
-            abnormalCount++;
-          }
-        }
-      });
+useEffect(() => {
+  // 각 환자의 비정상 수치 개수 계산
+  const loadAbnormalCounts = async () => {
+    const counts = {};
+    for (const patient of memoizedPatients) {
+      counts[patient.subjectId] = await calculateAbnormalCount(patient);
     }
-  });
-  console.log("Abnormal Count:", abnormalCount); // 추가된 부분
-  return abnormalCount;
-}, []);
+    setAbnormalCounts(counts);
+  };
+
+  loadAbnormalCounts();
+}, [memoizedPatients, calculateAbnormalCount]);
 
   const ranges = {
     // Blood Levels

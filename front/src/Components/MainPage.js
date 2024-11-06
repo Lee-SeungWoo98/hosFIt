@@ -177,7 +177,8 @@ function MainPage({
       />
     );
   };
-
+  console.log("혈액", labTests);
+  console.log("바이탈", visitInfo);
   return (
     <div className="app">
       <Header
