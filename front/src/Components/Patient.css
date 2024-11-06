@@ -85,7 +85,7 @@
 }
 
 .banner-item .value.with-unit {
-  color: #2196F3;
+  color: #2d3748;
 }
 
 /* 구분선 추가 */
@@ -105,37 +105,12 @@
   background-color: #e5e9f0;  /* 다른 구분선과 같은 색상 */
 }
 
+/* KTAS 배너 */
 .ktas-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  font-size: 16px;
+  color: #2d3748;
   font-weight: 600;
   font-family: 'Pretendard', sans-serif;
-}
-
-.ktas-badge.level-1 {
-  background-color: #EF4444;
-  color: white;
-}
-
-.ktas-badge.level-2 {
-  background-color: #F59E0B;
-  color: white;
-}
-
-.ktas-badge.level-3 {
-  background-color: #10B981;
-  color: white;
-}
-
-.ktas-badge.level-4 {
-  background-color: #3B82F6;
-  color: white;
-}
-
-.ktas-badge.level-5 {
-  background-color: #6B7280;
-  color: white;
 }
 
 /* Banner hover effects */
@@ -173,7 +148,6 @@
   width: 60%;
 }
 
-/* Updated Chart Styles */
 /* Vital Chart Styles */
 .vital-chart {
   background: white;
@@ -225,18 +199,62 @@
   fill: #718096;
 }
 
+.vital-chart .legend-items {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.vital-chart .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.765rem;
+  font-family: 'Pretendard', sans-serif;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.vital-chart .legend-marker {
+  width: 4.32px;
+  height: 4.32px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+/* 도넛 차트의 범례 컨테이너 위치 조정 */
+.vital-chart .donut-legend-container {
+  display: flex;
+  justify-content: center;
+  gap: 5.678px;
+  margin-top: 20px;
+  padding: 0 8px;
+}
+
+.vital-chart .recharts-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vital-chart .recharts-surface {
+  width: 100%;
+  height: 100%;
+}
+
 /* Blood Test Container and Related Styles */
 .blood-test-container {
   width: 40%;
-  padding: 1.5rem;
-  background-color: #fff;
-  border-radius: 0.5rem;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1.5rem;  /* vital-chart와 동일한 padding */
+  background: white;
+  border-radius: 16px;  /* vital-chart와 동일 */
+  border: 1px solid #edf2f7;  /* vital-chart와 동일 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);  /* vital-chart와 동일 */
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 620px;
+  position: relative;
 }
 
 .blood-test-results {
@@ -438,7 +456,7 @@
 .category-tabs {
   font-family: 'Pretendard', sans-serif;
   display: flex;
-  gap: 11px;
+  gap: 15px;
   padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;
   background: #fff;
@@ -446,7 +464,7 @@
   top: 0;
   z-index: 100;
   margin-bottom: 5px;
-  margin-left: 7px;
+  margin-left: 33px;
 }
 
 .category-tab {
@@ -869,28 +887,30 @@
   align-items: center;
   background: linear-gradient(to right, rgba(37, 99, 235, 0.02), rgba(37, 99, 235, 0.05));
   border-radius: 12px;
-  padding: 1.2rem 1.5rem;  /* 패딩 약간 증가 */
+  padding: 1.2rem 1.5rem;
   gap: 1rem;
   border: 1px solid rgba(37, 99, 235, 0.1);
-  margin-bottom: 1.5rem;  /* 하단 마진 증가 */
+  margin-bottom: 1.5rem;
 }
 
+.recommendation-box {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+  font-family: 'Pretendard', sans-serif;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: none;
+  flex: 1;
+}
+
+/* 모달의 AI 추천 섹션 스타일 */
 .ai-recommendation h3 {
   font-size: 0.9rem;
   color: #2563eb;
   margin: 0;
   font-weight: 600;
-  min-width: fit-content;
-}
-
-.recommendation-box {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #1e293b;
-  text-align: left;
-  padding: 0.5rem 0;
-  background: none;
-  flex: 1;
+  font-family: 'Pretendard', sans-serif;
 }
 
 /* 입력 필드 스타일 */
@@ -1118,18 +1138,25 @@
   .timeseries-container {
     width: calc(100% - 3rem);
     height: 300px;
-    background-color: #f8faff;
-    border-radius: 8px;
-    border: 2px solid #e0e0e0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 16px !important;  /* important 추가 */
+    padding: 1.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #edf2f7;
     margin: 20px 1.5rem;
-    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     min-width: 0;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+  
+  /* 중요도 추가 */
+  .data-container .timeseries-container,
+  .patient-details .timeseries-container {
+    border-radius: 16px !important;
   }
 
 /* ? 아이콘 부분 */
@@ -1202,6 +1229,21 @@
 .tooltip-wrapper:hover .info-icon {
   background-color: #cbd5e0;
   color: #2d3748;
+}
+
+.timeseries-container {
+  min-height: 400px;
+  margin: 20px 0;
+}
+
+.prediction-chart {
+  width: 100%;
+  height: 400px;
+}
+
+.donut-chart-card {
+  width: 100%;
+  height: 400px;
 }
 
 }
