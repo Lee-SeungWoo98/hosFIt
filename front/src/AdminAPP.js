@@ -9,6 +9,7 @@ import Errors from './Components/Errors';
 import Settings from './Components/Settings';
 import AdminHeader from './Components/AdminHeader';
 import NotificationContainer from './Components/NotificationContainer';
+import { ScoreProvider } from './Components/ScoreContext';
 import './Components/styles/AdminApp.css';
 
 const AdminApp = ({logout}) => {
@@ -18,7 +19,6 @@ const AdminApp = ({logout}) => {
   const SelectAllMember = async () => {
     try{
       const result = await axios.get("http://localhost:8082/boot/member/memberList");
-      
     }catch(error){
       console.log("리스트 출력 실패");
     }
@@ -82,7 +82,7 @@ const AdminApp = ({logout}) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard loading={loading} />;
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
       case 'model':
         return <AIModel />;
       case 'staff':
@@ -94,12 +94,13 @@ const AdminApp = ({logout}) => {
       case 'settings':
         return <Settings showNotification={showNotification} />;
       default:
-        return <Dashboard loading={loading} />;
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
     }
   };
+  
 
   return (
-    <>
+    <ScoreProvider>
       <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout}>
         <AdminHeader 
           title={getPageTitle()} 
@@ -109,7 +110,7 @@ const AdminApp = ({logout}) => {
         {renderContent()}
       </Layout>
       <NotificationContainer />
-    </>
+    </ScoreProvider>
   );
 };
 
