@@ -1,76 +1,65 @@
-/* Ktas.css */
+/* ktas.css */
 
-/* 기본 폰트 설정 */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
-
-/* 사이드바 컨테이너 스타일 */
-.sidebar {
-  width: 20vw;
-  min-width: 250px;
-  max-width: 250px;
-  padding: 1rem;
-  background: white;
-  height: 100vh;
-}
-
-/* 차트 컨테이너 스타일 */
-.chart-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 220px;
-  height: 220px;
-  margin-bottom: 20px;
+/* KTAS 차트 */
+.ktas-wrapper {
+  width: 108%;
+  height: 32vh;
+  margin-top: 1vw;
   position: relative;
-  top: -31px;
+  right: 11px;
 }
 
-/* 차트 제목 스타일 */
-.chart-title {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 512;
-  color: #2c3e50;
-  margin-bottom: 10px;
-  text-align: center;
-  width: 220px;
-}
-
-/* 차트 래퍼 스타일 */
-.chart-wrapper {
+/* 예측 차트 */
+.prediction-wrapper {
   width: 100%;
-  margin-bottom: 1rem;
+  height: 40vh;
+  margin-top: 1vw;
 }
 
-/* 레이블 컨테이너 스타일 */
-.label-container {
-  position: absolute;
-  top: 204px;
-  width: 220px;
-  display: flex;
-  justify-content: space-between;
-  gap: 25px;
-  padding: 0 2px;
-}
-
-/* 레이블 도트 스타일 */
+/* 레이블 도트 */
 .label-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 50px;  
+  height: 30px;
   cursor: pointer;
   position: relative;
   transition: transform 0.2s ease;
+  display: flex;          /* Flexbox 설정 */
+  align-items: center;    /* 세로 중앙 정렬 */
+  justify-content: center; /* 가로 중앙 정렬 */
+  padding: 0 10px;        /* 좌우 여백 추가 */
+  border-radius: 75%;
 }
 
-/* 호버 시 도트 확대 효과 */
-.label-dot:hover {
-  transform: scale(1.2);
+/* 예측 레이블 도트  */
+.prediction-label-dot {
+  width: 15px;  
+  height: 15px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
 }
 
-/* 툴팁 스타일 */
-.label-tooltip {
+/* 레이블 컨테이너  */
+.label-container {
+  position: absolute;
+  top: 400px;
+  width: auto;           /* 고정 너비 제거 */
+  display: flex;
+  padding: 0 2px;
+  justify-content: center; /* 중앙 정렬 */
+}
+
+/* 예측 레이블 컨테이너  */
+.prediction-label-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+/* 툴팁  */
+.label-tooltip, .prediction-label-tooltip {
   visibility: hidden;
   position: absolute;
   bottom: 100%;
@@ -88,8 +77,18 @@
   transition: opacity 0.2s ease, visibility 0s ease;
 }
 
-/* 툴팁 화살표 스타일 */
-.label-tooltip::after {
+/* 호버 시 툴팁 표시 */
+.label-dot:hover .label-tooltip,
+.prediction-label-dot:hover .prediction-label-tooltip,
+.label-tooltip.visible,
+.prediction-label-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 툴팁 화살표 */
+.label-tooltip::after,
+.prediction-label-tooltip::after {
   content: '';
   position: absolute;
   top: 100%;
@@ -100,65 +99,20 @@
   border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
 }
 
-/* 호버 시 툴팁 표시 */
-.label-dot:hover .label-tooltip {
-  visibility: visible;
-  opacity: 1;
+/* KTAS 타이틀 */
+.chart-title{
+  font-size: 12px;       /* 글자 크기 조정 */
+  color: #000;           /* 글자 색상 */
+  white-space: nowrap;   /* 텍스트 줄바꿈 방지 */
+  text-align: center;    /* 텍스트 중앙 정렬 */
 }
 
-/* AI 예측 차트 스타일 (새로 추가) */
-.prediction-container {
-  margin-bottom: 20px;
+/* 예측 타이틀 */
+.prediction-title{
+  text-align: center;
 }
 
-.prediction-title {
-  font-family: 'Pretendard', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 512;
-    color: #2c3e50;
-    margin-bottom: 10px;
-    text-align: center;
-    width: 220px
-}
-
-.prediction-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.prediction-label-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  gap: 10px;
-  margin-top: 26px;
-}
-
-.prediction-label-dot {
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  cursor: pointer;
-  position: relative;
-}
-
-.prediction-label-tooltip {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-
-.prediction-label-dot:hover .prediction-label-tooltip {
-  display: block;
+/* KTAS dot text */
+.ktas-label-text{
+  font-size: 5px;
 }

@@ -86,7 +86,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
       {data.map((entry, index) => {
         const isActive = isKtas && entry.name !== "미사용" && 
           ktasFilter?.includes(parseInt(entry.name.split(" ")[1]));
-
+  
         return (
           <div
             key={`dot-${index}`}
@@ -99,6 +99,9 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
             onMouseLeave={() => setHoverIndex(null)}
             onClick={() => isKtas && handleLabelClick(entry)}
           >
+            <span className="ktas-label-text">
+              {entry.name}
+            </span>
             <div 
               className={`${isKtas ? 'label-tooltip' : 'prediction-label-tooltip'} ${
                 shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''
@@ -110,7 +113,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
         );
       })}
     </div>
-  ), [hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
+  ), [hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);;
 
   /**
    * KTAS 도넛 차트 렌더링
@@ -118,7 +121,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
   const renderKtasChart = useCallback(() => (
     <div className="chart-container">
       <h3 className="chart-title">KTAS 병상 점유율</h3>
-      <div className="chart-wrapper">
+      <div className="ktas-wrapper">
         <ResponsiveContainer width="100%" height={180}>
           <PieChart>
             <Pie
@@ -160,16 +163,14 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     <div className="prediction-container">
       <h3 className="prediction-title">AI 예측 환자 배치 비율</h3>
       <div className="prediction-wrapper">
-        <ResponsiveContainer width="100%" height={120}>
+        <ResponsiveContainer width="100%" height={180}>
           <PieChart>
             <Pie
               data={predictionChartData}
               dataKey="value"
               nameKey="name"
               cx="50%"
-              cy="100%"
-              startAngle={180}
-              endAngle={0}
+              cy="50%"
               innerRadius={35}
               outerRadius={70}
               onMouseEnter={(_, index) => setHoveredPredictionIndex(index)}
@@ -180,7 +181,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
                   key={`prediction-cell-${index}`}
                   fill={entry.color}
                   stroke={hoveredPredictionIndex === index ? "#000" : "none"}
-                  strokeWidth={hoveredPredictionIndex === index ? 3 : 0}
+                  strokeWidth={hoveredPredictionIndex === index ? 3 : 2}
                   style={{ transition: 'stroke-width 0.2s ease' }}
                 />
               ))}
