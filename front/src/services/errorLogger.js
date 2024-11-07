@@ -6,27 +6,67 @@ import { API_ENDPOINTS } from '../constants/api';
 
 class ErrorLogger {
   constructor() {
-    this.endpoint = ERROR_ENDPOINTS.LOG;
+    this.endpoint = API_ENDPOINTS.ERROR.LOG;
+    this.errorQueue = [];  
+    this.retryInterval = 5 * 60 * 1000;  
+    this.retryCount = 0;
+    this.maxRetries = 5;  
+    this.initializeRetryMechanism();  // startRetryMechanism을 initializeRetryMechanism으로 변경
+  }
+
+  initializeRetryMechanism() {  // 메서드 이름 변경
+    setInterval(() => {
+      if (this.errorQueue.length > 0) {
+        console.log(`Retrying to send ${this.errorQueue.length} error logs`);
+        this.retryFailedLogs();
+      }
+    }, this.retryInterval);
   }
 
   async logError(error, errorInfo = {}) {
+    const errorLog = {
+      errorname: error.name || 'Unknown Error',
+      errormessage: error.message || '',
+      errorstack: error.stack || '',
+      errortype: this.determineErrorType(error, errorInfo.type),
+      severitylevel: this.determineSeverityLevel(error, errorInfo.severity),
+      url: window.location.pathname,
+      userid: localStorage.getItem('userId'),
+      browser: navigator.userAgent,
+      createdat: new Date().toISOString(),
+      isresolved: false
+    };
+  
     try {
-      const errorLog = {
-        error_name: error.name || 'Unknown Error',
-        error_message: error.message || '',
-        error_stack: error.stack || '',
-        error_type: this.determineErrorType(error, errorInfo.type),
-        severity_level: this.determineSeverityLevel(error, errorInfo.severity),
-        url: window.location.pathname,
-        user_id: localStorage.getItem('userId'),
-        browser: navigator.userAgent,
-        created_at: new Date().toISOString()
-      };
-
       await axios.post(this.endpoint, errorLog);
       console.info('Error logged successfully');
     } catch (loggingError) {
-      console.error('Failed to log error:', loggingError);
+      this.errorQueue.push({
+        log: errorLog,
+        retryCount: 0,
+        timestamp: Date.now()
+      });
+      console.warn('Error log queued for retry');
+    }
+  }
+
+  async retryFailedLogs() {
+    const currentQueue = [...this.errorQueue];
+    this.errorQueue = [];
+
+    for (const item of currentQueue) {
+      if (item.retryCount >= this.maxRetries) {
+        console.warn('Max retries exceeded for error log:', item.log);
+        continue;
+      }
+
+      try {
+        await axios.post(this.endpoint, item.log);
+        console.info('Queued error log sent successfully');
+      } catch (error) {
+        item.retryCount++;
+        this.errorQueue.push(item);
+      }
     }
   }
 
