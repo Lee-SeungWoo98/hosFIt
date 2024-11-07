@@ -1,76 +1,146 @@
-/* 내 맘을 받아줘~ */
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #fafafa !important;
+.page-wrapper {
+  position: relative;
+  background: #f6f8fa;
+  width: 100%;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.radial-gradient {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.radial-gradient::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.3;
+  background: radial-gradient(rgb(210, 241, 223), rgb(211, 215, 250), rgb(186, 216, 244)) 0% 0%/400% 400%;
+  animation: 15s ease 0s infinite normal none running gradient;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
   }
-  
-  .user_card {
-    height: 400px;
-    width: 350px;
-    margin-top: 20vh;
-    margin-bottom: auto;
-    background: #f39c12;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    padding: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    border-radius: 5px;
+  50% {
+    background-position: 100% 50%;
   }
-  
-  .brand_logo_container {
-    position: absolute;
-    height: 170px;
-    width: 170px;
-    top: -75px;
-    border-radius: 50%;
-    background: #60a3bc;
-    padding: 10px;
-    text-align: center;
+  100% {
+    background-position: 0% 50%;
   }
-  
-  .brand_logo {
-    height: 150px;
-    width: 150px;
-    border-radius: 50%;
-    border: 2px solid white;
+}
+
+.logo{
+  font-size: 3rem;
+  /* color: #2563EB; */
+}
+
+.logo-highlight{
+  color: red;
+}
+
+.card {
+  background: #fff;
+  box-shadow: 0px 3px 4px 0px rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  border: none;
+  width: 100%;
+  margin: 1rem auto;
+}
+
+.card-body {
+  position: relative;
+  z-index: 1;
+}
+
+/* Bootstrap utilities overrides */
+.py-8 {
+  padding-top: 0.8rem !important;
+  padding-bottom: 0.8rem !important;
+}
+
+.fs-4 {
+  font-size: 1rem !important;
+}
+
+/* Form controls */
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #3a4752;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #dbe1e6;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  color: #3a4752;
+  background-color: #fff;
+  border-color: #94a9ff;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(41, 82, 255, 0.25);
+}
+
+/* Alert styles */
+.alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}
+
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+/* Button styles */
+.btn-primary {
+  color: #fff;
+  background-color: #2952ff;
+  border-color: #2952ff;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #2346d9;
+  border-color: #2142cc;
+}
+
+/* Responsive container widths */
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
   }
-  
-  .form_container {
-    margin-top: 100px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
   }
-  
-  .login_btn {
-    width: 100%;
-    background: #c0392b !important;
-    color: white !important;
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
   }
-  
-  .login_btn:focus {
-    box-shadow: none !important;
-    outline: 0px !important;
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
   }
-  
-  .login_container {
-    padding: 0 2rem;
-  }
-  
-  .input-group-text {
-    background: #c0392b !important;
-    color: white !important;
-    border: 0 !important;
-    border-radius: 0.25rem 0 0 0.25rem !important;
-  }
-  
-  .input_user, .input_pass:focus {
-    box-shadow: none !important;
-    outline: 0px !important;
-  }
-  
-  .custom-checkbox .custom-control-input:checked~.custom-control-label::before {
-    background-color: #c0392b !important;
-  }
-  
+}
