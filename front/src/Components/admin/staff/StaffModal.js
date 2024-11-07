@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import './styles/StaffModal.css';
+import "../styles/StaffModal.css";
 
 const PasswordResetModal = ({ isOpen, onClose, staffId, onReset }) => {
   const [newPassword, setNewPassword] = useState('');
