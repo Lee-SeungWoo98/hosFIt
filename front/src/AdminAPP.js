@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Layout from './Components/Layout';
-import Dashboard from './Components/Dashboard';
-import AIModel from './Components/AIModel';
-import Staff from './Components/Staff';
-import Stats from './Components/Stats';
-import Errors from './Components/Errors';
-import Settings from './Components/Settings';
-import AdminHeader from './Components/AdminHeader';
-import NotificationContainer from './Components/NotificationContainer';
-import './Components/styles/AdminApp.css';
+import Layout from './Components/layout/Layout';
+import Dashboard from './Components/admin/dashboard';
+import AIModel from './Components/admin/model';
+import Staff from './Components/admin/staff';
+import Stats from './Components/admin/stats';
+import Errors from './Components/admin/errors';
+import Settings from './Components/admin/settings';
+import AdminHeader from './Components/admin/AdminHeader';
+import NotificationContainer from './Components/admin/NotificationContainer';
+import { ScoreProvider } from './Components/ScoreContext';
+import './Components/admin/styles/AdminApp.css';
 
 const AdminApp = ({logout}) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,7 +39,7 @@ const AdminApp = ({logout}) => {
     
     const icon = document.createElement('div');
     icon.className = 'admin-notification-icon';
-    icon.innerHTML = getNotificationIcon(type);
+    icon.innerHTML = getNotificationIcon(type);S
     
     const content = document.createElement('div');
     content.className = 'admin-notification-content';
@@ -96,7 +97,6 @@ const AdminApp = ({logout}) => {
         return <Dashboard loading={loading} onTabChange={setActiveTab} />;
     }
   };
-  
 
   return (
     <ScoreProvider>
