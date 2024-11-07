@@ -21,7 +21,7 @@
 }
 
 .admin-sidebar-header {
-  padding-bottom: 1.2rem;  /*크기 줄임 */
+  padding-bottom: 1.2rem;  
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -32,9 +32,9 @@
   margin-bottom: 0.8rem;
 }
 
-/* 로그아웃 아이콘 크기 조정 */
+/* 로그아웃 아이콘 */
 .admin-sidebar .logout {
-  width: 16px;  /* 67% → 100% 비율 고려하여 축소 */
+  width: 16px;  
   height: 16px;
   cursor: pointer;
   opacity: 0.8;
@@ -93,7 +93,6 @@
   height: 18px;
 }
 
-/* 사이드바 내 다른 아이콘들도 비율에 맞게 조정 */
 .admin-icon {
   width: 14px;
   height: 14px;
@@ -102,32 +101,32 @@
 
 @media (max-width: 1024px) {
   .admin-sidebar {
-      width: 80px;
-      padding: 1.5rem 1rem;
+    width: 80px;
+    padding: 1.5rem 1rem;
   }
 
   .admin-sidebar-header h2,
   .admin-user-info,
   .admin-nav-link span {
-      display: none;
+    display: none;
   }
 
   .admin-nav-link {
-      padding: 0.75rem;
-      justify-content: center;
+    padding: 0.75rem;
+    justify-content: center;
   }
 
   .admin-nav-link .admin-icon {
-      margin: 0;
+    margin: 0;
   }
 }
 
 @media (max-width: 768px) {
   .admin-sidebar {
-      transform: translateX(-100%);
+    transform: translateX(-100%);
   }
 
   .admin-sidebar.open {
-      transform: translateX(0);
+    transform: translateX(0);
   }
 }
