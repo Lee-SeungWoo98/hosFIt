@@ -1,15 +1,15 @@
 .user-layout {
   display: flex;
   min-height: 100vh;
-  position: fixed; /* 고정 위치 */
+  position: fixed;
   left: 0;
   top: 0;
-  width: 280px; /* 사이드바 너비만큼만 차지 */
+  width: 291px;
   z-index: 40;
 }
 
 .user-sidebar {
-  width: 300px;
+  width: 291px;
   background-color: var(--card-background, white);
   padding: 1rem;
   box-shadow: var(--shadow, 0 2px 4px rgba(0,0,0,0.1));
@@ -26,7 +26,7 @@
 
 .user-sidebar-header h2 {
   color: var(--primary-color, #222930);
-  font-size: 33px;
+  font-size: 34.3px;
   font-weight: 600;
   margin-bottom: 1.5rem;
   text-align: center;
@@ -38,12 +38,47 @@
   gap: 1rem;
 }
 
-.user-profile {
+.user-profile-container {
   display: flex;
-  flex-direction: row;
   align-items: center;
+  gap: 1rem;
+  margin-left: 8px;
+  margin-top: -2px;
+}
+
+.profile-image {
+  width: 45px;
+  height: 46px;
+  border-radius: 4px; /* 배경만 사각형으로 */
+  background-color: #e4e4e4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+.profile-icon {
+  width: 32px;
+  height: 32px;
+  color: #858585;
+  border-radius: 10px; /* SVG 아이콘은 원형 유지 */
+}
+
+.user-details {
+  font-family: 'Pretendard', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  flex: 1;
+}
+
+.name-logout-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  width: max-content;
+  margin-bottom: -3px;
 }
 
 .user-name {
@@ -54,36 +89,51 @@
 .user-role {
   font-size: 0.875rem;
   color: var(--text-light, #666);
+  margin-top: -2px; /* 위로 이동 */
+}
+
+/* 로그아웃 부분 */
+.logout-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: none;
-  border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  color: var(--text-color, #333);
-  transition: background-color 0.2s ease;
+  transform: translateY(15px);
+  margin-right: 1px;
+}
+
+.logout-icon {
+  width: 23.8px;
+  height: 23.8px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
+
+.logout-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 9px;
+  color: #000000;
+  margin-top: -2px;
 }
 
 .logout-button:hover {
   background-color: var(--background-color, #f5f5f5);
+  border-radius: 8px;
 }
 
-.logout-icon {
-  width: 18px;
-  height: 18px;
+.logout-button:hover .logout-text {
+  color: #333;
 }
 
 .ktas-section {
   margin-top: 2rem;
-}
-
-.label-container {
-  margin-top: 10px;
-  
 }

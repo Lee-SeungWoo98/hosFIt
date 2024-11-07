@@ -1,32 +1,73 @@
-import React, { useState } from "react";
-import { Edit, Key, Search, UserX } from "lucide-react";
-import { EditModal, PasswordResetModal, ResignModal } from './StaffModal';
+import React, { useState, useEffect } from "react";
+import { Key, Search, UserX } from "lucide-react";
+import { PasswordResetModal, StatusModal } from './StaffModal';
+import axios from 'axios';
 import "./styles/Staff.css";
 
+// 부서 메뉴 설정
+const DEPARTMENT_MENUS = [
+  { id: 'all', label: '전체 부서' },
+  { id: '응급의학과', label: '응급의학과' },
+  { id: '내과', label: '내과' },
+  { id: '외과', label: '외과' },
+  { id: '신경외과', label: '신경외과' }
+];
+
+// 테이블 컬럼 설정
+const TABLE_COLUMNS = [
+  { id: 'id', label: '사번' },
+  { id: 'name', label: '이름' },
+  { id: 'role', label: '직책' },
+  { id: 'department', label: '부서' },
+  { id: 'email', label: '이메일' },
+  { id: 'lastLogin', label: '마지막 로그인' },
+  { id: 'status', label: '상태' }
+];
+
 const Staff = ({ showNotification }) => {
-  const [modalOpen, setModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [resignModalOpen, setResignModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [staffList, setStaffList] = useState([]);
 
-  const staffList = [
-    {
-      id: "2024001",
-      name: "김의사",
-      role: "전문의",
-      department: "응급의학과",
-      email: "kim@hospital.com",
-      lastLogin: "2024-10-25 09:30",
-      status: "active",
+  // 직원 목록 가져오기
+  const fetchStaffList = async () => {
+    try {
+      const response = await axios.get('http://localhost:8082/boot/member/memberList');
+      const mappedStaff = response.data.map(staff => ({
+        id: '데이터 없음',  // 사번은 항상 '데이터 없음'으로 표시
+        name: staff.name || '데이터 없음',
+        role: staff.major || '데이터 없음',
+        department: staff.department || '데이터 없음',
+        email: '데이터 없음',  // 이메일 필드 유지
+        lastLogin: '데이터 없음',  // 마지막 로그인 필드 유지
+        status: staff.status || 'active',
+        username: staff.username  // 내부 처리용으로 username 보존
+      }));
+      setStaffList(mappedStaff);
+    } catch (error) {
+      showNotification("직원 목록을 불러오는데 실패했습니다.", "error");
     }
-  ];
-
-  const handleEditClick = (staff) => {
-    setSelectedStaff(staff);
-    setModalOpen(true);
   };
+
+  useEffect(() => {
+    fetchStaffList();
+  }, []);
+
+  // 검색 및 필터링된 직원 목록
+  const filteredStaffList = staffList.filter(staff => {
+    const matchesDepartment = selectedDepartment === "all" || 
+      (staff.department === selectedDepartment);
+    
+    const searchFields = ['name', 'role', 'department', 'email'];
+    const matchesSearch = searchFields.some(field => 
+      staff[field].toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return matchesDepartment && matchesSearch;
+  });
 
   const handlePasswordResetClick = (staff) => {
     setSelectedStaff(staff);
@@ -38,37 +79,23 @@ const Staff = ({ showNotification }) => {
     setResignModalOpen(true);
   };
 
-  const handleSaveStaff = async (staffData) => {
-    try {
-      // API 호출로 직원 정보 업데이트
-      // const response = await axios.put(`/api/staff/${staffData.id}`, staffData);
-      showNotification("직원 정보가 업데이트되었습니다.", "success");
-      setModalOpen(false);
-    } catch (error) {
-      showNotification("업데이트 중 오류가 발생했습니다.", "error");
-    }
-  };
-
-  const handlePasswordReset = async (staffId, newPassword) => {
-    try {
-      // API 호출로 비밀번호 재설정
-      // const response = await axios.post(`/api/staff/${staffId}/reset-password`, { password: newPassword });
-      showNotification("비밀번호가 재설정되었습니다.", "success");
-      setPasswordModalOpen(false);
-    } catch (error) {
-      showNotification("비밀번호 재설정 중 오류가 발생했습니다.", "error");
-    }
-  };
-
   const handleResign = async (staffId) => {
     try {
-      // API 호출로 퇴사 처리
-      // await axios.post(`/api/staff/${staffId}/resign`);
-      showNotification('퇴사 처리가 완료되었습니다.', 'success');
+      const staffToUpdate = staffList.find(staff => staff.username === staffId);
+      const newStatus = staffToUpdate.status === 'active' ? 'inactive' : 'active';
+      
+      await axios.put(`http://localhost:8082/boot/member/updateStatus/${staffId}`, {
+        status: newStatus
+      });
+      
+      showNotification(
+        newStatus === 'active' ? '활성화되었습니다.' : '비활성화되었습니다.', 
+        'success'
+      );
       setResignModalOpen(false);
-      // TODO: 목록 새로고침 로직 추가
+      fetchStaffList();
     } catch (error) {
-      showNotification('퇴사 처리 중 오류가 발생했습니다.', 'error');
+      showNotification('상태 변경 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -87,30 +114,15 @@ const Staff = ({ showNotification }) => {
           </div>
 
           <div className="department-filter">
-            <button
-              className={selectedDepartment === "all" ? "active" : ""}
-              onClick={() => setSelectedDepartment("all")}
-            >
-              전체 부서
-            </button>
-            <button
-              className={selectedDepartment === "emergency" ? "active" : ""}
-              onClick={() => setSelectedDepartment("emergency")}
-            >
-              응급의학과
-            </button>
-            <button
-              className={selectedDepartment === "internal" ? "active" : ""}
-              onClick={() => setSelectedDepartment("internal")}
-            >
-              내과
-            </button>
-            <button
-              className={selectedDepartment === "surgery" ? "active" : ""}
-              onClick={() => setSelectedDepartment("surgery")}
-            >
-              외과
-            </button>
+            {DEPARTMENT_MENUS.map(menu => (
+              <button
+                key={menu.id}
+                className={selectedDepartment === menu.id ? "active" : ""}
+                onClick={() => setSelectedDepartment(menu.id)}
+              >
+                {menu.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -120,77 +132,66 @@ const Staff = ({ showNotification }) => {
           <table>
             <thead>
               <tr>
-                <th>사번</th>
-                <th>이름</th>
-                <th>직책</th>
-                <th>부서</th>
-                <th>이메일</th>
-                <th>마지막 로그인</th>
-                <th>상태</th>
+                {TABLE_COLUMNS.map(column => (
+                  <th key={column.id}>{column.label}</th>
+                ))}
                 <th>액션</th>
               </tr>
             </thead>
             <tbody>
-              {staffList.map((staff) => (
-                <tr key={staff.id}>
-                  <td>{staff.id}</td>
-                  <td>{staff.name}</td>
-                  <td>{staff.role}</td>
-                  <td>{staff.department}</td>
-                  <td>{staff.email}</td>
-                  <td>{staff.lastLogin}</td>
-                  <td>
-                    <span className={`status ${staff.status}`}>
-                      {staff.status === "active" ? "활성" : "비활성"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button 
-                        className="action-btn" 
-                        title="정보 수정"
-                        onClick={() => handleEditClick(staff)}
-                      >
-                        <Edit className="icon" />
-                      </button>
-                      <button 
-                        className="action-btn" 
-                        title="비밀번호 재설정"
-                        onClick={() => handlePasswordResetClick(staff)}
-                      >
-                        <Key className="icon" />
-                      </button>
-                      <button 
-                        className="action-btn danger" 
-                        title="퇴사 처리"
-                        onClick={() => handleResignClick(staff)}
-                      >
-                        <UserX className="icon" />
-                      </button>
-                    </div>
+              {filteredStaffList.length > 0 ? (
+                filteredStaffList.map((staff) => (
+                  <tr key={staff.username}>
+                    {TABLE_COLUMNS.map(column => (
+                      <td key={`${staff.username}-${column.id}`}>
+                        {column.id === 'status' ? (
+                          <span className={`status ${staff.status}`}>
+                            {staff.status === "active" ? "활성" : "비활성"}
+                          </span>
+                        ) : (
+                          staff[column.id]
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn" 
+                          title="비밀번호 재설정"
+                          onClick={() => handlePasswordResetClick(staff)}
+                        >
+                          <Key className="icon" />
+                        </button>
+                        <button 
+                          className="action-btn danger" 
+                          title={staff.status === 'active' ? "비활성화" : "활성화"}
+                          onClick={() => handleResignClick(staff)}
+                        >
+                          <UserX className="icon" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={TABLE_COLUMNS.length + 1} className="no-data">
+                    데이터가 없습니다.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <EditModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        editData={selectedStaff}
-        onSave={handleSaveStaff}
-      />
-
       <PasswordResetModal
         isOpen={passwordModalOpen}
         onClose={() => setPasswordModalOpen(false)}
-        staffId={selectedStaff?.id}
-        onReset={handlePasswordReset}
+        staffId={selectedStaff?.username}
       />
 
-      <ResignModal
+      <StatusModal
         isOpen={resignModalOpen}
         onClose={() => setResignModalOpen(false)}
         staff={selectedStaff}
