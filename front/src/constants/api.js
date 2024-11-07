@@ -16,6 +16,10 @@ export const API_ENDPOINTS = {
   },
   LAB_TESTS: `${BASE_URL}/labtests`,
   DETAILS: `${BASE_URL}/patients`,
+  ERROR: {
+    LOG: `${BASE_URL}/errors/log`,  
+    LIST: `${BASE_URL}/errors`      
+  }
 };
 
 export const AUTO_REFRESH_INTERVAL = 600000; // 10분
