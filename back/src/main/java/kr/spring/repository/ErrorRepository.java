@@ -8,7 +8,7 @@ import kr.spring.entity.ErrorLog;
 
 public interface ErrorRepository extends JpaRepository<ErrorLog, Long> {
 
-	Error save(Error error);
+	ErrorLog save(ErrorLog error);
 
 	
 }
