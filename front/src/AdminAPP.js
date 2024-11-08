@@ -5,7 +5,7 @@ import Dashboard from './Components/admin/dashboard';
 import AIModel from './Components/admin/model';
 import Staff from './Components/admin/staff';
 import Stats from './Components/admin/stats';
-import Errors from './Components/admin/errors';
+import Errors from './Components/admin/errors/errors';
 import Settings from './Components/admin/settings';
 import AdminHeader from './Components/admin/AdminHeader';
 import NotificationContainer from './Components/admin/NotificationContainer';
