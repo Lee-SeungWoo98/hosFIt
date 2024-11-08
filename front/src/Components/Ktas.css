@@ -1,65 +1,135 @@
 /* ktas.css */
+/* 폰트 import */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+/* 전체 차트 컨테이너 */
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: -66px;
+}
+
+/* KTAS 섹션 */
+.ktas-section {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1px;
+}
+
+/* 예측 섹션 */
+.prediction-section {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: -22px;
+}
 
 /* KTAS 차트 */
 .ktas-wrapper {
-  width: 108%;
-  height: 32vh;
-  margin-top: 1vw;
-  position: relative;
-  right: 11px;
+  width: 100%;
+  height: 180px;
+  margin-bottom: -8px;  /* dot과의 간격 조정 */
 }
 
 /* 예측 차트 */
 .prediction-wrapper {
   width: 100%;
-  height: 40vh;
-  margin-top: 1vw;
+  height: 180px;
+  margin-bottom: 1rem;  /* dot과의 간격 조정 */
 }
 
-/* 레이블 도트 */
-.label-dot {
-  width: 50px;  
-  height: 30px;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.2s ease;
-  display: flex;          /* Flexbox 설정 */
-  align-items: center;    /* 세로 중앙 정렬 */
-  justify-content: center; /* 가로 중앙 정렬 */
-  padding: 0 10px;        /* 좌우 여백 추가 */
-  border-radius: 75%;
-}
-
-/* 예측 레이블 도트  */
-.prediction-label-dot {
-  width: 15px;  
-  height: 15px;
-  border-radius: 50%;
-  cursor: pointer;
-  position: relative;
-}
-
-/* 레이블 컨테이너  */
+/* KTAS 레이블 컨테이너 */
 .label-container {
-  position: absolute;
-  top: 400px;
-  width: auto;           /* 고정 너비 제거 */
-  display: flex;
-  padding: 0 2px;
-  justify-content: center; /* 중앙 정렬 */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* 3열 */
+  grid-template-rows: repeat(2, auto);    /* 2행 */
+  gap: 5.3px;
+  padding: 0.7rem;
+  width: 130%;
+  margin-top: -1px;
+  margin-left: -30px;
 }
 
-/* 예측 레이블 컨테이너  */
+/* 예측 레이블 컨테이너 */
 .prediction-label-container {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  gap: 10px;
-  margin-top: 26px;
+  flex-direction: row;          /* 가로 방향으로 변경 */
+  justify-content: center;      /* 중앙 정렬 */
+  gap: 10px;                    /* 레이블 간 간격 증가 */
+  padding: 0.5rem;
+  margin-top: 10px;
 }
 
-/* 툴팁  */
-.label-tooltip, .prediction-label-tooltip {
+/* KTAS 레이블 도트 */
+.label-dot {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 0.5rem;
+  margin-top: -5px;
+}
+
+/* 예측 레이블 도트 */
+.prediction-label-dot {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 0.5rem;
+  margin-top: -29px;
+  gap: -10px;
+}
+
+/* Dot indicators */
+.label-dot::before,
+.prediction-label-dot::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+/* KTAS 타이틀 */
+.chart-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 19px;
+  color: #000;
+  white-space: nowrap;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* 예측 타이틀 */
+.prediction-title {
+  font-size: 19px;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+  margin-bottom: 1rem;
+  margin-top: 5px;
+}
+
+/* KTAS dot text */
+.ktas-label-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 툴팁 관련 스타일 */
+/* 툴팁 스타일 */
+.label-tooltip,
+.prediction-label-tooltip {
   visibility: hidden;
   position: absolute;
   bottom: 100%;
@@ -75,6 +145,12 @@
   margin-bottom: 5px;
   opacity: 0;
   transition: opacity 0.2s ease, visibility 0s ease;
+}
+
+/* 호버 효과 */
+.label-dot:hover,
+.prediction-label-dot:hover {
+  transform: translateX(2px);
 }
 
 /* 호버 시 툴팁 표시 */
@@ -99,20 +175,28 @@
   border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
 }
 
-/* KTAS 타이틀 */
-.chart-title{
-  font-size: 12px;       /* 글자 크기 조정 */
-  color: #000;           /* 글자 색상 */
-  white-space: nowrap;   /* 텍스트 줄바꿈 방지 */
-  text-align: center;    /* 텍스트 중앙 정렬 */
+/* KTAS 색상 */
+.label-dot:nth-child(1)::before { background-color: #1A66FF; }
+.label-dot:nth-child(2)::before { background-color: #FF1A1A; }
+.label-dot:nth-child(3)::before { background-color: #FFEB1A; }
+.label-dot:nth-child(4)::before { background-color: #00E600; }
+.label-dot:nth-child(5)::before { background-color: #f3f3f3; }
+.label-dot:nth-child(6)::before { background-color: #d7d7d7; }
+
+/* 예측 색상 */
+.prediction-label-dot:nth-child(1)::before { background-color: #ef4444; }
+.prediction-label-dot:nth-child(2)::before { background-color: #3b82f6; }
+.prediction-label-dot:nth-child(3)::before { background-color: #22c55e; }
+
+/* Active 상태 */
+.active {
+  font-weight: 600;
 }
 
-/* 예측 타이틀 */
-.prediction-title{
-  text-align: center;
+.ktas-value {
+  font-size: 10px;
+  color: #666;
+  margin-left: 4px;
 }
 
-/* KTAS dot text */
-.ktas-label-text{
-  font-size: 5px;
-}
+

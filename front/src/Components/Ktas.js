@@ -4,15 +4,23 @@
  * 도넛 차트와 반원 차트를 통해 KTAS 데이터와 AI 예측 데이터를 시각화
  */
 import React, { useState, useCallback, useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import "./Ktas.css";
 
 // =========== 상수 정의 ===========
-const KTAS_COLORS = ["#0000FF", "#FF0000", "#FFFF00", "#00FF00", "#FFFFFF"];
+const KTAS_COLORS = [
+  "#1A66FF",
+  "#FF1A1A",
+  "#FFEB1A",
+  "#00E600",
+  "#f3f3f3",
+  "#d7d7d7"
+];
+
 const PREDICTION_COLORS = {
-  DISCHARGE: "#FF9999",
-  WARD: "#99FF99",
-  ICU: "#9999FF"
+  DISCHARGE: "#ef4444",
+  WARD: "#3b82f6",
+  ICU: "#22c55e"
 };
 
 const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
@@ -28,24 +36,26 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     const totalBeds = ktasData?.totalBeds || 0;
     const usedBeds = ktasData?.usedBeds || 0;
     const unusedBeds = totalBeds > 0 ? totalBeds - usedBeds : 0;
-
-    console.log("total : ", totalBeds);
-    console.log("use : ", usedBeds);
-    console.log("unuse : ", unusedBeds);
-
+  
     // KTAS 레벨별 데이터 매핑
     const tasData = ktasData?.ktasRatios?.map((ratio, index) => ({
       name: `KTAS ${index + 1}`,
       value: ratio,
+      beds: Math.round(ratio * totalBeds),  // 병상 수 계산
       color: KTAS_COLORS[index]
     })) || [];
 
     // 미사용 병상 데이터 추가
-    return [
-      ...tasData,
-      { name: "미사용", value: unusedBeds, color: "#DDDDDD" }
-    ];
-  }, [ktasData]);
+  return [
+    ...tasData,
+    { 
+      name: "미사용", 
+      value: unusedBeds / totalBeds,  // 비율로 변환
+      beds: unusedBeds,               // 실제 병상 수
+      color: "#DDDDDD" 
+    }
+  ];
+}, [ktasData]);
 
   /**
    * 예측 차트 데이터 계산
@@ -54,9 +64,9 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     if (!predictionData) return [];
 
     return [
-      { name: "DISCHARGE", value: predictionData.DISCHARGE, color: PREDICTION_COLORS.DISCHARGE },
+      { name: "ICU", value: predictionData.ICU, color: PREDICTION_COLORS.ICU },
       { name: "WARD", value: predictionData.WARD, color: PREDICTION_COLORS.WARD },
-      { name: "ICU", value: predictionData.ICU, color: PREDICTION_COLORS.ICU }
+      { name: "DISCHARGE", value: predictionData.DISCHARGE, color: PREDICTION_COLORS.DISCHARGE }
     ];
   }, [predictionData]);
 
@@ -77,9 +87,9 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     return hoveredIdx === index || (ktasFilter?.includes(index + 1) && isActive);
   }, [ktasFilter]);
 
-  // =========== 렌더링 함수 ===========
+  // =========== 레이블 렌더링 ===========
   /**
-   * KTAS 레이블 렌더링
+   * 레이블 렌더링
    */
   const renderLabels = useCallback((data, setHoverIndex, isKtas = true) => (
     <div className={isKtas ? "label-container" : "prediction-label-container"}>
@@ -91,38 +101,36 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
           <div
             key={`dot-${index}`}
             className={`${isKtas ? 'label-dot' : 'prediction-label-dot'} ${isActive ? 'active' : ''}`}
-            style={{ 
-              backgroundColor: entry.color,
-              border: isActive ? '2px solid #000' : 'none'
-            }}
             onMouseEnter={() => setHoverIndex(index)}
             onMouseLeave={() => setHoverIndex(null)}
             onClick={() => isKtas && handleLabelClick(entry)}
           >
-            <span className="ktas-label-text">
-              {entry.name}
-            </span>
+            <span className="ktas-label-text">{entry.name}</span>
             <div 
               className={`${isKtas ? 'label-tooltip' : 'prediction-label-tooltip'} ${
                 shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''
               }`}
             >
-              {entry.name} ({entry.value})
+              {isKtas 
+                ? `${entry.name} (${entry.beds}beds, ${(entry.value).toFixed(1)}%)`
+                : `${entry.name} (${(entry.value).toFixed(1)}%)`
+              }
             </div>
           </div>
         );
       })}
     </div>
-  ), [hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);;
+  ), [hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
 
+  // =========== 차트 렌더링 ===========
   /**
-   * KTAS 도넛 차트 렌더링
+   * KTAS 도넛 차트 섹션 렌더링
    */
   const renderKtasChart = useCallback(() => (
-    <div className="chart-container">
+    <section className="ktas-section">
       <h3 className="chart-title">KTAS 병상 점유율</h3>
       <div className="ktas-wrapper">
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={165}>
           <PieChart>
             <Pie
               data={ktasChartData}
@@ -130,10 +138,14 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={35}
-              outerRadius={70}
-              onMouseEnter={(_, index) => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              innerRadius={48.5}
+              outerRadius={75}
+              paddingAngle={1.5}
+              startAngle={90}
+              endAngle={-270}
+              isAnimationActive={true}
+              animationBegin={44}
+              animationDuration={800}
             >
               {ktasChartData.map((entry, index) => (
                 <Cell
@@ -144,26 +156,60 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
                      ktasFilter?.includes(parseInt(entry.name.split(" ")[1])))
                     ? "#000"
                     : "none"}
-                  strokeWidth={hoveredIndex === index ? 3 : 2}
-                  style={{ transition: 'stroke-width 0.2s ease' }}
+                  strokeWidth={1}
                 />
               ))}
             </Pie>
+            <Tooltip
+              formatter={(value) => `${(value).toFixed(1)}%`}
+              contentStyle={{
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                padding: '0.75rem'
+              }}
+              animationDuration={300}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>
-      {renderLabels(ktasChartData, setHoveredIndex)}
-    </div>
-  ), [ktasChartData, hoveredIndex, ktasFilter, renderLabels]);
+      <div className="label-container">
+        {ktasChartData.map((entry, index) => {
+          const isActive = entry.name !== "미사용" && 
+            ktasFilter?.includes(parseInt(entry.name.split(" ")[1]));
+  
+          return (
+            <div
+              key={`dot-${index}`}
+              className={`label-dot ${isActive ? 'active' : ''}`}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onClick={() => handleLabelClick(entry)}
+            >
+              <span className="ktas-label-text">
+                {entry.name}
+              </span>
+              {/* 호버 시에만 보이는 툴팁 */}
+              <div 
+                className={`label-tooltip ${shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''}`}
+              >
+                {`${entry.name} (${entry.beds}beds, ${(entry.value).toFixed(1)}%)`}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      </section>
+), [ktasChartData, hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
 
   /**
-   * AI 예측 반원 차트 렌더링
+   * AI 예측 차트 섹션 렌더링
    */
   const renderPredictionChart = useCallback(() => (
-    <div className="prediction-container">
-      <h3 className="prediction-title">AI 예측 환자 배치 비율</h3>
+    <section className="prediction-section">
+      <h3 className="prediction-title">AI_TAS 배치 비율</h3>
       <div className="prediction-wrapper">
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={163}>
           <PieChart>
             <Pie
               data={predictionChartData}
@@ -171,33 +217,46 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={35}
-              outerRadius={70}
-              onMouseEnter={(_, index) => setHoveredPredictionIndex(index)}
-              onMouseLeave={() => setHoveredPredictionIndex(null)}
+              innerRadius={48.5}
+              outerRadius={75}
+              paddingAngle={1.7}
+              startAngle={90}
+              endAngle={-270}
+              isAnimationActive={true}
+              animationBegin={44}
+              animationDuration={800}
             >
               {predictionChartData.map((entry, index) => (
                 <Cell
                   key={`prediction-cell-${index}`}
                   fill={entry.color}
                   stroke={hoveredPredictionIndex === index ? "#000" : "none"}
-                  strokeWidth={hoveredPredictionIndex === index ? 3 : 2}
-                  style={{ transition: 'stroke-width 0.2s ease' }}
+                  strokeWidth={1}
                 />
               ))}
             </Pie>
+            <Tooltip
+              formatter={(value) => `${(value).toFixed(1)}%`}
+              contentStyle={{
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                padding: '0.75rem'
+              }}
+              animationDuration={300}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>
       {renderLabels(predictionChartData, setHoveredPredictionIndex, false)}
-    </div>
+    </section>
   ), [predictionChartData, hoveredPredictionIndex, renderLabels]);
 
   return (
-    <aside className="sidebar">
+    <div className="charts-container">
       {renderKtasChart()}
       {renderPredictionChart()}
-    </aside>
+    </div>
   );
 };
 

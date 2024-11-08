@@ -1,0 +1,132 @@
+/* Global Styles */
+:root {
+  --sidebar-width: 250px;
+  --header-height: 64px;
+  --primary-color: #2563eb;
+  --background-color: #f8fafc;
+  --card-background: #ffffff;
+}
+
+.admin-sidebar {
+  width: var(--sidebar-width);
+  max-width: 240px;
+  background-color: var(--card-background);
+  border-right: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  position: fixed;
+  height: 100vh;
+  z-index: 40;
+  transition: all 0.3s ease;
+}
+
+.admin-sidebar-header {
+  padding-bottom: 1.2rem;  
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-sidebar-header h2 {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+/* 로그아웃 아이콘 */
+.admin-sidebar .logout {
+  width: 16px;  
+  height: 16px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  margin-left: 6px;
+}
+
+.admin-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.admin-user-name {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.admin-user-role {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.admin-nav-links {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.admin-nav-link:hover {
+  background-color: var(--background-color);
+}
+
+.admin-nav-link.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.admin-nav-link .admin-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 80px;
+    padding: 1.5rem 1rem;
+  }
+
+  .admin-sidebar-header h2,
+  .admin-user-info,
+  .admin-nav-link span {
+    display: none;
+  }
+
+  .admin-nav-link {
+    padding: 0.75rem;
+    justify-content: center;
+  }
+
+  .admin-nav-link .admin-icon {
+    margin: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+}

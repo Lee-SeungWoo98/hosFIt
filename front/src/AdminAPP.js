@@ -83,6 +83,7 @@ const AdminApp = ({logout}) => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard loading={loading} onTabChange={setActiveTab} />;
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
       case 'model':
         return <AIModel />;
       case 'staff':
@@ -95,10 +96,12 @@ const AdminApp = ({logout}) => {
         return <Settings showNotification={showNotification} />;
       default:
         return <Dashboard loading={loading} onTabChange={setActiveTab} />;
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
     }
   };
 
   return (
+    <ScoreProvider>
     <ScoreProvider>
       <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout}>
         <AdminHeader 
@@ -109,6 +112,7 @@ const AdminApp = ({logout}) => {
         {renderContent()}
       </Layout>
       <NotificationContainer />
+    </ScoreProvider>
     </ScoreProvider>
   );
 };
