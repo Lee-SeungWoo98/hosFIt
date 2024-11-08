@@ -37,9 +37,9 @@ const ErrorCard = ({ error, onSendToSupport }) => {
               <CheckCircle className="w-5 h-5 text-green-500" /> : 
               <XCircle className="w-5 h-5 text-red-500" />
             }
-            <span className="text-sm font-medium">
+            {/* <span className="text-sm font-medium">
               {error.isresolved ? "해결됨" : "미해결"}
-            </span>
+            </span> */}
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
