@@ -74,38 +74,7 @@ const Stats = () => {
 
       {/* 차트 섹션 */}
       <div className="charts-area">
-        <div className="chart-container">
-          <h3>ICU 입실률 추이</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={lineChartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" />
-              <YAxis domain={[10, 20]} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={{ fill: '#2563eb', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-container">
-          <h3>부서별 입실 현황</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barChartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        
 
         {/* 추가 통계 테이블 */}
         <div className="stats-table-container">
