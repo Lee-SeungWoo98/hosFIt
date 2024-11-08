@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Key, Search, UserX } from "lucide-react";
 import { PasswordResetModal, StatusModal } from './StaffModal';
 import axios from 'axios';
-import "./styles/Staff.css";
+import "../styles/Staff.css";
 
 // 부서 메뉴 설정
 const DEPARTMENT_MENUS = [

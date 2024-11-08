@@ -3,7 +3,7 @@ import axios from 'axios';
 import Layout from './Components/layout/Layout';
 import Dashboard from './Components/admin/dashboard';
 import AIModel from './Components/admin/model';
-import Staff from './Components/admin/staff';
+import Staff from './Components/admin/staff/Staff'; 
 import Stats from './Components/admin/stats';
 import Errors from './Components/admin/errors';
 import Settings from './Components/admin/settings';
