@@ -381,13 +381,14 @@ function App() {
   }, [isAuthenticated]); // currentPage 의존성 제거
 
 
-  // 자동 새로고침(환자)
-  // 자동 새로고침은 환자 데이터만
+  // 자동 새로고침
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const autoRefresh = setInterval(() => {
-      fetchFilteredData(currentPage);  // 환자 데이터만 새로고침
+      fetchFilteredData(currentPage);
+      fetchKtasData();
+      fetchPredictionData();
     }, AUTO_REFRESH_INTERVAL);
 
     return () => clearInterval(autoRefresh);

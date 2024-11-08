@@ -17,7 +17,7 @@ function Login({ onLogin }) {
       }, { withCredentials: true });
 
       await onLogin();
-      navigate('/', { state: { username } });
+      
     } catch (err) {
       setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.');
     }
@@ -40,7 +40,7 @@ function Login({ onLogin }) {
                       </span>
                   </div>
                   
-                  <form>
+                  <form onSubmit={handleLogin}>
                     {error && (
                       <div className="alert alert-danger" role="alert">
                         {error}
@@ -79,9 +79,8 @@ function Login({ onLogin }) {
                     </div>
                     
                     <button 
-                      type="button" 
+                      type="submit" 
                       className="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
-                      onClick={handleLogin}
                     >
                       로그인
                     </button>
