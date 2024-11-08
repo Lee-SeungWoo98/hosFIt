@@ -58,3 +58,5 @@ build/
 .vscode/
 
 pom.properties
+
+/back/target/
