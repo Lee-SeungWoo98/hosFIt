@@ -39,7 +39,7 @@ const AdminApp = ({logout}) => {
     
     const icon = document.createElement('div');
     icon.className = 'admin-notification-icon';
-    icon.innerHTML = getNotificationIcon(type);S
+    icon.innerHTML = getNotificationIcon(type);
     
     const content = document.createElement('div');
     content.className = 'admin-notification-content';
