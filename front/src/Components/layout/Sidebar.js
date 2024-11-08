@@ -110,8 +110,9 @@ const Sidebar = ({ activeTab, onTabChange, logout }) => (
           onClick={() => onTabChange('settings')}
         />
       </nav>
+      
     </div>
   </aside>
-);
+); 
 
 export default Sidebar;
