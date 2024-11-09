@@ -38,34 +38,18 @@ jobs:
         CI: true
       continue-on-error: true
 
-    - name: Process Test Results
-      if: always()
-      run: |
-        # Jest의 coverage 결과를 환경 변수로 저장
-        COVERAGE_SUMMARY=$(cat ./front/coverage/coverage-summary.json)
-        echo "COVERAGE_DATA=${COVERAGE_SUMMARY}" >> $GITHUB_ENV
-
     - name: Add Test Results Comment
       if: always()
       uses: actions/github-script@v6
       with:
         script: |
-          const coverageData = JSON.parse(process.env.COVERAGE_DATA || '{}');
-          const summary = coverageData.total || {};
-          
-          const getStatusEmoji = (status) => status ? '✅' : '❌';
-          const formatCoverage = (value) => value ? `${value.pct.toFixed(2)}% (${value.covered}/${value.total})` : 'N/A';
+          const getStatusEmoji = (passed) => passed ? '✅' : '❌';
+          const testPassed = process.env.TEST_FAILED !== 'true';
           
           const message = `## 테스트 결과 요약
 
           ### Frontend Tests 🌐
-          **전체 상태:** ${getStatusEmoji(!process.env.TEST_FAILED)} ${process.env.TEST_FAILED === 'true' ? '일부 테스트 실패' : '모든 테스트 통과'}
-
-          ### Coverage Report 📊
-          - Statements : ${formatCoverage(summary.statements)}
-          - Branches   : ${formatCoverage(summary.branches)}
-          - Functions  : ${formatCoverage(summary.functions)}
-          - Lines     : ${formatCoverage(summary.lines)}
+          **전체 상태:** ${getStatusEmoji(testPassed)} ${testPassed ? '모든 테스트 통과' : '일부 테스트 실패'}
 
           ---
           🕒 테스트 실행 시간: ${new Date().toISOString()}`;
