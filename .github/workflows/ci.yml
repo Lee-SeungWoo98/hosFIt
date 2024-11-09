@@ -34,14 +34,9 @@ jobs:
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트를 실행하고 결과 저장
-        JEST_CONFIG_PATH=./jest.config.js TEST_OUTPUT=$(npm run test:ci)
+        # 테스트 실행 및 결과 저장
+        TEST_OUTPUT=$(npm run test:ci)
         echo "$TEST_OUTPUT"
-        
-        # JSON 형식의 테스트 결과 저장
-        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --json --testLocationInResults >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
         
         # 테스트 실패 여부 확인
         if echo "$TEST_OUTPUT" | grep -q "FAIL"; then
@@ -52,13 +47,11 @@ jobs:
         
         # 커버리지 결과 수집
         echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        npm run test:ci 2>&1 | tail -n 4 >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
         CI: true
-        NODE_ENV: test
-      continue-on-error: true
 
     - name: Add Test Results Comment
       if: always()
