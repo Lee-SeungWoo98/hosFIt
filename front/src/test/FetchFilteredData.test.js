@@ -1,5 +1,5 @@
 // src/test/FetchFilteredData.test.js
-import { renderHook } from '@testing-library/react-hooks';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { act } from '@testing-library/react';
 import axios from 'axios';
 
