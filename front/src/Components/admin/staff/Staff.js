@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Key, Search, UserX } from "lucide-react";
-import { PasswordResetModal, StatusModal } from './StaffModal';
+import { Search, UserX, RotateCcw } from "lucide-react";
+import { StatusModal } from './StaffModal';
 import axios from 'axios';
 import "../styles/Staff.css";
 
@@ -25,11 +25,11 @@ const TABLE_COLUMNS = [
 ];
 
 const Staff = ({ showNotification }) => {
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [resignModalOpen, setResignModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [staffList, setStaffList] = useState([]);
 
   // 직원 목록 가져오기
@@ -37,14 +37,14 @@ const Staff = ({ showNotification }) => {
     try {
       const response = await axios.get('http://localhost:8082/boot/member/memberList');
       const mappedStaff = response.data.map(staff => ({
-        id: '데이터 없음',  // 사번은 항상 '데이터 없음'으로 표시
+        id: '데이터 없음',
         name: staff.name || '데이터 없음',
         role: staff.major || '데이터 없음',
         department: staff.department || '데이터 없음',
-        email: '데이터 없음',  // 이메일 필드 유지
-        lastLogin: '데이터 없음',  // 마지막 로그인 필드 유지
+        email: '데이터 없음',
+        lastLogin: '데이터 없음',
         status: staff.status || 'active',
-        username: staff.username  // 내부 처리용으로 username 보존
+        username: staff.username
       }));
       setStaffList(mappedStaff);
     } catch (error) {
@@ -62,16 +62,21 @@ const Staff = ({ showNotification }) => {
       (staff.department === selectedDepartment);
     
     const searchFields = ['name', 'role', 'department', 'email'];
-    const matchesSearch = searchFields.some(field => 
-      staff[field].toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = activeSearchTerm === "" || searchFields.some(field => 
+      staff[field].toLowerCase().includes(activeSearchTerm.toLowerCase())
     );
 
     return matchesDepartment && matchesSearch;
   });
 
-  const handlePasswordResetClick = (staff) => {
-    setSelectedStaff(staff);
-    setPasswordModalOpen(true);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setActiveSearchTerm(searchTerm);
+  };
+
+  const handleSearchReset = () => {
+    setSearchTerm("");
+    setActiveSearchTerm("");
   };
 
   const handleResignClick = (staff) => {
@@ -103,16 +108,25 @@ const Staff = ({ showNotification }) => {
     <div className="staff-page">
       <div className="staff-controls">
         <div className="controls-right">
-          <div className="search-box">
-            <Search className="icon" />
-            <input
-              type="text"
-              placeholder="검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="search-section">
+            <form onSubmit={handleSearchSubmit} className="search-box">
+              <Search className="icon search-icon" />
+              <input
+                type="text"
+                placeholder="검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </form>
+            <button
+              className="search-reset-btn"
+              onClick={handleSearchReset}
+              title="검색 초기화"
+            >
+              <RotateCcw className="icon" size={16} />
+            </button>
           </div>
-
+  
           <div className="department-filter">
             {DEPARTMENT_MENUS.map(menu => (
               <button
@@ -156,13 +170,6 @@ const Staff = ({ showNotification }) => {
                     <td>
                       <div className="action-buttons">
                         <button 
-                          className="action-btn" 
-                          title="비밀번호 재설정"
-                          onClick={() => handlePasswordResetClick(staff)}
-                        >
-                          <Key className="icon" />
-                        </button>
-                        <button 
                           className="action-btn danger" 
                           title={staff.status === 'active' ? "비활성화" : "활성화"}
                           onClick={() => handleResignClick(staff)}
@@ -184,12 +191,6 @@ const Staff = ({ showNotification }) => {
           </table>
         </div>
       </div>
-
-      <PasswordResetModal
-        isOpen={passwordModalOpen}
-        onClose={() => setPasswordModalOpen(false)}
-        staffId={selectedStaff?.username}
-      />
 
       <StatusModal
         isOpen={resignModalOpen}

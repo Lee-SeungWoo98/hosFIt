@@ -4,17 +4,17 @@
  * 도넛 차트와 반원 차트를 통해 KTAS 데이터와 AI 예측 데이터를 시각화
  */
 import React, { useState, useCallback, useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import "./Ktas.css";
 
 // =========== 상수 정의 ===========
 const KTAS_COLORS = [
-  "#1A66FF",
-  "#FF1A1A",
-  "#FFEB1A",
-  "#00E600",
-  "#f3f3f3",
-  "#d7d7d7"
+  "#3b82f6",    // Level 1 - 선명한 파란색
+  "#ef4444",    // Level 2 - 선명한 빨간색
+  "#fde047",    // Level 3 - 더 밝은 노란색 (수정됨)
+  "#22c55e",    // Level 4 - 선명한 초록색
+  "#e7e7e7",    // Level 5 - 회색 같은 하얀색 같은 무언가
+  "#bbbbbb"     // 기타 - 더 회색
 ];
 
 const PREDICTION_COLORS = {
@@ -36,25 +36,26 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
     const totalBeds = ktasData?.totalBeds || 0;
     const usedBeds = ktasData?.usedBeds || 0;
     const unusedBeds = totalBeds > 0 ? totalBeds - usedBeds : 0;
-  
+
+    console.log("total : ", totalBeds);
+    console.log("use : ", usedBeds);
+    console.log("unuse : ", unusedBeds);
+
     // KTAS 레벨별 데이터 매핑
     const tasData = ktasData?.ktasRatios?.map((ratio, index) => ({
       name: `KTAS ${index + 1}`,
       value: ratio,
-      beds: Math.round(ratio * totalBeds),  // 병상 수 계산
       color: KTAS_COLORS[index]
     })) || [];
 
     // 미사용 병상 데이터 추가
-  return [
-    ...tasData,
-    { 
-      name: "미사용", 
-      value: unusedBeds / totalBeds,  // 비율로 변환
-      beds: unusedBeds,               // 실제 병상 수
-      color: "#DDDDDD" 
-    }
-  ];
+    const totalUsedRatio = tasData.reduce((sum, data) => sum + data.value, 0);
+    const unusedRatio = Math.max(0, 1 - totalUsedRatio);
+
+    return [
+      ...tasData,
+      { name: "미사용", value: unusedRatio, color: "#DDDDDD" }
+    ];
 }, [ktasData]);
 
   /**
@@ -111,10 +112,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
                 shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''
               }`}
             >
-              {isKtas 
-                ? `${entry.name} (${entry.beds}beds, ${(entry.value).toFixed(1)}%)`
-                : `${entry.name} (${(entry.value).toFixed(1)}%)`
-              }
+              {`${entry.name} (${(entry.value).toFixed(1)}%)`}
             </div>
           </div>
         );
@@ -161,7 +159,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value) => `${(value).toFixed(1)}%`}
+              formatter={(value) => `${(value)}%`}
               contentStyle={{
                 backgroundColor: 'white',
                 border: '1px solid #e5e7eb',
@@ -193,7 +191,7 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
               <div 
                 className={`label-tooltip ${shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''}`}
               >
-                {`${entry.name} (${entry.beds}beds, ${(entry.value).toFixed(1)}%)`}
+                {`${entry.name} (${(entry.value).toFixed(1)}%)`}
               </div>
             </div>
           );
