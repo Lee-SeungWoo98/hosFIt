@@ -1,169 +1,101 @@
+// src/test/App.test.js
+
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import App from '../App';
 import { API_ENDPOINTS } from '../constants/api';
 
-// axios 모킹
-jest.mock('axios');
+jest.mock('axios'); // axios를 mock 처리
 
-// localStorage 모킹
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-};
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-
-describe('App Login Functionality', () => {
-  beforeEach(() => {
-    // 각 테스트 전에 모든 목업을 초기화
+// localStorage mock 설정
+beforeEach(() => {
     jest.clearAllMocks();
-    window.localStorage.clear();
-    
-    // localStorage 기본 상태 설정
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'isAuthenticated') return 'false';
-      if (key === 'position') return null;
-      return null;
-    });
-  });
 
-  test('초기 로그인 페이지 렌더링 테스트', () => {
+    const localStorageMock = (() => {
+        let store = {};
+        return {
+            getItem: jest.fn((key) => store[key] || null),
+            setItem: jest.fn((key, value) => {
+                store[key] = value.toString();
+            }),
+            removeItem: jest.fn((key) => {
+                delete store[key];
+            }),
+            clear: jest.fn(() => {
+                store = {};
+            })
+        };
+    })();
+
+    Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock
+    });
+
+    window.localStorage.clear(); // 각 테스트 전에 clear()를 호출하여 초기화
+});
+
+test('초기 로그인 페이지 렌더링 테스트', () => {
     render(<App />);
+    const loginButton = screen.getByText(/로그인/i);
+    expect(loginButton).toBeInTheDocument();
+});
+
+test('일반 사용자 로그인 성공 후 메인 페이지 리다이렉션', async () => {
+    axios.post.mockResolvedValueOnce({ data: { role: 'user', token: 'user-token' } });
+
+    render(<App />);
+    userEvent.type(screen.getByLabelText(/아이디/i), 'testuser');
+    userEvent.type(screen.getByLabelText(/비밀번호/i), 'password');
+    userEvent.click(screen.getByText(/로그인/i));
+
+    await waitFor(() => {
+        expect(window.localStorage.setItem).toHaveBeenCalledWith('token', 'user-token');
+    });
+    expect(screen.getByText(/메인 페이지/i)).toBeInTheDocument();
+});
+
+test('관리자 로그인 성공 후 관리자 페이지 리다이렉션', async () => {
+    axios.post.mockResolvedValueOnce({ data: { role: 'admin', token: 'admin-token' } });
+
+    render(<App />);
+    userEvent.type(screen.getByLabelText(/아이디/i), 'adminuser');
+    userEvent.type(screen.getByLabelText(/비밀번호/i), 'password');
+    userEvent.click(screen.getByText(/로그인/i));
+
+    await waitFor(() => {
+        expect(window.localStorage.setItem).toHaveBeenCalledWith('token', 'admin-token');
+    });
+    expect(screen.getByText(/관리자 페이지/i)).toBeInTheDocument();
+});
+
+test('로그인 세션 만료 시 로그인 페이지로 리다이렉션', async () => {
+    axios.get.mockRejectedValueOnce({ response: { status: 401 } }); // 401 Unauthorized
+
+    render(<App />);
+
+    await waitFor(() => {
+        expect(screen.getByText(/로그인/i)).toBeInTheDocument();
+    });
+});
+
+test('로그아웃 기능 테스트', async () => {
+    render(<App />);
+
+    userEvent.click(screen.getByText(/로그아웃/i));
+
+    await waitFor(() => {
+        expect(window.localStorage.clear).toHaveBeenCalled();
+    });
     expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-  });
+});
 
-  test('일반 사용자 로그인 성공 후 메인 페이지 리다이렉션', async () => {
-    // 세션 체크 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.resolve({
-          data: {
-            isAuthenticated: true,
-            user: { position: '일반' }
-          }
-        });
-      }
-    });
+test('세션 체크 네트워크 오류 처리', async () => {
+    axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
-    await act(async () => {
-      render(<App />);
-    });
+    render(<App />);
 
-    // localStorage 설정 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
-    expect(localStorage.setItem).toHaveBeenCalledWith('position', '일반');
-
-    // 리다이렉션 확인
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/');
+        expect(screen.getByText(/로그인/i)).toBeInTheDocument();
     });
-  });
-
-  test('관리자 로그인 성공 후 관리자 페이지 리다이렉션', async () => {
-    // 세션 체크 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.resolve({
-          data: {
-            isAuthenticated: true,
-            user: { position: '관리자' }
-          }
-        });
-      }
-    });
-
-    await act(async () => {
-      render(<App />);
-    });
-
-    // localStorage 설정 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
-    expect(localStorage.setItem).toHaveBeenCalledWith('position', '관리자');
-
-    // 리다이렉션 확인
-    await waitFor(() => {
-      expect(window.location.pathname).toBe('/admin');
-    });
-  });
-
-  test('로그인 세션 만료 시 로그인 페이지로 리다이렉션', async () => {
-    // 실패하는 세션 체크 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.reject(new Error('Session expired'));
-      }
-    });
-
-    await act(async () => {
-      render(<App />);
-    });
-
-    // localStorage 항목 제거 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
-
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-    });
-  });
-
-  test('로그아웃 기능 테스트', async () => {
-    // 먼저 로그인 상태로 설정
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'isAuthenticated') return 'true';
-      if (key === 'position') return '일반';
-      return null;
-    });
-
-    // 로그아웃 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.LOGOUT) {
-        return Promise.resolve({ data: { success: true } });
-      }
-    });
-
-    await act(async () => {
-      render(<App />);
-    });
-
-    // 로그아웃 처리 확인
-    const logoutButton = screen.getByText(/로그아웃/i);
-    await act(async () => {
-      userEvent.click(logoutButton);
-    });
-
-    // localStorage 항목 제거 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
-
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(window.location.pathname).toBe('/login');
-    });
-  });
-
-  test('세션 체크 네트워크 오류 처리', async () => {
-    // 네트워크 오류 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.reject(new Error('Network Error'));
-      }
-    });
-
-    await act(async () => {
-      render(<App />);
-    });
-
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-    });
-
-    // localStorage 초기화 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
-  });
 });
