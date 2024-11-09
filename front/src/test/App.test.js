@@ -2,7 +2,7 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import App from '../App';
-import { API_ENDPOINTS } from './constants/api';
+import { API_ENDPOINTS } from '../constants/api';
 
 // axios 모킹
 jest.mock('axios');
