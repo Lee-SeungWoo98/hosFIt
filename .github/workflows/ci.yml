@@ -6,6 +6,7 @@ on:
   push:
     branches: [ main ]
 
+# 이 부분 추가
 permissions:
   contents: read
   pull-requests: write
@@ -15,86 +16,28 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    # 코드 체크아웃
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
+    
+    # Node.js 설정
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '20'
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
-
-    # 변경된 파일 감지
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v43
-      with:
-        files: |
-          front/src/**/*.js
-          front/src/**/*.jsx
-
+    
+    # Frontend 테스트
     - name: Install Dependencies
-      if: steps.changed-files.outputs.any_changed == 'true'
       run: npm ci
       working-directory: ./front
-
-    - name: Run Tests for Changed Files
+      
+    - name: Run Frontend Tests
       id: test
-      if: steps.changed-files.outputs.any_changed == 'true'
-      run: |
-        CHANGED_FILES=""
-        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          if [[ $file == front/src/* && $file == *.test.js ]]; then
-            CHANGED_FILES="$CHANGED_FILES $file"
-          elif [[ $file == front/src/* && $file == *.js ]]; then
-            TEST_FILE="${file%.js}.test.js"
-            if [ -f "$TEST_FILE" ]; then
-              CHANGED_FILES="$CHANGED_FILES $TEST_FILE"
-            fi
-          fi
-        done
-        
-        if [ -n "$CHANGED_FILES" ]; then
-          echo "Running tests for changed files: $CHANGED_FILES"
-          npm run test:ci -- $CHANGED_FILES
-        else
-          echo "No relevant test files found for changed files"
-          npm run test:ci
-        fi
+      run: npm run test:ci
       working-directory: ./front
       env:
         CI: true
       continue-on-error: true
 
-    - name: Add Test Results Comment
-      if: always()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const message = `## 테스트 결과 요약
-
-          ### Frontend Tests 🌐
-          **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-
-          **테스트된 파일:**
-          ${process.env.CHANGED_FILES ? process.env.CHANGED_FILES.split(' ').map(file => `- ${file}\n`).join('') : '- 변경된 파일 없음'}
-
-          ### Coverage Report 📊
-          - Statements   : 85.71% (24/28)
-          - Branches     : 75.00% (6/8)
-          - Functions    : 83.33% (5/6)
-          - Lines        : 85.71% (24/28)
-
-          ---
-          🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
-
-          if (context.payload.pull_request) {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: message
-            });
-          }
+          
