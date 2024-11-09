@@ -25,7 +25,11 @@ jobs:
       #       ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install  # npm ci에서 npm install로 변경
+        run: npm install
+
+      # react-scripts 명시적 설치 단계 추가
+      - name: Install react-scripts
+        run: npm install react-scripts
 
       - name: Run tests
-        run: react-scripts test --watchAll=false --passWithNoTests --coverage  # 테스트 명령 직접 실행
+        run: npm run test:ci
