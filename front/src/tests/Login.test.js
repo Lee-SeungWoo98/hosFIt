@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../Components/Login';
 
+// axios 모킹
+jest.mock('axios');
+
 // 테스트용 로그인 컴포넌트 래퍼
 const renderLogin = (onLogin = jest.fn()) => {
   return render(

@@ -71,5 +71,10 @@
     "postcss": "^8.4.47",
     "postcss-preset-env": "^9.0.0",
     "tailwindcss": "^3.4.14"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!axios)/"
+    ]
   }
 }
