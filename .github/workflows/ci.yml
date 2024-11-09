@@ -6,7 +6,6 @@ on:
   push:
     branches: [ main ]
 
-# 이 부분 추가
 permissions:
   contents: read
   pull-requests: write
@@ -16,10 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 코드 체크아웃
     - uses: actions/checkout@v3
     
-    # Node.js 설정
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
@@ -27,57 +24,90 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
     
-    # Frontend 테스트
     - name: Install Dependencies
       run: npm ci
       working-directory: ./front
       
     - name: Run Frontend Tests
       id: test
-      run: npm run test:ci
+      run: |
+        # 테스트를 JSON 형식으로 실행하고 결과 저장
+        TEST_OUTPUT=$(npm run test:ci -- --json)
+        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+        echo "$TEST_OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        
+        # 커버리지 결과 수집
+        echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
+        npm run test:ci -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
         CI: true
       continue-on-error: true
 
-    # 테스트 결과를 PR에 코멘트로 달기
     - name: Add Test Results Comment
       if: always()
       uses: actions/github-script@v6
       with:
         script: |
-          const message = `## 테스트 결과 요약
+          try {
+            const testOutput = JSON.parse(process.env.TEST_OUTPUT || '{}');
+            const coverageReport = process.env.COVERAGE_REPORT || '';
+            
+            // 테스트 결과 파싱
+            const testResults = testOutput.testResults || [];
+            const failedTests = testOutput.numFailedTests || 0;
+            const passedTests = testOutput.numPassedTests || 0;
+            const totalTests = testOutput.numTotalTests || 0;
+            
+            // 파일별로 테스트 결과 그룹화
+            const testsByFile = testResults.reduce((acc, suite) => {
+              const fileName = suite.name.split('/').pop().replace('.test.js', '');
+              const tests = suite.testResults.map(test => ({
+                name: test.title,
+                status: test.status === 'passed' ? '✅' : '❌'
+              }));
+              acc[fileName] = tests;
+              return acc;
+            }, {});
 
-          ### Frontend Tests 🌐
-          **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+            // 파일별 테스트 결과 문자열 생성
+            const testStatusSection = Object.entries(testsByFile)
+              .map(([fileName, tests]) => `
+              #### ${fileName} 컴포넌트 테스트
+              ${tests.map(test => `- ${test.name} ${test.status}`).join('\n')}
+              `).join('\n');
 
-          **테스트 항목:**
-          ✅ 로그인 기능 테스트
-          ✅ 세션 관리 테스트
-          ✅ 권한 검증 테스트
+            const message = `## 테스트 결과 요약
 
-          ### 상세 테스트 결과
-          - 초기 로그인 페이지 렌더링 ✅
-          - 일반 사용자 로그인 및 리다이렉션 ✅
-          - 관리자 로그인 및 리다이렉션 ✅
-          - 세션 만료 처리 ✅
-          - 로그아웃 기능 ✅
-          - 에러 핸들링 ✅
+            ### Frontend Tests 🌐
+            **전체 상태:** ${failedTests === 0 ? '✅ 모든 테스트 통과' : '❌ 일부 테스트 실패'}
+            
+            **테스트 통계:**
+            - 총 테스트 수: ${totalTests}
+            - 통과: ${passedTests}
+            - 실패: ${failedTests}
 
-          ### Coverage Report 📊
-          - Statements   : 85.71% (24/28)
-          - Branches     : 75.00% (6/8)
-          - Functions    : 83.33% (5/6)
-          - Lines        : 85.71% (24/28)
+            ### 상세 테스트 결과
+            ${testStatusSection}
 
-          ---
-          🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
+            ### Coverage Report 📊
+            \`\`\`
+            ${coverageReport}
+            \`\`\`
 
-          if (context.payload.pull_request) {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: message
-            });
+            ---
+            🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
+
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message
+              });
+            }
+          } catch (error) {
+            core.setFailed(`Action failed with error: ${error}`);
           }
