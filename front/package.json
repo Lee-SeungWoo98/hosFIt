@@ -42,18 +42,6 @@
     "test:ci": "react-scripts test --watchAll=false --passWithNoTests --coverage",
     "eject": "react-scripts eject"
   },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
-    },
-    "transform": {
-      "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { "rootMode": "upward" }]
-    },
-    "setupFilesAfterEnv": [
-      "<rootDir>/src/setupTests.js"
-    ]
-  },
   "eslintConfig": {
     "extends": [
       "react-app",
