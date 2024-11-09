@@ -38,7 +38,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test:ci": "react-scripts test --testMatch='**/src/test/**/*.test.js' --watchAll=false --ci --coverage --json --testLocationInResults",
+    "test:ci": "jest --config jest.config.js --testMatch='**/src/test/**/*.test.js' --watchAll=false --ci",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -83,9 +83,6 @@
       "^axios$": "axios"
     },
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": [
-      "<rootDir>/src/setupTests.js"
-    ],
     "transformIgnorePatterns": [
       "/node_modules/(?!axios)/"
     ],

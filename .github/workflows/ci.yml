@@ -28,16 +28,19 @@ jobs:
       run: |
         rm -f package-lock.json
         npm install
-        npm install -D @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy jest @babel/plugin-transform-modules-commonjs
+        npm install -D @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy jest @babel/plugin-transform-modules-commonjs @testing-library/jest-dom @testing-library/react @testing-library/user-event
       working-directory: ./front
     
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트를 JSON 형식으로 실행하고 결과 저장
-        TEST_OUTPUT=$(npm run test:ci)
+        # 테스트를 실행하고 결과 저장
+        JEST_CONFIG_PATH=./jest.config.js TEST_OUTPUT=$(npm run test:ci)
+        echo "$TEST_OUTPUT"
+        
+        # JSON 형식의 테스트 결과 저장
         echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
-        npm test -- --json --testLocationInResults >> $GITHUB_ENV
+        JEST_CONFIG_PATH=./jest.config.js npm test -- --json --testLocationInResults >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
         
         # 테스트 실패 여부 확인
@@ -49,11 +52,12 @@ jobs:
         
         # 커버리지 결과 수집
         echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        npm run test:ci -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        JEST_CONFIG_PATH=./jest.config.js npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
         CI: true
+        NODE_ENV: test
       continue-on-error: true
 
     - name: Add Test Results Comment
@@ -76,7 +80,8 @@ jobs:
               const fileName = suite.name.split('/').pop().replace('.test.js', '');
               const tests = suite.testResults.map(test => ({
                 name: test.title,
-                status: test.status === 'passed' ? '✅' : '❌'
+                status: test.status === 'passed' ? '✅' : '❌',
+                failureMessages: test.status === 'failed' ? test.failureMessages : []
               }));
               acc[fileName] = tests;
               return acc;
@@ -86,7 +91,11 @@ jobs:
             const testStatusSection = Object.entries(testsByFile)
               .map(([fileName, tests]) => `
               #### ${fileName} 컴포넌트 테스트
-              ${tests.map(test => `- ${test.name} ${test.status}`).join('\n')}
+              ${tests.map(test => `- ${test.name} ${test.status}${
+                test.failureMessages.length > 0 
+                  ? '\n  ```\n  ' + test.failureMessages.join('\n  ') + '\n  ```'
+                  : ''
+              }`).join('\n')}
               `).join('\n');
 
             const message = `## 테스트 결과 요약
