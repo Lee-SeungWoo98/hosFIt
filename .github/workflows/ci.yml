@@ -6,7 +6,6 @@ on:
   push:
     branches: [ main ]
 
-# 이 부분 추가
 permissions:
   contents: read
   pull-requests: write
@@ -16,31 +15,59 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 코드 체크아웃
     - uses: actions/checkout@v3
-    
-    # Node.js 설정
+      with:
+        fetch-depth: 0
+
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '20'
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
-    
-    # Frontend 테스트
+
+    # 변경된 파일 감지
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v43
+      with:
+        files: |
+          front/src/**/*.js
+          front/src/**/*.jsx
+
     - name: Install Dependencies
+      if: steps.changed-files.outputs.any_changed == 'true'
       run: npm ci
       working-directory: ./front
-      
-    - name: Run Frontend Tests
+
+    - name: Run Tests for Changed Files
       id: test
-      run: npm run test:ci
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        CHANGED_FILES=""
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ $file == front/src/* && $file == *.test.js ]]; then
+            CHANGED_FILES="$CHANGED_FILES $file"
+          elif [[ $file == front/src/* && $file == *.js ]]; then
+            TEST_FILE="${file%.js}.test.js"
+            if [ -f "$TEST_FILE" ]; then
+              CHANGED_FILES="$CHANGED_FILES $TEST_FILE"
+            fi
+          fi
+        done
+        
+        if [ -n "$CHANGED_FILES" ]; then
+          echo "Running tests for changed files: $CHANGED_FILES"
+          npm run test:ci -- $CHANGED_FILES
+        else
+          echo "No relevant test files found for changed files"
+          npm run test:ci
+        fi
       working-directory: ./front
       env:
         CI: true
       continue-on-error: true
 
-    # 테스트 결과를 PR에 코멘트로 달기
     - name: Add Test Results Comment
       if: always()
       uses: actions/github-script@v6
@@ -51,18 +78,8 @@ jobs:
           ### Frontend Tests 🌐
           **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
 
-          **테스트 항목:**
-          ✅ 로그인 기능 테스트
-          ✅ 세션 관리 테스트
-          ✅ 권한 검증 테스트
-
-          ### 상세 테스트 결과
-          - 초기 로그인 페이지 렌더링 ✅
-          - 일반 사용자 로그인 및 리다이렉션 ✅
-          - 관리자 로그인 및 리다이렉션 ✅
-          - 세션 만료 처리 ✅
-          - 로그아웃 기능 ✅
-          - 에러 핸들링 ✅
+          **테스트된 파일:**
+          ${process.env.CHANGED_FILES ? process.env.CHANGED_FILES.split(' ').map(file => `- ${file}\n`).join('') : '- 변경된 파일 없음'}
 
           ### Coverage Report 📊
           - Statements   : 85.71% (24/28)
