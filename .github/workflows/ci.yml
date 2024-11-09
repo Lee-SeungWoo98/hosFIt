@@ -6,7 +6,6 @@ on:
   push:
     branches: [ main ]
 
-# 이 부분 추가
 permissions:
   contents: read
   pull-requests: write
@@ -16,10 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 코드 체크아웃
     - uses: actions/checkout@v3
     
-    # Node.js 설정
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
@@ -27,51 +24,51 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
     
-    # Frontend 테스트
     - name: Install Dependencies
       run: npm ci
       working-directory: ./front
       
     - name: Run Frontend Tests
       id: test
-      run: npm run test:ci
+      run: |
+        npm run test:ci
+        echo "TEST_FAILED=${{ job.status != 'success' }}" >> $GITHUB_ENV
       working-directory: ./front
       env:
         CI: true
       continue-on-error: true
 
-    # 테스트 결과를 PR에 코멘트로 달기
+    - name: Process Test Results
+      if: always()
+      run: |
+        # Jest의 coverage 결과를 환경 변수로 저장
+        COVERAGE_SUMMARY=$(cat ./front/coverage/coverage-summary.json)
+        echo "COVERAGE_DATA=${COVERAGE_SUMMARY}" >> $GITHUB_ENV
+
     - name: Add Test Results Comment
       if: always()
       uses: actions/github-script@v6
       with:
         script: |
+          const coverageData = JSON.parse(process.env.COVERAGE_DATA || '{}');
+          const summary = coverageData.total || {};
+          
+          const getStatusEmoji = (status) => status ? '✅' : '❌';
+          const formatCoverage = (value) => value ? `${value.pct.toFixed(2)}% (${value.covered}/${value.total})` : 'N/A';
+          
           const message = `## 테스트 결과 요약
 
           ### Frontend Tests 🌐
-          **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-
-          **테스트 항목:**
-          ✅ 로그인 기능 테스트
-          ✅ 세션 관리 테스트
-          ✅ 권한 검증 테스트
-
-          ### 상세 테스트 결과
-          - 초기 로그인 페이지 렌더링 ✅
-          - 일반 사용자 로그인 및 리다이렉션 ✅
-          - 관리자 로그인 및 리다이렉션 ✅
-          - 세션 만료 처리 ✅
-          - 로그아웃 기능 ✅
-          - 에러 핸들링 ✅
+          **전체 상태:** ${getStatusEmoji(!process.env.TEST_FAILED)} ${process.env.TEST_FAILED === 'true' ? '일부 테스트 실패' : '모든 테스트 통과'}
 
           ### Coverage Report 📊
-          - Statements   : 85.71% (24/28)
-          - Branches     : 75.00% (6/8)
-          - Functions    : 83.33% (5/6)
-          - Lines        : 85.71% (24/28)
+          - Statements : ${formatCoverage(summary.statements)}
+          - Branches   : ${formatCoverage(summary.branches)}
+          - Functions  : ${formatCoverage(summary.functions)}
+          - Lines     : ${formatCoverage(summary.lines)}
 
           ---
-          🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
+          🕒 테스트 실행 시간: ${new Date().toISOString()}`;
 
           if (context.payload.pull_request) {
             await github.rest.issues.createComment({
