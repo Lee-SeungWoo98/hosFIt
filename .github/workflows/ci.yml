@@ -24,14 +24,50 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
     
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v41
+      with:
+        files: |
+          front/src/**/*.js
+          front/src/**/*.jsx
+          front/src/**/*.ts
+          front/src/**/*.tsx
+
     - name: Install Dependencies
+      if: steps.changed-files.outputs.any_changed == 'true'
       run: npm ci
       working-directory: ./front
       
-    - name: Run Frontend Tests
+    - name: Run Tests for Changed Files
+      if: steps.changed-files.outputs.any_changed == 'true'
       id: test
       run: |
-        npm run test:ci
+        CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+        JEST_ARGS=""
+        
+        # Convert file paths to Jest test patterns
+        for file in $CHANGED_FILES; do
+          if [[ $file == *.test.* ]]; then
+            # If it's a test file, test it directly
+            JEST_ARGS="$JEST_ARGS $file"
+          else
+            # For source files, find and run corresponding test files
+            FILE_NAME=$(basename "$file" .js)
+            TEST_FILE="$(dirname "$file")/$FILE_NAME.test.js"
+            if [ -f "$TEST_FILE" ]; then
+              JEST_ARGS="$JEST_ARGS $TEST_FILE"
+            fi
+          fi
+        done
+        
+        if [ ! -z "$JEST_ARGS" ]; then
+          npm run test:ci -- $JEST_ARGS --json --outputFile=test-results.json
+        else
+          echo "No test files found for changed files"
+          echo '{"success":true,"numTotalTests":0,"numPassedTests":0,"numFailedTests":0}' > test-results.json
+        fi
+        
         echo "TEST_FAILED=${{ job.status != 'success' }}" >> $GITHUB_ENV
       working-directory: ./front
       env:
@@ -39,20 +75,41 @@ jobs:
       continue-on-error: true
 
     - name: Add Test Results Comment
-      if: always()
+      if: always() && steps.changed-files.outputs.any_changed == 'true'
       uses: actions/github-script@v6
       with:
         script: |
+          const fs = require('fs');
+          let testResults;
+          try {
+            testResults = JSON.parse(fs.readFileSync('./front/test-results.json', 'utf8'));
+          } catch (error) {
+            testResults = null;
+          }
+          
           const getStatusEmoji = (passed) => passed ? '✅' : '❌';
-          const testPassed = process.env.TEST_FAILED !== 'true';
+          const testPassed = testResults ? testResults.success : false;
+          
+          // 변경된 파일 목록 가져오기
+          const changedFiles = process.env.CHANGED_FILES ? process.env.CHANGED_FILES.split(' ') : [];
           
           const message = `## 테스트 결과 요약
 
-          ### Frontend Tests 🌐
-          **전체 상태:** ${getStatusEmoji(testPassed)} ${testPassed ? '모든 테스트 통과' : '일부 테스트 실패'}
+          ### 변경된 파일 🔄
+          ${changedFiles.map(file => `- ${file}`).join('\n')}
+
+          ### 테스트 실행 결과 🧪
+          **상태:** ${getStatusEmoji(testPassed)} ${testPassed ? '모든 테스트 통과' : '테스트 실패'}
+
+          ${testResults ? `
+          **세부 결과:**
+          - 총 테스트 수: ${testResults.numTotalTests}
+          - 통과: ${testResults.numPassedTests}
+          - 실패: ${testResults.numFailedTests}
+          ` : '테스트 결과를 찾을 수 없습니다.'}
 
           ---
-          🕒 테스트 실행 시간: ${new Date().toISOString()}`;
+          🕒 실행 시간: ${new Date().toISOString()}`;
 
           if (context.payload.pull_request) {
             await github.rest.issues.createComment({
