@@ -1,9 +1,12 @@
-import { render, act, waitFor } from '@testing-library/react';
-import axios from 'axios';
-import App from '../App';
-import { API_ENDPOINTS } from '../constants/api';
+const { render, act, waitFor } = require('@testing-library/react');
+const axios = require('axios');
+const App = require('../App').default;
+const { API_ENDPOINTS } = require('../constants/api');
 
-jest.mock('axios');
+// axios 모킹
+jest.mock('axios', () => ({
+  get: jest.fn()
+}));
 
 describe('fetchFilteredData Functionality', () => {
   const mockPatientData = {
@@ -26,14 +29,12 @@ describe('fetchFilteredData Functionality', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    Object.defineProperty(window, 'localStorage', {
-      value: {
-        getItem: jest.fn(() => 'true'),
-        setItem: jest.fn(),
-        removeItem: jest.fn()
-      },
-      writable: true
-    });
+    // localStorage 모킹
+    global.localStorage = {
+      getItem: jest.fn(() => 'true'),
+      setItem: jest.fn(),
+      removeItem: jest.fn()
+    };
   });
 
   test('기본 데이터 로딩 테스트', async () => {
@@ -59,13 +60,16 @@ describe('fetchFilteredData Functionality', () => {
     });
 
     await waitFor(() => {
-      const url = axios.get.mock.calls[0][0];
-      expect(url).toContain('page=0');
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining('page=0'),
+        expect.any(Object)
+      );
     });
   });
 
   test('API 에러 처리 테스트', async () => {
-    axios.get.mockRejectedValue(new Error('Network Error'));
+    const errorMessage = 'Network Error';
+    axios.get.mockRejectedValue(new Error(errorMessage));
 
     await act(async () => {
       render(<App />);
