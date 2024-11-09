@@ -17,8 +17,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./front  # front 폴더로 작업 디렉토리 설정
+        working-directory: ./front  # 경로를 ./front로 설정
 
       - name: Run tests
         run: npx react-scripts test --watchAll=false --passWithNoTests --coverage
-        working-directory: ./front  # front 폴더로 작업 디렉토리 설정
+        working-directory: ./front  # 경로를 ./front로 설정
