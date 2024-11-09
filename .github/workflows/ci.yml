@@ -15,21 +15,9 @@ jobs:
         with:
           node-version: '18'
 
-      # Cache step 주석 처리
-      # - name: Cache node modules
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: ~/.npm
-      #     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-node-
-
       - name: Install dependencies
         run: npm install
 
-      # react-scripts 명시적 설치 단계 추가
-      - name: Install react-scripts
-        run: npm install react-scripts
-
+      # react-scripts 명시적 설치 단계 제거, npx로 대체
       - name: Run tests
-        run: react-scripts test --watchAll=false --passWithNoTests --coverage
+        run: npx react-scripts test --watchAll=false --passWithNoTests --coverage
