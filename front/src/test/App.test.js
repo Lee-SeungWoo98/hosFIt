@@ -1,7 +1,7 @@
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
-import App from './App';
+import App from '../App';
 import { API_ENDPOINTS } from './constants/api';
 
 // axios 모킹
