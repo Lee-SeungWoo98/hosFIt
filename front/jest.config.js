@@ -1,9 +1,13 @@
-// jest.config.js
 module.exports = {
     transform: {
-      '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+      '^.+\\.(js|jsx)$': 'babel-jest',
     },
     transformIgnorePatterns: [
-      '/node_modules/(?!(axios)/)', // 'axios' 모듈을 변환 대상에 포함
+      '/node_modules/(?!axios)/'
     ],
+    moduleNameMapper: {
+      '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+    },
+    testEnvironment: 'jsdom',
+    setupFilesAfterEnv: ['<rootDir>/src/setupTests.js']
   };

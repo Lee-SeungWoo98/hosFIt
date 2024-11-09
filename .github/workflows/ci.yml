@@ -25,21 +25,23 @@ jobs:
         cache-dependency-path: './front/package-lock.json'
     
     - name: Install Dependencies
-      run: npm ci
+      run: |
+        npm ci
+        npm install -D @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy
       working-directory: ./front
       
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트를 JSON 형식으로 실행하고 결과 저장
-        TEST_OUTPUT=$(npm run test:ci -- --json)
+        # 테스트 실행 및 결과 저장
+        TEST_OUTPUT=$(npm test -- --json --testLocationInResults)
         echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
         echo "$TEST_OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
         
         # 커버리지 결과 수집
         echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        npm run test:ci -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
