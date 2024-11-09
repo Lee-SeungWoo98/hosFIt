@@ -15,11 +15,5 @@ public class VitalSignsService {
     @Transactional
     public List<VitalSigns> getVitalSignsByStayId(Long stayId) {
         return vitalSignsRepository.findByVisitStayId(stayId);
-        
-        
-    }
-    
-    public List<VitalSigns> getVitalSigns2ByStayId(Long stayId) {
-        return vitalSignsRepository.findByVisitStayIdOrderByChartTime(stayId);
     }
 }

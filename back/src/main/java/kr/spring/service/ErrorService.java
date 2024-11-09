@@ -34,7 +34,7 @@ public class ErrorService {
     }
 
     public ErrorDTO createError(ErrorDTO errorDTO) {
-        Error error = modelMapper.map(errorDTO, Error.class);
+        ErrorLog error = modelMapper.map(errorDTO, ErrorLog.class);
         error = errorRepository.save(error);
         return modelMapper.map(error, ErrorDTO.class);
     }
