@@ -4,40 +4,61 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 import { configure } from '@testing-library/react';
-require('@testing-library/jest-dom');
 
 // 테스트 라이브러리 설정
-configure({ 
+configure({
   testIdAttribute: 'data-testid',
-  defaultHidden: true
+  defaultHidden: true,
 });
 
 // Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  length: 0,
-  key: jest.fn()
-};
-Object.defineProperty(window, 'localStorage', { 
+const localStorageMock = (() => {
+  let store = {};
+  return {
+    getItem: jest.fn((key) => store[key] || null),
+    setItem: jest.fn((key, value) => {
+      store[key] = value.toString();
+    }),
+    removeItem: jest.fn((key) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+    key: jest.fn((index) => Object.keys(store)[index] || null),
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+})();
+Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock sessionStorage
-const sessionStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  length: 0,
-  key: jest.fn()
-};
-Object.defineProperty(window, 'sessionStorage', { 
+const sessionStorageMock = (() => {
+  let store = {};
+  return {
+    getItem: jest.fn((key) => store[key] || null),
+    setItem: jest.fn((key, value) => {
+      store[key] = value.toString();
+    }),
+    removeItem: jest.fn((key) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+    key: jest.fn((index) => Object.keys(store)[index] || null),
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+})();
+Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock window.location
@@ -53,18 +74,17 @@ const mockLocation = {
   port: '',
   assign: jest.fn(),
   replace: jest.fn(),
-  reload: jest.fn()
+  reload: jest.fn(),
 };
-delete window.location;
 Object.defineProperty(window, 'location', {
   value: mockLocation,
-  writable: true
+  writable: true,
 });
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -91,24 +111,22 @@ jest.mock('axios', () => ({
   delete: jest.fn(() => Promise.resolve({ data: {} })),
   defaults: {
     baseURL: 'http://localhost:8082/boot',
-    withCredentials: true
+    withCredentials: true,
   },
   create: jest.fn().mockReturnThis(),
   interceptors: {
     request: { use: jest.fn(), eject: jest.fn() },
-    response: { use: jest.fn(), eject: jest.fn() }
-  }
+    response: { use: jest.fn(), eject: jest.fn() },
+  },
 }));
 
 // 글로벌 에러 핸들링 설정
 beforeAll(() => {
-  // 콘솔 에러 무시 설정
   jest.spyOn(console, 'error').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 afterAll(() => {
-  // 콘솔 에러/경고 무시 해제
   console.error.mockRestore?.();
   console.warn.mockRestore?.();
 });
@@ -118,16 +136,17 @@ beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
   sessionStorage.clear();
-  window.location = { ...mockLocation }; // 위치 초기화
+  window.location.assign.mockClear();
+  window.location.replace.mockClear();
+  window.location.reload.mockClear();
+  window.location = { ...mockLocation };
 });
 
 // 각 테스트 후 정리
 afterEach(() => {
-  // DOM 정리
   document.body.innerHTML = '';
-  // 모든 진행 중인 타이머 정리
   jest.clearAllTimers();
 });
 
 // 전역 타임아웃 설정
-jest.setTimeout(10000); // 10초
+jest.setTimeout(10000);
