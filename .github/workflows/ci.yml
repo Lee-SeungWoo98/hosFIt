@@ -6,17 +6,15 @@ on:
   push:
     branches: [ main ]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   test:
     runs-on: ubuntu-latest
     
     steps:
+    # 코드 체크아웃
     - uses: actions/checkout@v3
     
+    # Node.js 설정
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
@@ -24,6 +22,7 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './front/package-lock.json'
     
+    # Frontend 테스트
     - name: Install Dependencies
       run: npm ci
       working-directory: ./front
@@ -32,46 +31,35 @@ jobs:
       id: test
       run: |
         npm run test:ci
-        echo "COVERAGE_REPORT=$(npm run test:ci --coverage --coverageReporters='text-summary' 2>&1 | tail -n 4)" >> $GITHUB_ENV
+        echo "::set-output name=summary::$(npm test -- --json | jq -r '.testResults[0].message')"
       working-directory: ./front
       env:
         CI: true
       continue-on-error: true
 
+    # 테스트 상태 설정
+    - name: Set Test Status
+      run: |
+        echo "TEST_FAILED=${{ steps.test.outcome == 'failure' }}" >> $GITHUB_ENV
+        echo "TEST_SUMMARY<<EOF" >> $GITHUB_ENV
+        echo "${{ steps.test.outputs.summary }}" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    # 커버리지 리포트 생성
+    - name: Generate Coverage Report
+      if: always()
+      run: |
+        COVERAGE=$(npm test -- --coverage --coverageReporters="text-summary" | tail -n 4)
+        echo "COVERAGE_SUMMARY<<EOF" >> $GITHUB_ENV
+        echo "$(echo "$COVERAGE" | sed 's/^/- /')" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+      working-directory: ./front
+
+    # 테스트 결과를 PR에 코멘트로 달기
     - name: Add Test Results Comment
       if: always()
       uses: actions/github-script@v6
       with:
         script: |
-          const message = `## 테스트 결과 요약
-
-          ### Frontend Tests 🌐
-          **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-
-          **테스트 항목:**
-          ✅ 로그인 기능 테스트
-          ✅ 세션 관리 테스트
-          ✅ 권한 검증 테스트
-
-          ### 상세 테스트 결과 (src/test 폴더)
-          - 초기 로그인 페이지 렌더링 ✅
-          - 일반 사용자 로그인 및 리다이렉션 ✅
-          - 관리자 로그인 및 리다이렉션 ✅
-          - 세션 만료 처리 ✅
-          - 로그아웃 기능 ✅
-          - 에러 핸들링 ✅
-
-          ### Coverage Report 📊
-          ${process.env.COVERAGE_REPORT || 'Coverage 정보를 불러올 수 없습니다.'}
-
-          ---
-          🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
-
-          if (context.payload.pull_request) {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: message
-            });
-          }
+          const script = require('./.github/workflows/scripts/test-results.js')
+          await script({github, context, core})
