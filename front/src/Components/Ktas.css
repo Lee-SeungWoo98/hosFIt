@@ -104,6 +104,11 @@ body {
   height: 12px;
   border-radius: 50%;
   margin-right: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 
+    0 2px 4px -2px rgba(0, 0, 0, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
 /* KTAS 타이틀 */
@@ -134,7 +139,6 @@ body {
 }
 
 /* 툴팁 관련 스타일 */
-/* 툴팁 스타일 */
 .label-tooltip,
 .prediction-label-tooltip {
   visibility: hidden;
@@ -182,22 +186,112 @@ body {
   border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
 }
 
-/* KTAS 색상 */
-.label-dot:nth-child(1)::before { background-color: #3b82f6; }
-.label-dot:nth-child(2)::before { background-color: #ef4444; }
-.label-dot:nth-child(3)::before { background-color: #fde047; }
-.label-dot:nth-child(4)::before { background-color: #22c55e; }
-.label-dot:nth-child(5)::before { background-color: #e7e7e7; }
-.label-dot:nth-child(6)::before { background-color: #bbbbbb; }
+/* KTAS 색상 - 도넛차트 스타일의 그라데이션 적용 */
+.label-dot:nth-child(1)::before { 
+  background: #3b82f6;
+  background: linear-gradient(145deg, 
+    #3b82f6 0%, 
+    #4287f7 40%,
+    #3b82f6 60%,
+    #2563eb 100%
+  );
+}
+.label-dot:nth-child(2)::before { 
+  background: #ef4444;
+  background: linear-gradient(145deg,
+    #ef4444 0%,
+    #f15555 40%,
+    #ef4444 60%,
+    #dc2626 100%
+  );
+}
+.label-dot:nth-child(3)::before { 
+  background: #fde047;
+  background: linear-gradient(145deg,
+    #fde047 0%,
+    #fee158 40%,
+    #fde047 60%,
+    #facc15 100%
+  );
+}
+.label-dot:nth-child(4)::before { 
+  background: #22c55e;
+  background: linear-gradient(145deg,
+    #22c55e 0%,
+    #27cc65 40%,
+    #22c55e 60%,
+    #16a34a 100%
+  );
+}
+.label-dot:nth-child(5)::before { 
+  background: #e7e7e7;
+  background: linear-gradient(145deg,
+    #e7e7e7 0%,
+    #ebebeb 40%,
+    #e7e7e7 60%,
+    #d1d1d1 100%
+  );
+}
+.label-dot:nth-child(6)::before { 
+  background: #bbbbbb;
+  background: linear-gradient(145deg,
+    #bbbbbb 0%,
+    #c2c2c2 40%,
+    #bbbbbb 60%,
+    #a3a3a3 100%
+  );
+}
 
-/* 예측 색상 */
-.prediction-label-dot:nth-child(1)::before { background-color: #ef4444; }
-.prediction-label-dot:nth-child(2)::before { background-color: #3b82f6; }
-.prediction-label-dot:nth-child(3)::before { background-color: #22c55e; }
+/* 예측 색상 - 도넛차트 스타일의 그라데이션 적용 */
+.prediction-label-dot:nth-child(1)::before { 
+  background: #ef4444;
+  background: linear-gradient(145deg,
+    #ef4444 0%,
+    #f15555 40%,
+    #ef4444 60%,
+    #dc2626 100%
+  );
+}
+.prediction-label-dot:nth-child(2)::before { 
+  background: #3b82f6;
+  background: linear-gradient(145deg,
+    #3b82f6 0%,
+    #4287f7 40%,
+    #3b82f6 60%,
+    #2563eb 100%
+  );
+}
+.prediction-label-dot:nth-child(3)::before { 
+  background: #22c55e;
+  background: linear-gradient(145deg,
+    #22c55e 0%,
+    #27cc65 40%,
+    #22c55e 60%,
+    #16a34a 100%
+  );
+}
+
+/* Dot indicators 호버 효과 */
+.label-dot:hover::before,
+.prediction-label-dot:hover::before {
+  transform: scale(1.1);
+  box-shadow: 
+    0 3px 6px -2px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
 
 /* Active 상태 */
 .active {
   font-weight: 600;
+}
+
+.active::before {
+  transform: scale(1.05);
+  box-shadow: 
+    0 2px 5px -2px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
+    inset 0 1px 2px rgba(255, 255, 255, 0.22);
 }
 
 .ktas-value {
@@ -206,4 +300,49 @@ body {
   margin-left: 4px;
 }
 
+/* 선택된 dot 스타일 */
+.ktas-selected {
+  background: rgba(243, 244, 246, 0.9);
+  transform: translateX(4px);
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
 
+.ktas-selected::before {
+  transform: scale(1.2);
+  box-shadow: 
+    0 4px 10px -2px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.35);
+  animation: selectedPulse 2s infinite;
+}
+
+.ktas-selected .ktas-label-text {
+  font-weight: 700;
+  color: #111827;
+}
+
+@keyframes selectedPulse {
+  0% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 0 rgba(0, 0, 0, 0.3);
+  }
+  70% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 6px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
