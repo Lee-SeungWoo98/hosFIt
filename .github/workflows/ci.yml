@@ -2,9 +2,9 @@ name: CI Test
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -34,25 +34,29 @@ jobs:
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트 실행 및 결과 저장
-        TEST_OUTPUT=$(npm run test:ci)
-        echo "$TEST_OUTPUT"
-        
-        # JSON 형식의 테스트 결과 저장
-        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --json --testLocationInResults >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-        
-        # 테스트 실패 여부 확인
-        if echo "$TEST_OUTPUT" | grep -q "FAIL"; then
-          echo "TEST_FAILED=true" >> $GITHUB_ENV
+        npm run test:ci || true
+
+        # 테스트 결과 JSON 파일 파싱
+        if [ -f "test-results.json" ]; then
+          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
+          cat test-results.json >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # 테스트 실패 여부 확인
+          FAILED_TESTS=$(jq '.numFailedTests' test-results.json)
+          if [ "$FAILED_TESTS" != "0" ]; then
+            echo "TEST_FAILED=true" >> $GITHUB_ENV
+          else
+            echo "TEST_FAILED=false" >> $GITHUB_ENV
+          fi
         else
-          echo "TEST_FAILED=false" >> $GITHUB_ENV
+          echo "TEST_FAILED=true" >> $GITHUB_ENV
         fi
-        
+
         # 커버리지 결과 수집
+        npm run test:ci -- --coverage --coverageReporters="text-summary" > coverage-summary.txt
         echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        tail -n 4 coverage-summary.txt >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
@@ -66,17 +70,17 @@ jobs:
       with:
         script: |
           try {
-            const testOutput = JSON.parse(process.env.TEST_OUTPUT || '{}');
+            const testResults = JSON.parse(process.env.TEST_RESULTS || '{}');
             const coverageReport = process.env.COVERAGE_REPORT || '';
             
-            // 테스트 결과 파싱
-            const testResults = testOutput.testResults || [];
-            const failedTests = testOutput.numFailedTests || 0;
-            const passedTests = testOutput.numPassedTests || 0;
-            const totalTests = testOutput.numTotalTests || 0;
-            
-            // 파일별로 테스트 결과 그룹화
-            const testsByFile = testResults.reduce((acc, suite) => {
+            const testSummary = testResults.numFailedTests !== undefined
+              ? `**전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+              - 총 테스트 수: ${testResults.numTotalTests}
+              - 통과: ${testResults.numPassedTests}
+              - 실패: ${testResults.numFailedTests}`
+              : '테스트 결과를 불러오는 데 실패했습니다.';
+
+            const testsByFile = (testResults.testResults || []).reduce((acc, suite) => {
               const fileName = suite.name.split('/').pop().replace('.test.js', '');
               const tests = suite.testResults.map(test => ({
                 name: test.title,
@@ -87,26 +91,14 @@ jobs:
               return acc;
             }, {});
 
-            // 파일별 테스트 결과 문자열 생성
             const testStatusSection = Object.entries(testsByFile)
               .map(([fileName, tests]) => `
               #### ${fileName} 컴포넌트 테스트
-              ${tests.map(test => `- ${test.name} ${test.status}${
-                test.failureMessages.length > 0 
-                  ? '\n  ```\n  ' + test.failureMessages.join('\n  ') + '\n  ```'
-                  : ''
-              }`).join('\n')}
+              ${tests.map(test => `- ${test.name} ${test.status}${test.failureMessages.length > 0 ? '\n  ```\n' + test.failureMessages.join('\n') + '\n  ```' : ''}`).join('\n')}
               `).join('\n');
 
             const message = `## 테스트 결과 요약
-
-            ### Frontend Tests 🌐
-            **전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-            
-            **테스트 통계:**
-            - 총 테스트 수: ${totalTests}
-            - 통과: ${passedTests}
-            - 실패: ${failedTests}
+            ${testSummary}
 
             ### 상세 테스트 결과
             ${testStatusSection}
@@ -116,7 +108,6 @@ jobs:
             ${coverageReport}
             \`\`\`
 
-            ---
             🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
 
             if (context.payload.pull_request) {
