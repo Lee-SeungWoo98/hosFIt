@@ -36,28 +36,15 @@ jobs:
       run: |
         npm run test:ci || true
 
-        # 테스트 결과 JSON 파일 파싱
+        # 테스트 결과 JSON 파일 저장
         if [ -f "test-results.json" ]; then
-          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
-          cat test-results.json >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          
-          # 테스트 실패 여부 확인
-          FAILED_TESTS=$(jq '.numFailedTests' test-results.json)
-          if [ "$FAILED_TESTS" != "0" ]; then
-            echo "TEST_FAILED=true" >> $GITHUB_ENV
-          else
-            echo "TEST_FAILED=false" >> $GITHUB_ENV
-          fi
+          mv test-results.json test-results-output.json
         else
-          echo "TEST_FAILED=true" >> $GITHUB_ENV
+          echo "{}" > test-results-output.json
         fi
 
-        # 커버리지 결과 수집
+        # 커버리지 결과 저장
         npm run test:ci -- --coverage --coverageReporters="text-summary" > coverage-summary.txt
-        echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        tail -n 4 coverage-summary.txt >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
         CI: true
@@ -69,12 +56,15 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
+          const fs = require('fs');
+          
           try {
-            const testResults = JSON.parse(process.env.TEST_RESULTS || '{}');
-            const coverageReport = process.env.COVERAGE_REPORT || '';
+            // 테스트 결과 파일 읽기
+            const testResults = JSON.parse(fs.readFileSync('./front/test-results-output.json', 'utf8'));
+            const coverageReport = fs.readFileSync('./front/coverage-summary.txt', 'utf8');
             
             const testSummary = testResults.numFailedTests !== undefined
-              ? `**전체 상태:** ${process.env.TEST_FAILED === 'true' ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+              ? `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
               - 총 테스트 수: ${testResults.numTotalTests}
               - 통과: ${testResults.numPassedTests}
               - 실패: ${testResults.numFailedTests}`
@@ -119,5 +109,5 @@ jobs:
               });
             }
           } catch (error) {
-            core.setFailed(`Action failed with error: ${error}`);
+            core.setFailed(`Action failed with error: ${error.message}`);
           }
