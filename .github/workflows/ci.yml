@@ -36,7 +36,7 @@ jobs:
       run: |
         npm run test:ci || true
 
-        # 테스트 결과 JSON 파일 저장
+        # 테스트 결과 JSON 파일 확인 및 복사
         if [ -f "test-results.json" ]; then
           mv test-results.json test-results-output.json
         else
