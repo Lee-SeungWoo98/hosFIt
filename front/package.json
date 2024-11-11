@@ -25,7 +25,6 @@
     "react-circular-progressbar": "^2.1.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
-    "react-scripts": "5.0.1",
     "react-smooth": "^4.0.1",
     "recharts": "^2.13.0",
     "shadcn-ui": "^0.9.2",
@@ -38,7 +37,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test:ci": "react-scripts test --watchAll=false --passWithNoTests --coverage",
+    "test:ci": "react-scripts test --testMatch='**/src/test/**/*.test.js' --watchAll=false --ci --coverage --json --outputFile=./test-results.json",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -62,6 +61,7 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-transform-modules-commonjs": "^7.23.3",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.25.9",
     "@shadcn/ui": "^0.0.4",
@@ -69,8 +69,34 @@
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "autoprefixer": "^10.4.20",
+    "babel-jest": "^29.7.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-json-reporter": "^1.2.2",
     "postcss": "^8.4.47",
     "postcss-preset-env": "^9.0.0",
+    "react-scripts": "^5.0.1",
     "tailwindcss": "^3.4.14"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "^axios$": "axios"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!axios)/"
+    ],
+    "transform": {
+      "^.+\\.(js|jsx)$": "babel-jest"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ]
   }
 }
