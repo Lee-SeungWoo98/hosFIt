@@ -28,23 +28,28 @@ jobs:
       run: |
         rm -f package-lock.json
         npm install
-        npm install -D jest @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy @babel/plugin-transform-modules-commonjs @testing-library/jest-dom @testing-library/react @testing-library/user-event
+        npm install -D @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy jest @babel/plugin-transform-modules-commonjs @testing-library/jest-dom @testing-library/react @testing-library/user-event
       working-directory: ./front
     
     - name: Run Frontend Tests
       id: test
       run: |
-        # Jest 직접 실행
-        ./node_modules/.bin/jest --json --outputFile=test-results.json --testMatch='**/src/test/**/*.test.js' --coverage --ci || true
+        # 테스트 실행 및 결과 저장
+        npm run test:ci
         
-        # 결과 파일 생성 확인 및 디버깅
-        echo "Checking test results file..."
-        ls -la test-results.json || echo "test-results.json not found"
+        # 결과 파일 위치 확인
+        echo "현재 디렉토리 내용:"
+        ls -la
         
-        # 결과 파일 내용 출력
+        # 테스트 결과 파일 내용 출력
         if [ -f "test-results.json" ]; then
-          echo "Test results content:"
+          echo "=== Test Results File Contents ==="
           cat test-results.json
+          echo "================================="
+        else
+          echo "test-results.json not found in current directory"
+          echo "Checking for test results in other locations..."
+          find . -name "test-results.json"
         fi
       working-directory: ./front
       env:
@@ -60,87 +65,55 @@ jobs:
           const fs = require('fs');
           
           try {
-            console.log('Starting test results processing...');
-            
-            // 테스트 결과 파일 읽기
-            const testResultsPath = './front/test-results.json';
-            console.log('Reading test results from:', testResultsPath);
-            
+            // 테스트 결과 파일 읽기 시도
             let testResults;
-            try {
-              const resultContent = fs.readFileSync(testResultsPath, 'utf8');
-              console.log('Raw test results content:', resultContent);
-              testResults = JSON.parse(resultContent);
-            } catch (e) {
-              console.error('Error reading test results:', e);
-              testResults = null;
+            const possiblePaths = [
+              './front/test-results.json',
+              './front/coverage/test-results.json',
+              './front/jest_output/test-results.json'
+            ];
+            
+            for (const path of possiblePaths) {
+              try {
+                console.log(`Trying to read from ${path}...`);
+                const resultContent = fs.readFileSync(path, 'utf8');
+                testResults = JSON.parse(resultContent);
+                console.log(`Successfully read test results from ${path}`);
+                break;
+              } catch (e) {
+                console.log(`Could not read from ${path}: ${e.message}`);
+              }
             }
             
-            // 커버리지 결과 읽기
-            const coverageSummaryPath = './front/coverage/coverage-summary.json';
-            let coverageData;
-            try {
-              coverageData = JSON.parse(fs.readFileSync(coverageSummaryPath, 'utf8'));
-            } catch (e) {
-              console.error('Error reading coverage data:', e);
-              coverageData = null;
+            if (!testResults) {
+              throw new Error('Could not find test results file in any expected location');
             }
             
-            // 테스트 요약 생성
-            const testSummary = testResults ? 
-              `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-              - 총 테스트 수: ${testResults.numTotalTests}
-              - 통과: ${testResults.numPassedTests}
-              - 실패: ${testResults.numFailedTests}`
-              : '테스트 결과를 불러올 수 없습니다.';
+            // 테스트 결과 요약 생성
+            const testSummary = `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+            - 총 테스트 수: ${testResults.numTotalTests}
+            - 통과: ${testResults.numPassedTests}
+            - 실패: ${testResults.numFailedTests}`;
             
             // 상세 테스트 결과 생성
-            let detailedResults = '';
-            if (testResults && testResults.testResults) {
-              console.log('Processing test suites...');
-              detailedResults = testResults.testResults
-                .filter(suite => suite && suite.testResults)
-                .map(suite => {
-                  const fileName = suite.name.split('/').pop().replace('.test.js', '');
-                  const suiteResults = suite.testResults
-                    .map(test => {
-                      const status = test.status === 'passed' ? '✅' : '❌';
-                      const failures = test.failureMessages && test.failureMessages.length > 0
-                        ? `\n  \`\`\`\n  ${test.failureMessages.join('\n  ')}\n  \`\`\``
-                        : '';
-                      return `- ${status} ${test.title}${failures}`;
-                    })
-                    .join('\n');
-                  
-                  return `#### ${fileName}\n${suiteResults}`;
-                })
-                .join('\n\n');
-            }
+            const detailedResults = testResults.testResults
+              .map(suite => {
+                const fileName = suite.name.split('/').pop().replace('.test.js', '');
+                return `#### ${fileName}
+                ${suite.testResults.map(test => {
+                  const status = test.status === 'passed' ? '✅' : '❌';
+                  const title = test.title.split(' › ').pop(); // 마지막 부분만 사용
+                  return `- ${status} ${title}`;
+                }).join('\n')}`;
+              })
+              .join('\n\n');
             
-            // 커버리지 정보 생성
-            let coverageReport = '';
-            if (coverageData) {
-              const total = coverageData.total;
-              coverageReport = `
-              Statement Coverage: ${total.statements.pct}%
-              Branch Coverage: ${total.branches.pct}%
-              Function Coverage: ${total.functions.pct}%
-              Line Coverage: ${total.lines.pct}%
-              `;
-            } else {
-              coverageReport = '커버리지 정보를 불러올 수 없습니다.';
-            }
-            
+            // 최종 메시지 구성
             const message = `## 테스트 결과 요약
             ${testSummary}
             
             ### 상세 테스트 결과
             ${detailedResults || '상세 테스트 결과가 없습니다.'}
-            
-            ### Coverage Report 📊
-            \`\`\`
-            ${coverageReport}
-            \`\`\`
             
             🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
             
