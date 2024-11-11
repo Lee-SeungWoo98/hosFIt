@@ -21,27 +21,30 @@ import lombok.NoArgsConstructor;
 public class AiDTO {
 	
 	
-	    private String chartNum;
-	    
-	    private Long id;
-	    private Long level1;
-	    private Long level2;
-	    private Long level3;
-		public void setVisit(Visit visit) {
-			// TODO Auto-generated method stub
-			
-		}
-		public void setId(Long id) {
-			// TODO Auto-generated method stub
-			
-		}
-		public AiDTO(Long level1, Long level2, Long level3) {
-		    this.level1 = level1;
-		    this.level2 = level2;
-		    this.level3 = level3;
-		}
+	
+    private String chartNum;
     
-	
-	
+    private Long id;
+    private float level1;
+    private float level2;
+    private float level3;
+    
+	public AiDTO(float level1, float level2, float level3) {
+	    this.level1 = level1;
+	    this.level2 = level2;
+	    this.level3 = level3;
+	}
+    
+	public void setVisit(Visit visit) {
+		// TODO Auto-generated method stub
+		
+	}
+	public void setId(Long id) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 
 }
+

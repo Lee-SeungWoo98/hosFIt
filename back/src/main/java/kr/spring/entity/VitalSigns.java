@@ -1,39 +1,30 @@
+// VitalSigns.java
 package kr.spring.entity;
 
-
-import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
+import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import lombok.Data;
-
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "vitalsigns")
-@Data
-public class VitalSigns implements Serializable {
-    @Id
-    @Column(name = "chartnum")
-    private String chartNum;
+@Getter
+@Setter
+public class VitalSigns {
+	// VitalSigns 엔티티에 @Id 어노테이션과 함께 자동생성 전략 추가
+	@Id
+	@Column(name = "chartnum")
+	private String chartNum;
 
-    @Column(name = "charttime")
-    private String chartTime;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "stayId")
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stayid")
     @JsonBackReference
     private Visit visit;
+
+    @Column(name = "charttime")
+    private LocalDateTime chartTime;
 
     @Column(name = "heartrate")
     private Long heartrate;
@@ -53,14 +44,86 @@ public class VitalSigns implements Serializable {
     @Column(name = "temperature")
     private String temperature;
 
-    @Column(name = "regdate")
-    private LocalDateTime  regDate;
-    
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chartNum", referencedColumnName = "chartNum", insertable = false, updatable = false)
+    @OneToOne(mappedBy = "vitalSigns", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private AiTAS aiTAS;
 
-    // getter 및 setter 메서드 추가
+    // 기본 생성자
+    public VitalSigns() {
+    }
+
+    // Getters and Setters
+    public String getChartNum() {
+        return chartNum;
+    }
+
+    public void setChartNum(String chartNum) {
+        this.chartNum = chartNum;
+    }
+
+    public Visit getVisit() {
+        return visit;
+    }
+
+    public void setVisit(Visit visit) {
+        this.visit = visit;
+    }
+
+    public LocalDateTime getChartTime() {
+        return chartTime;
+    }
+
+    public void setChartTime(LocalDateTime chartTime) {
+        this.chartTime = chartTime;
+    }
+
+    public Long getHeartrate() {
+        return heartrate;
+    }
+
+    public void setHeartrate(Long heartrate) {
+        this.heartrate = heartrate;
+    }
+
+    public Long getResprate() {
+        return resprate;
+    }
+
+    public void setResprate(Long resprate) {
+        this.resprate = resprate;
+    }
+
+    public String getO2sat() {
+        return o2sat;
+    }
+
+    public void setO2sat(String o2sat) {
+        this.o2sat = o2sat;
+    }
+
+    public Long getSbp() {
+        return sbp;
+    }
+
+    public void setSbp(Long sbp) {
+        this.sbp = sbp;
+    }
+
+    public Long getDbp() {
+        return dbp;
+    }
+
+    public void setDbp(Long dbp) {
+        this.dbp = dbp;
+    }
+
+    public String getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
+    }
+
     public AiTAS getAiTAS() {
         return aiTAS;
     }
@@ -68,5 +131,9 @@ public class VitalSigns implements Serializable {
     public void setAiTAS(AiTAS aiTAS) {
         this.aiTAS = aiTAS;
     }
-    // Getters and Sette
+
+	public Object getStayId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
