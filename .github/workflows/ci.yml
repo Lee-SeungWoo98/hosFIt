@@ -34,15 +34,7 @@ jobs:
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트 실행 및 결과 저장
         npm run test:ci
-        
-        # 테스트 결과 파일 내용 확인
-        if [ -f "test-results.json" ]; then
-          echo "=== Test Results File Contents ==="
-          cat test-results.json
-          echo "================================="
-        fi
       working-directory: ./front
       env:
         CI: true
@@ -59,11 +51,7 @@ jobs:
           try {
             // 테스트 결과 파일 읽기
             const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
-            console.log('Raw test results:', resultContent);
             const testResults = JSON.parse(resultContent);
-            
-            // 테스트 결과 구조 확인
-            console.log('Test results structure:', JSON.stringify(testResults, null, 2));
             
             // 테스트 결과 요약 생성
             const testSummary = `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
@@ -71,55 +59,49 @@ jobs:
             - 통과: ${testResults.numPassedTests}
             - 실패: ${testResults.numFailedTests}`;
             
-            // 상세 테스트 결과 생성
+            // 테스트 상세 결과 생성
             let detailedResults = '';
             
-            if (testResults.testResults && Array.isArray(testResults.testResults)) {
-              detailedResults = testResults.testResults
-                .filter(suite => suite && suite.testResults)
-                .map(suite => {
-                  const fileName = suite.name.split('/').pop().replace('.test.js', '');
-                  const testDetails = suite.testResults
-                    .map(test => {
-                      const status = test.status === 'passed' ? '✅' : '❌';
-                      const testName = test.title.includes(' › ') 
-                        ? test.title.split(' › ').pop() 
-                        : test.title;
-                      return `- ${status} ${testName}`;
-                    })
-                    .join('\n');
-                  
-                  return `#### ${fileName}\n${testDetails}`;
-                })
-                .join('\n\n');
-            } else {
-              console.log('TestResults structure is not as expected:', testResults);
+            testResults.testResults.forEach(suite => {
+              const fileName = suite.name.split('/').pop();
+              detailedResults += `\n### ${fileName}\n\n`;
               
-              // Jest의 다른 가능한 결과 형식 처리
-              if (testResults.results && testResults.results.testResults) {
-                detailedResults = testResults.results.testResults
-                  .map(suite => {
-                    const fileName = suite.name.split('/').pop().replace('.test.js', '');
-                    const testDetails = suite.assertionResults
-                      .map(test => {
-                        const status = test.status === 'passed' ? '✅' : '❌';
-                        const testName = test.title;
-                        return `- ${status} ${testName}`;
-                      })
-                      .join('\n');
-                    
-                    return `#### ${fileName}\n${testDetails}`;
-                  })
-                  .join('\n\n');
-              }
+              suite.assertionResults.forEach(test => {
+                const status = test.status === 'passed' ? '✅' : '❌';
+                const fullTitle = test.fullName || test.title;
+                detailedResults += `${status} ${fullTitle}\n`;
+                
+                if (test.failureMessages && test.failureMessages.length > 0) {
+                  detailedResults += '```\n' + test.failureMessages.join('\n') + '\n```\n';
+                }
+              });
+            });
+            
+            // 코드 커버리지 정보 추출
+            let coverageInfo = '';
+            if (testResults.coverageMap) {
+              const totalCoverage = Object.values(testResults.coverageMap).reduce((acc, file) => {
+                const statements = file.s || {};
+                const covered = Object.values(statements).filter(v => v > 0).length;
+                const total = Object.values(statements).length;
+                return {
+                  covered: acc.covered + covered,
+                  total: acc.total + total
+                };
+              }, { covered: 0, total: 0 });
+              
+              const coveragePercent = (totalCoverage.covered / totalCoverage.total * 100).toFixed(2);
+              coverageInfo = `\n### 코드 커버리지\n전체 커버리지: ${coveragePercent}%\n`;
             }
             
             // 최종 메시지 구성
             const message = `## 테스트 결과 요약
             ${testSummary}
             
-            ### 상세 테스트 결과
-            ${detailedResults || '상세 테스트 결과가 없습니다.'}
+            ## 상세 테스트 결과
+            ${detailedResults || '상세 테스트 결과를 불러올 수 없습니다.'}
+            
+            ${coverageInfo}
             
             🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
             
@@ -133,12 +115,5 @@ jobs:
             }
           } catch (error) {
             console.error('Error in test result processing:', error);
-            // 에러 발생 시 테스트 결과 구조 출력
-            try {
-              const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
-              console.error('Test results file content:', resultContent);
-            } catch (e) {
-              console.error('Could not read test results file:', e);
-            }
             core.setFailed(`Action failed with error: ${error.message}`);
           }
