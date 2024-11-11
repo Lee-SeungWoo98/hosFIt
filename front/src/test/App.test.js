@@ -4,166 +4,249 @@ import axios from 'axios';
 import App from '../App';
 import { API_ENDPOINTS } from '../constants/api';
 
-// axios 모킹
+// axios 모킹 
 jest.mock('axios');
 
-// localStorage 모킹
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
+// Mock location object
+const mockLocation = {
+ pathname: '/',
+ search: '',
+ state: { username: '테스트 사용자' }
 };
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+// Mock KTAS Data
+const mockKtasData = {
+ KTAS_1: 10,
+ KTAS_2: 15,
+ KTAS_3: 25,
+ KTAS_4: 30,
+ KTAS_5: 20
+};
+
+// Mock prediction data
+const mockPredictionData = {
+ DISCHARGE: 35,
+ WARD: 45,
+ ICU: 20
+};
+
+// Mock patients data
+const mockPatientsData = {
+ patients: [],
+ totalPages: 1, 
+ totalElements: 0
+};
+
+// React Router 모킹
+const mockNavigate = jest.fn();
+
+jest.mock('react-router-dom', () => {
+ const actual = jest.requireActual('react-router-dom');
+ return {
+   ...actual,
+   BrowserRouter: ({ children }) => children,
+   Routes: ({ children }) => children,
+   Route: ({ element }) => element,
+   Navigate: ({ to }) => {
+     mockNavigate(to);
+     return null;
+   },
+   useNavigate: () => mockNavigate,
+   useLocation: () => mockLocation
+ };
+});
 
 describe('App Login Functionality', () => {
-  beforeEach(() => {
-    // 각 테스트 전에 모든 목업을 초기화
-    jest.clearAllMocks();
-    window.localStorage.clear();
-    
-    // localStorage 기본 상태 설정
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'isAuthenticated') return 'false';
-      if (key === 'position') return null;
-      return null;
-    });
-  });
+ beforeEach(() => {
+   jest.clearAllMocks();
+   window.localStorage.clear();
+   mockNavigate.mockClear();
+   
+   // localStorage 기본 상태 설정
+   window.localStorage.getItem.mockImplementation((key) => {
+     if (key === 'isAuthenticated') return 'false';
+     if (key === 'position') return null;
+     return null;
+   });
+ });
 
-  test('초기 로그인 페이지 렌더링 테스트', () => {
-    render(<App />);
-    expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-  });
+ test('초기 로그인 페이지 렌더링 테스트', async () => {
+   // 세션 체크 API 모킹
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.resolve({
+         data: {
+           isAuthenticated: false
+         }
+       });
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-  test('일반 사용자 로그인 성공 후 메인 페이지 리다이렉션', async () => {
-    // 세션 체크 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.resolve({
-          data: {
-            isAuthenticated: true,
-            user: { position: '일반' }
-          }
-        });
-      }
-    });
+   await act(async () => {
+     render(<App />);
+   });
 
-    await act(async () => {
-      render(<App />);
-    });
+   await waitFor(() => {
+     expect(mockNavigate).toHaveBeenCalledWith('/login');
+   });
+ });
 
-    // localStorage 설정 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
-    expect(localStorage.setItem).toHaveBeenCalledWith('position', '일반');
+ test('일반 사용자 로그인 성공 후 메인 페이지 리다이렉션', async () => {
+   // 로그인 상태 설정
+   window.localStorage.getItem.mockImplementation((key) => {
+     if (key === 'isAuthenticated') return 'true';
+     if (key === 'position') return '일반';
+     return null;
+   });
 
-    // 리다이렉션 확인
-    await waitFor(() => {
-      expect(window.location.pathname).toBe('/');
-    });
-  });
+   // API 응답 모킹
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.resolve({
+         data: {
+           isAuthenticated: true,
+           user: { position: '일반' }
+         }
+       });
+     }
+     if (url.includes('/statistics/tas')) {
+       return Promise.resolve({ data: mockKtasData });
+     }
+     if (url.includes('/patients')) {
+       return Promise.resolve({ data: mockPatientsData });
+     }
+     if (url.includes('/prediction')) {
+       return Promise.resolve({ data: mockPredictionData });
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-  test('관리자 로그인 성공 후 관리자 페이지 리다이렉션', async () => {
-    // 세션 체크 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.resolve({
-          data: {
-            isAuthenticated: true,
-            user: { position: '관리자' }
-          }
-        });
-      }
-    });
+   await act(async () => {
+     render(<App />);
+   });
+   
+   await waitFor(() => {
+     expect(window.localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
+     expect(window.localStorage.setItem).toHaveBeenCalledWith('position', '일반');
+     expect(mockNavigate).toHaveBeenLastCalledWith('/');
+   });
+ });
 
-    await act(async () => {
-      render(<App />);
-    });
+ test('관리자 로그인 성공 후 관리자 페이지 리다이렉션', async () => {
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.resolve({
+         data: {
+           isAuthenticated: true,
+           user: { position: '관리자' }
+         }
+       });
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-    // localStorage 설정 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
-    expect(localStorage.setItem).toHaveBeenCalledWith('position', '관리자');
+   await act(async () => {
+     render(<App />);
+   });
 
-    // 리다이렉션 확인
-    await waitFor(() => {
-      expect(window.location.pathname).toBe('/admin');
-    });
-  });
+   await waitFor(() => {
+     expect(window.localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
+     expect(window.localStorage.setItem).toHaveBeenCalledWith('position', '관리자');
+     expect(mockNavigate).toHaveBeenCalledWith('/admin');
+   });
+ });
 
-  test('로그인 세션 만료 시 로그인 페이지로 리다이렉션', async () => {
-    // 실패하는 세션 체크 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.reject(new Error('Session expired'));
-      }
-    });
+ test('로그인 세션 만료 시 로그인 페이지로 리다이렉션', async () => {
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.reject(new Error('Session expired'));
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-    await act(async () => {
-      render(<App />);
-    });
+   await act(async () => {
+     render(<App />);
+   });
 
-    // localStorage 항목 제거 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
+   await waitFor(() => {
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
+     expect(mockNavigate).toHaveBeenCalledWith('/login');
+   });
+ });
 
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-    });
-  });
+ test('로그아웃 기능 테스트', async () => {
+   // 로그인 상태 설정
+   window.localStorage.getItem.mockImplementation((key) => {
+     if (key === 'isAuthenticated') return 'true';
+     if (key === 'position') return '일반';
+     return null;
+   });
 
-  test('로그아웃 기능 테스트', async () => {
-    // 먼저 로그인 상태로 설정
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'isAuthenticated') return 'true';
-      if (key === 'position') return '일반';
-      return null;
-    });
+   // API 응답 모킹
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.resolve({
+         data: {
+           isAuthenticated: true,
+           user: { position: '일반' }
+         }
+       });
+     }
+     if (url.includes('/statistics/tas')) {
+       return Promise.resolve({ data: mockKtasData });
+     }
+     if (url === API_ENDPOINTS.AUTH.LOGOUT) {
+       return Promise.resolve({ data: { success: true } });
+     }
+     if (url.includes('/patients')) {
+       return Promise.resolve({ data: mockPatientsData });
+     }
+     if (url.includes('/prediction')) {
+       return Promise.resolve({ data: mockPredictionData });
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-    // 로그아웃 API 응답 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.LOGOUT) {
-        return Promise.resolve({ data: { success: true } });
-      }
-    });
+   await act(async () => {
+     render(<App />);
+   });
 
-    await act(async () => {
-      render(<App />);
-    });
+   // 로그아웃 버튼이 나타날 때까지 대기
+   await waitFor(() => {
+     const logoutButton = screen.queryByRole('button', { name: /logout/i });
+     expect(logoutButton).toBeInTheDocument();
+   });
 
-    // 로그아웃 처리 확인
-    const logoutButton = screen.getByText(/로그아웃/i);
-    await act(async () => {
-      userEvent.click(logoutButton);
-    });
+   await act(async () => {
+     const logoutButton = screen.getByRole('button', { name: /logout/i });
+     await userEvent.click(logoutButton);
+   });
 
-    // localStorage 항목 제거 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
+   await waitFor(() => {
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
+     expect(mockNavigate).toHaveBeenCalledWith('/login');
+   });
+ });
 
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(window.location.pathname).toBe('/login');
-    });
-  });
+ test('세션 체크 네트워크 오류 처리', async () => {
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.reject(new Error('Network Error'));
+     }
+     return Promise.resolve({ data: {} });
+   });
 
-  test('세션 체크 네트워크 오류 처리', async () => {
-    // 네트워크 오류 모킹
-    axios.get.mockImplementationOnce((url) => {
-      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-        return Promise.reject(new Error('Network Error'));
-      }
-    });
+   await act(async () => {
+     render(<App />);
+   });
 
-    await act(async () => {
-      render(<App />);
-    });
-
-    // 로그인 페이지로 리다이렉션 확인
-    await waitFor(() => {
-      expect(screen.getByText(/로그인/i)).toBeInTheDocument();
-    });
-
-    // localStorage 초기화 확인
-    expect(localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('position');
-  });
+   await waitFor(() => {
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
+     expect(mockNavigate).toHaveBeenCalledWith('/login');
+   });
+ });
 });
