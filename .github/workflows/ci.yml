@@ -34,17 +34,17 @@ jobs:
     - name: Run Frontend Tests
       id: test
       run: |
+        # 테스트 실행 (이미 JSON 출력 포함)
         npm run test:ci || true
-
-        # 테스트 결과 JSON 파일 저장
+        
+        # test-results.json가 생성되었는지 확인하고 복사
         if [ -f "test-results.json" ]; then
-          mv test-results.json test-results-output.json
+          cp test-results.json test-results-output.json
         else
-          echo "{}" > test-results-output.json
+          echo '{"testResults": [], "numTotalTests": 0, "numPassedTests": 0, "numFailedTests": 0}' > test-results-output.json
         fi
-
-        # 커버리지 결과 저장
-        npm run test:ci -- --coverage --coverageReporters="text-summary" > coverage-summary.txt
+        
+        # 커버리지는 이미 test:ci에 포함되어 있으므로 별도로 실행할 필요 없음
       working-directory: ./front
       env:
         CI: true
@@ -59,9 +59,26 @@ jobs:
           const fs = require('fs');
           
           try {
-            // 테스트 결과 파일 읽기
-            const testResults = JSON.parse(fs.readFileSync('./front/test-results-output.json', 'utf8'));
-            const coverageReport = fs.readFileSync('./front/coverage-summary.txt', 'utf8');
+            // 테스트 결과 파일 읽기 시도
+            let testResults;
+            try {
+              testResults = JSON.parse(fs.readFileSync('./front/test-results-output.json', 'utf8'));
+            } catch (e) {
+              console.log('테스트 결과 파일 읽기 실패:', e);
+              testResults = { testResults: [], numTotalTests: 0, numPassedTests: 0, numFailedTests: 0 };
+            }
+
+            // coverage/lcov-report/index.html에서 커버리지 정보 읽기 시도
+            let coverageReport = '';
+            try {
+              coverageReport = fs.readFileSync('./front/coverage/lcov-report/index.html', 'utf8');
+              // HTML에서 테이블 데이터 추출 (간단한 예시)
+              const matches = coverageReport.match(/<span class="strong">(\d+(\.\d+)?%)<\/span>/g) || [];
+              coverageReport = matches.map(m => m.replace(/<[^>]+>/g, '')).join('\n');
+            } catch (e) {
+              console.log('커버리지 리포트 읽기 실패:', e);
+              coverageReport = '커버리지 정보를 불러올 수 없습니다.';
+            }
             
             const testSummary = testResults.numFailedTests !== undefined
               ? `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
@@ -69,37 +86,49 @@ jobs:
               - 통과: ${testResults.numPassedTests}
               - 실패: ${testResults.numFailedTests}`
               : '테스트 결과를 불러오는 데 실패했습니다.';
-
-            const testsByFile = (testResults.testResults || []).reduce((acc, suite) => {
-              const fileName = suite.name.split('/').pop().replace('.test.js', '');
-              const tests = suite.testResults.map(test => ({
-                name: test.title,
-                status: test.status === 'passed' ? '✅' : '❌',
-                failureMessages: test.status === 'failed' ? test.failureMessages : []
-              }));
-              acc[fileName] = tests;
-              return acc;
-            }, {});
-
+            
+            const testsByFile = ((testResults.testResults || []).length > 0) 
+              ? (testResults.testResults || []).reduce((acc, suite) => {
+                  if (!suite || !suite.testResults) return acc;
+                  const fileName = suite.name.split('/').pop().replace('.test.js', '');
+                  const tests = Array.isArray(suite.testResults) 
+                    ? suite.testResults.map(test => ({
+                        name: test.title,
+                        status: test.status === 'passed' ? '✅' : '❌',
+                        failureMessages: test.status === 'failed' ? test.failureMessages : []
+                      }))
+                    : [];
+                  if (tests.length > 0) {
+                    acc[fileName] = tests;
+                  }
+                  return acc;
+                }, {})
+              : {};
+            
             const testStatusSection = Object.entries(testsByFile)
-              .map(([fileName, tests]) => `
-              #### ${fileName} 컴포넌트 테스트
-              ${tests.map(test => `- ${test.name} ${test.status}${test.failureMessages.length > 0 ? '\n  ```\n' + test.failureMessages.join('\n') + '\n  ```' : ''}`).join('\n')}
-              `).join('\n');
-
+              .map(([fileName, tests]) => {
+                if (!tests || !Array.isArray(tests)) return '';
+                return `
+                #### ${fileName} 컴포넌트 테스트
+                ${tests.map(test => `- ${test.name} ${test.status}${test.failureMessages.length > 0 ? '\n  ```\n' + test.failureMessages.join('\n') + '\n  ```' : ''}`).join('\n')}
+                `;
+              })
+              .filter(section => section !== '')
+              .join('\n');
+            
             const message = `## 테스트 결과 요약
             ${testSummary}
-
+            
             ### 상세 테스트 결과
-            ${testStatusSection}
-
+            ${testStatusSection || '테스트 결과가 없습니다.'}
+            
             ### Coverage Report 📊
             \`\`\`
             ${coverageReport}
             \`\`\`
-
+            
             🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
-
+            
             if (context.payload.pull_request) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -109,5 +138,6 @@ jobs:
               });
             }
           } catch (error) {
+            console.error('Error in test result processing:', error);
             core.setFailed(`Action failed with error: ${error.message}`);
           }
