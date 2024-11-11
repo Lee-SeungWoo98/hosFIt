@@ -37,7 +37,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test:ci": "react-scripts test --testMatch='**/src/test/**/*.test.js' --watchAll=false --ci --coverage --json --testLocationInResults",
+    "test:ci": "react-scripts test --testMatch='**/src/test/**/*.test.js' --watchAll=false --ci --coverage --json --outputFile=test-results.json",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

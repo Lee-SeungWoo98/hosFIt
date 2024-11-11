@@ -35,24 +35,26 @@ jobs:
       id: test
       run: |
         # 테스트 실행 및 결과 저장
-        TEST_OUTPUT=$(npm run test:ci)
-        echo "$TEST_OUTPUT"
+        npm run test:ci -- --json --outputFile=test-results.json || true
         
-        # JSON 형식의 테스트 결과 저장
-        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --json --testLocationInResults >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-        
-        # 테스트 실패 여부 확인
-        if echo "$TEST_OUTPUT" | grep -q "FAIL"; then
-          echo "TEST_FAILED=true" >> $GITHUB_ENV
+        if [ -f "test-results.json" ]; then
+          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
+          cat test-results.json >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # 테스트 실패 여부 확인
+          if [ "$(jq '.numFailedTests' test-results.json)" != "0" ]; then
+            echo "TEST_FAILED=true" >> $GITHUB_ENV
+          else
+            echo "TEST_FAILED=false" >> $GITHUB_ENV
+          fi
         else
-          echo "TEST_FAILED=false" >> $GITHUB_ENV
+          echo "TEST_FAILED=true" >> $GITHUB_ENV
         fi
         
         # 커버리지 결과 수집
         echo "COVERAGE_REPORT<<EOF" >> $GITHUB_ENV
-        JEST_CONFIG_PATH=./jest.config.js npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
+        npm test -- --coverage --coverageReporters="text-summary" 2>&1 | tail -n 4 >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       working-directory: ./front
       env:
@@ -66,14 +68,14 @@ jobs:
       with:
         script: |
           try {
-            const testOutput = JSON.parse(process.env.TEST_OUTPUT || '{}');
+            const testResults = JSON.parse(process.env.TEST_RESULTS || '{}');
             const coverageReport = process.env.COVERAGE_REPORT || '';
             
             // 테스트 결과 파싱
-            const testResults = testOutput.testResults || [];
-            const failedTests = testOutput.numFailedTests || 0;
-            const passedTests = testOutput.numPassedTests || 0;
-            const totalTests = testOutput.numTotalTests || 0;
+            const testResults = testResults.testResults || [];
+            const failedTests = testResults.numFailedTests || 0;
+            const passedTests = testResults.numPassedTests || 0;
+            const totalTests = testResults.numTotalTests || 0;
             
             // 파일별로 테스트 결과 그룹화
             const testsByFile = testResults.reduce((acc, suite) => {

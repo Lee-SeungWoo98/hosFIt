@@ -20,7 +20,9 @@ const mockKtasData = {
  KTAS_2: 15,
  KTAS_3: 25,
  KTAS_4: 30,
- KTAS_5: 20
+ KTAS_5: 20,
+ totalBeds: 48,
+ usedBeds: 38
 };
 
 // Mock prediction data
@@ -33,7 +35,7 @@ const mockPredictionData = {
 // Mock patients data
 const mockPatientsData = {
  patients: [],
- totalPages: 1, 
+ totalPages: 1,
  totalElements: 0
 };
 
@@ -71,7 +73,6 @@ describe('App Login Functionality', () => {
  });
 
  test('초기 로그인 페이지 렌더링 테스트', async () => {
-   // 세션 체크 API 모킹
    axios.get.mockImplementation((url) => {
      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
        return Promise.resolve({
@@ -93,45 +94,43 @@ describe('App Login Functionality', () => {
  });
 
  test('일반 사용자 로그인 성공 후 메인 페이지 리다이렉션', async () => {
-   // 로그인 상태 설정
-   window.localStorage.getItem.mockImplementation((key) => {
-     if (key === 'isAuthenticated') return 'true';
-     if (key === 'position') return '일반';
-     return null;
-   });
+  window.localStorage.getItem.mockImplementation((key) => {
+    if (key === 'isAuthenticated') return 'false';
+    if (key === 'position') return null;
+    return null;
+  });
 
-   // API 응답 모킹
-   axios.get.mockImplementation((url) => {
-     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-       return Promise.resolve({
-         data: {
-           isAuthenticated: true,
-           user: { position: '일반' }
-         }
-       });
-     }
-     if (url.includes('/statistics/tas')) {
-       return Promise.resolve({ data: mockKtasData });
-     }
-     if (url.includes('/patients')) {
-       return Promise.resolve({ data: mockPatientsData });
-     }
-     if (url.includes('/prediction')) {
-       return Promise.resolve({ data: mockPredictionData });
-     }
-     return Promise.resolve({ data: {} });
-   });
+  let checkSessionCalled = false;
+  axios.get.mockImplementation((url) => {
+    if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+      checkSessionCalled = true;
+      return Promise.resolve({
+        data: {
+          isAuthenticated: true,
+          user: { position: '일반' }
+        }
+      });
+    }
+    if (url.includes('/statistics/tas')) {
+      return Promise.resolve({ data: mockKtasData });
+    }
+    if (url.includes('/prediction')) {
+      return Promise.resolve({ data: mockPredictionData });
+    }
+    return Promise.resolve({ data: {} });
+  });
 
-   await act(async () => {
-     render(<App />);
-   });
-   
-   await waitFor(() => {
-     expect(window.localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
-     expect(window.localStorage.setItem).toHaveBeenCalledWith('position', '일반');
-     expect(mockNavigate).toHaveBeenLastCalledWith('/');
-   });
- });
+  render(<App />);
+  
+  await waitFor(() => {
+    expect(checkSessionCalled).toBe(true);
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('isAuthenticated', 'true');
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('position', '일반');
+  });
+
+  // handleAuthenticationSuccess가 호출된 후의 결과 체크
+  expect(window.location.href).toBe('/');
+});
 
  test('관리자 로그인 성공 후 관리자 페이지 리다이렉션', async () => {
    axios.get.mockImplementation((url) => {
@@ -176,21 +175,74 @@ describe('App Login Functionality', () => {
    });
  });
 
- test('로그아웃 기능 테스트', async () => {
-   // 로그인 상태 설정
+ test('일반 사용자 로그아웃 기능 테스트', async () => {
    window.localStorage.getItem.mockImplementation((key) => {
      if (key === 'isAuthenticated') return 'true';
      if (key === 'position') return '일반';
      return null;
    });
 
-   // API 응답 모킹
    axios.get.mockImplementation((url) => {
      if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
        return Promise.resolve({
          data: {
            isAuthenticated: true,
            user: { position: '일반' }
+         }
+       });
+     }
+     if (url.includes('/statistics/tas')) {
+       return Promise.resolve({ data: mockKtasData });
+     }
+     if (url === API_ENDPOINTS.AUTH.LOGOUT) {
+       return Promise.resolve({ data: { success: true } });
+     }
+     if (url.includes('/prediction')) {
+       return Promise.resolve({ data: mockPredictionData });
+     }
+     return Promise.resolve({ data: {} });
+   });
+
+   await act(async () => {
+     render(<App />);
+   });
+
+   await waitFor(() => {
+     const logoutText = screen.queryByText('Logout');
+     expect(logoutText).toBeInTheDocument();
+   });
+
+   const logoutButton = screen.getByRole('button', {
+     name: (content, element) => {
+       return element.querySelector('img[alt="logout"]') !== null || 
+              /logout/i.test(content);
+     }
+   });
+
+   await act(async () => {
+     await userEvent.click(logoutButton);
+   });
+
+   await waitFor(() => {
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
+     expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
+     expect(mockNavigate).toHaveBeenCalledWith('/login');
+   });
+ });
+
+ test('관리자 로그아웃 기능 테스트', async () => {
+   window.localStorage.getItem.mockImplementation((key) => {
+     if (key === 'isAuthenticated') return 'true';
+     if (key === 'position') return '관리자';
+     return null;
+   });
+
+   axios.get.mockImplementation((url) => {
+     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+       return Promise.resolve({
+         data: {
+           isAuthenticated: true,
+           user: { position: '관리자' }
          }
        });
      }
@@ -213,14 +265,18 @@ describe('App Login Functionality', () => {
      render(<App />);
    });
 
-   // 로그아웃 버튼이 나타날 때까지 대기
    await waitFor(() => {
-     const logoutButton = screen.queryByRole('button', { name: /logout/i });
-     expect(logoutButton).toBeInTheDocument();
+     const logoutImg = screen.queryByAltText('Logout');
+     expect(logoutImg).toBeInTheDocument();
+   });
+
+   const logoutButton = screen.getByRole('button', {
+     name: (content, element) => {
+       return element.querySelector('img[alt="Logout"]') !== null;
+     }
    });
 
    await act(async () => {
-     const logoutButton = screen.getByRole('button', { name: /logout/i });
      await userEvent.click(logoutButton);
    });
 
