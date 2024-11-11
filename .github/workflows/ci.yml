@@ -34,17 +34,13 @@ jobs:
     - name: Run Frontend Tests
       id: test
       run: |
-        # 테스트 실행 (이미 JSON 출력 포함)
-        npm run test:ci || true
+        # 테스트 실행 및 결과 저장
+        npm run test:ci
         
-        # test-results.json가 생성되었는지 확인하고 복사
-        if [ -f "test-results.json" ]; then
-          cp test-results.json test-results-output.json
-        else
-          echo '{"testResults": [], "numTotalTests": 0, "numPassedTests": 0, "numFailedTests": 0}' > test-results-output.json
-        fi
-        
-        # 커버리지는 이미 test:ci에 포함되어 있으므로 별도로 실행할 필요 없음
+        # 결과 파일 확인 및 디버깅
+        echo "=== Test Results File Contents ==="
+        cat test-results.json || echo "test-results.json not found"
+        echo "================================="
       working-directory: ./front
       env:
         CI: true
@@ -59,68 +55,68 @@ jobs:
           const fs = require('fs');
           
           try {
-            // 테스트 결과 파일 읽기 시도
+            // 테스트 결과 파일 읽기 및 디버깅
             let testResults;
             try {
-              testResults = JSON.parse(fs.readFileSync('./front/test-results-output.json', 'utf8'));
+              const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
+              console.log('Raw test results:', resultContent);
+              testResults = JSON.parse(resultContent);
             } catch (e) {
-              console.log('테스트 결과 파일 읽기 실패:', e);
-              testResults = { testResults: [], numTotalTests: 0, numPassedTests: 0, numFailedTests: 0 };
+              console.error('Error reading test results:', e);
+              throw new Error(`Failed to read test results: ${e.message}`);
             }
-
-            // coverage/lcov-report/index.html에서 커버리지 정보 읽기 시도
+            
+            // 커버리지 정보 읽기
             let coverageReport = '';
             try {
-              coverageReport = fs.readFileSync('./front/coverage/lcov-report/index.html', 'utf8');
-              // HTML에서 테이블 데이터 추출 (간단한 예시)
-              const matches = coverageReport.match(/<span class="strong">(\d+(\.\d+)?%)<\/span>/g) || [];
-              coverageReport = matches.map(m => m.replace(/<[^>]+>/g, '')).join('\n');
+              const coverageContent = fs.readFileSync('./front/coverage/lcov-report/index.html', 'utf8');
+              const coverageMatch = coverageContent.match(/<div class='fl pad1y space-right2'>(.*?)<\/div>/g);
+              if (coverageMatch) {
+                coverageReport = coverageMatch
+                  .map(match => match.replace(/<[^>]+>/g, '').trim())
+                  .join('\n');
+              }
             } catch (e) {
-              console.log('커버리지 리포트 읽기 실패:', e);
+              console.error('Error reading coverage:', e);
               coverageReport = '커버리지 정보를 불러올 수 없습니다.';
             }
             
-            const testSummary = testResults.numFailedTests !== undefined
-              ? `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
-              - 총 테스트 수: ${testResults.numTotalTests}
-              - 통과: ${testResults.numPassedTests}
-              - 실패: ${testResults.numFailedTests}`
-              : '테스트 결과를 불러오는 데 실패했습니다.';
+            // 테스트 결과 요약 생성
+            const numFailedTests = testResults.numFailedTests || 0;
+            const numTotalTests = testResults.numTotalTests || 0;
+            const numPassedTests = testResults.numPassedTests || 0;
             
-            const testsByFile = ((testResults.testResults || []).length > 0) 
-              ? (testResults.testResults || []).reduce((acc, suite) => {
-                  if (!suite || !suite.testResults) return acc;
+            const testSummary = `**전체 상태:** ${numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+            - 총 테스트 수: ${numTotalTests}
+            - 통과: ${numPassedTests}
+            - 실패: ${numFailedTests}`;
+            
+            // 상세 테스트 결과 생성
+            let detailedResults = '';
+            if (testResults.testResults) {
+              detailedResults = testResults.testResults
+                .filter(suite => suite && suite.testResults && suite.testResults.length > 0)
+                .map(suite => {
                   const fileName = suite.name.split('/').pop().replace('.test.js', '');
-                  const tests = Array.isArray(suite.testResults) 
-                    ? suite.testResults.map(test => ({
-                        name: test.title,
-                        status: test.status === 'passed' ? '✅' : '❌',
-                        failureMessages: test.status === 'failed' ? test.failureMessages : []
-                      }))
-                    : [];
-                  if (tests.length > 0) {
-                    acc[fileName] = tests;
-                  }
-                  return acc;
-                }, {})
-              : {};
+                  const tests = suite.testResults.map(test => {
+                    const status = test.status === 'passed' ? '✅' : '❌';
+                    const failureInfo = test.failureMessages && test.failureMessages.length > 0 
+                      ? `\n  \`\`\`\n  ${test.failureMessages.join('\n  ')}\n  \`\`\`` 
+                      : '';
+                    return `- ${status} ${test.title}${failureInfo}`;
+                  }).join('\n');
+                  
+                  return `#### ${fileName} 컴포넌트 테스트\n${tests}`;
+                })
+                .join('\n\n');
+            }
             
-            const testStatusSection = Object.entries(testsByFile)
-              .map(([fileName, tests]) => {
-                if (!tests || !Array.isArray(tests)) return '';
-                return `
-                #### ${fileName} 컴포넌트 테스트
-                ${tests.map(test => `- ${test.name} ${test.status}${test.failureMessages.length > 0 ? '\n  ```\n' + test.failureMessages.join('\n') + '\n  ```' : ''}`).join('\n')}
-                `;
-              })
-              .filter(section => section !== '')
-              .join('\n');
-            
+            // 최종 메시지 구성
             const message = `## 테스트 결과 요약
             ${testSummary}
             
             ### 상세 테스트 결과
-            ${testStatusSection || '테스트 결과가 없습니다.'}
+            ${detailedResults || '상세 테스트 결과가 없습니다.'}
             
             ### Coverage Report 📊
             \`\`\`
