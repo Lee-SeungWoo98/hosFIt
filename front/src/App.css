@@ -1,11 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100&display=swap');
+
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Noto Sans KR', sans-serif !important; /* 'Arial'을 'Noto Sans KR'로 교체 */
   background-color: #f4f5f7;
+  font-weight: 400;
   margin-top: -26px;
 }
-
 
 
  /* 사이드바 여백 */

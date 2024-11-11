@@ -2,14 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 기존 스타일 유지 */
+/* Noto Sans KR 폰트 적용 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
+
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
   background-color: #f4f5f7;
+  font-weight: 400;
 }
 
+/* 웨이트 유틸리티 클래스 */
+.font-light { font-weight: 300; }
+.font-regular { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
+
+/* 나머지 스타일 유지 */
 .content-wrapper {
   flex-grow: 1;
   margin-left: 222px;
