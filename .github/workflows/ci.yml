@@ -37,19 +37,11 @@ jobs:
         # 테스트 실행 및 결과 저장
         npm run test:ci
         
-        # 결과 파일 위치 확인
-        echo "현재 디렉토리 내용:"
-        ls -la
-        
-        # 테스트 결과 파일 내용 출력
+        # 테스트 결과 파일 내용 확인
         if [ -f "test-results.json" ]; then
           echo "=== Test Results File Contents ==="
           cat test-results.json
           echo "================================="
-        else
-          echo "test-results.json not found in current directory"
-          echo "Checking for test results in other locations..."
-          find . -name "test-results.json"
         fi
       working-directory: ./front
       env:
@@ -65,29 +57,13 @@ jobs:
           const fs = require('fs');
           
           try {
-            // 테스트 결과 파일 읽기 시도
-            let testResults;
-            const possiblePaths = [
-              './front/test-results.json',
-              './front/coverage/test-results.json',
-              './front/jest_output/test-results.json'
-            ];
+            // 테스트 결과 파일 읽기
+            const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
+            console.log('Raw test results:', resultContent);
+            const testResults = JSON.parse(resultContent);
             
-            for (const path of possiblePaths) {
-              try {
-                console.log(`Trying to read from ${path}...`);
-                const resultContent = fs.readFileSync(path, 'utf8');
-                testResults = JSON.parse(resultContent);
-                console.log(`Successfully read test results from ${path}`);
-                break;
-              } catch (e) {
-                console.log(`Could not read from ${path}: ${e.message}`);
-              }
-            }
-            
-            if (!testResults) {
-              throw new Error('Could not find test results file in any expected location');
-            }
+            // 테스트 결과 구조 확인
+            console.log('Test results structure:', JSON.stringify(testResults, null, 2));
             
             // 테스트 결과 요약 생성
             const testSummary = `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
@@ -96,17 +72,47 @@ jobs:
             - 실패: ${testResults.numFailedTests}`;
             
             // 상세 테스트 결과 생성
-            const detailedResults = testResults.testResults
-              .map(suite => {
-                const fileName = suite.name.split('/').pop().replace('.test.js', '');
-                return `#### ${fileName}
-                ${suite.testResults.map(test => {
-                  const status = test.status === 'passed' ? '✅' : '❌';
-                  const title = test.title.split(' › ').pop(); // 마지막 부분만 사용
-                  return `- ${status} ${title}`;
-                }).join('\n')}`;
-              })
-              .join('\n\n');
+            let detailedResults = '';
+            
+            if (testResults.testResults && Array.isArray(testResults.testResults)) {
+              detailedResults = testResults.testResults
+                .filter(suite => suite && suite.testResults)
+                .map(suite => {
+                  const fileName = suite.name.split('/').pop().replace('.test.js', '');
+                  const testDetails = suite.testResults
+                    .map(test => {
+                      const status = test.status === 'passed' ? '✅' : '❌';
+                      const testName = test.title.includes(' › ') 
+                        ? test.title.split(' › ').pop() 
+                        : test.title;
+                      return `- ${status} ${testName}`;
+                    })
+                    .join('\n');
+                  
+                  return `#### ${fileName}\n${testDetails}`;
+                })
+                .join('\n\n');
+            } else {
+              console.log('TestResults structure is not as expected:', testResults);
+              
+              // Jest의 다른 가능한 결과 형식 처리
+              if (testResults.results && testResults.results.testResults) {
+                detailedResults = testResults.results.testResults
+                  .map(suite => {
+                    const fileName = suite.name.split('/').pop().replace('.test.js', '');
+                    const testDetails = suite.assertionResults
+                      .map(test => {
+                        const status = test.status === 'passed' ? '✅' : '❌';
+                        const testName = test.title;
+                        return `- ${status} ${testName}`;
+                      })
+                      .join('\n');
+                    
+                    return `#### ${fileName}\n${testDetails}`;
+                  })
+                  .join('\n\n');
+              }
+            }
             
             // 최종 메시지 구성
             const message = `## 테스트 결과 요약
@@ -127,5 +133,12 @@ jobs:
             }
           } catch (error) {
             console.error('Error in test result processing:', error);
+            // 에러 발생 시 테스트 결과 구조 출력
+            try {
+              const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
+              console.error('Test results file content:', resultContent);
+            } catch (e) {
+              console.error('Could not read test results file:', e);
+            }
             core.setFailed(`Action failed with error: ${error.message}`);
           }
