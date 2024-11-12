@@ -173,7 +173,7 @@ public class VitalSignsService {
                    heartrate, resprate, o2sat, sbp, dbp, temperature);
 
            try {
-        	   VitalSigns saved = vitalSignsRepository.save(newVitalSigns);
+              VitalSigns saved = vitalSignsRepository.save(newVitalSigns);
                log.info("Successfully saved VitalSigns with ChartNum: {}", saved.getChartNum());
                
                // 새로 생성된 VitalSign에 대해서만 분석 요청
@@ -195,23 +195,23 @@ public class VitalSignsService {
 
    @Transactional
    public void sendToFlaskForAnalysis(String chartNum, Long subjectId) {
-	    try {
-	        log.info("Sending data to Flask for analysis - chartNum: {}", chartNum);
-	        List<FlaDTO> dataList = flaskRepository.getPatientDataByChartNum(chartNum);
-	        
-	        if (dataList.isEmpty()) {
-	            log.warn("No data found by chartNum: {}, trying with subjectId: {}", chartNum, subjectId);
-	            dataList = flaskRepository.getPatientData(subjectId);
-	        }
-	        
-	        if (!dataList.isEmpty()) {
-	            flaskService.getAiTAS(dataList);
-	            log.info("Successfully sent data to Flask for chartNum: {}", chartNum);
-	        } else {
-	            log.error("No data found for chartNum: {} or subjectId: {}", chartNum, subjectId);
-	        }
-	    } catch (Exception e) {
-	        log.error("Error sending data to Flask for chartNum {}: {}", chartNum, e.getMessage(), e);
-	    }
-	}
+       try {
+           log.info("Sending data to Flask for analysis - chartNum: {}", chartNum);
+           List<FlaDTO> dataList = flaskRepository.getPatientDataByChartNum(chartNum);
+           
+           if (dataList.isEmpty()) {
+               log.warn("No data found by chartNum: {}, trying with subjectId: {}", chartNum, subjectId);
+               dataList = flaskRepository.getPatientData(subjectId);
+           }
+           
+           if (!dataList.isEmpty()) {
+               flaskService.getAiTAS(dataList);
+               log.info("Successfully sent data to Flask for chartNum: {}", chartNum);
+           } else {
+               log.error("No data found for chartNum: {} or subjectId: {}", chartNum, subjectId);
+           }
+       } catch (Exception e) {
+           log.error("Error sending data to Flask for chartNum {}: {}", chartNum, e.getMessage(), e);
+       }
+   }
 }
