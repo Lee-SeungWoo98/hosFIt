@@ -1,32 +1,35 @@
 package kr.spring.entity;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
 import javax.persistence.*;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "visit")
-@Data
+@Getter
+@Setter
 public class Visit implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Id
     @Column(name = "stayid")
     private Long stayId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subjectid")
-    @JsonBackReference
+    @JsonBackReference	
     private Patient patient;
 
     @Column(name = "pain")
@@ -51,29 +54,42 @@ public class Visit implements Serializable {
     @Column(name = "staystatus")
     private Long staystatus;
 
-    @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<LabTest> labTests;
+    private Set<LabTest> labTests = new HashSet<>();
 
     @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Set<VitalSigns> vitalSigns;
+    @JsonIgnore
+    private Set<VitalSigns> vitalSigns = new HashSet<>();
+
+    // 양방향 관계 관리를 위한 헬퍼 메서드
+  
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Visit)) return false;
+        Visit visit = (Visit) o;
+        return Objects.equals(getStayId(), visit.getStayId());
+    }
 
     @Override
     public int hashCode() {
-        return Objects.hash(stayId);
+        return Objects.hash(getStayId());
     }
 
     @Override
     public String toString() {
-        return "Visit{stayId=" + stayId + ", pain=" + pain + ", losHours=" + losHours + "}";
+        return "Visit{" +
+               "stayId=" + stayId +
+               ", pain=" + pain +
+               ", losHours='" + losHours + '\'' +
+               ", visitDate=" + visitDate +
+               '}';
     }
 
-    public void setVitalsigns(List<VitalSigns> vitalsignsList) {
-        if (vitalsignsList != null) {
-            this.vitalSigns = new HashSet<>(vitalsignsList);
-        }
+    public long getSubjectId() {
+        return patient != null ? patient.getSubjectId() : 0;
     }
 }

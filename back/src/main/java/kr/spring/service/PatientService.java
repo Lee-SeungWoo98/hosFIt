@@ -37,11 +37,16 @@ import kr.spring.repository.PatientProjection;
 import kr.spring.repository.PatientRepository;
 import kr.spring.repository.VisitRepository;
 import kr.spring.repository.VitalSignsRepository;
+import lombok.extern.slf4j.Slf4j;
 @Service
+@Slf4j
 public class PatientService {
 	
 	@Autowired
     private VitalSignsService vitalSignsService;
+	
+	@Autowired
+    private PatientAssignmentService patientAssignmentService;
 
     @Autowired
     private PatientRepository patientRepository;
@@ -84,7 +89,6 @@ public class PatientService {
 
     public PatientDTO getPatientWithVisitsAndVitals(Long subjectId) {
         List<PatientProjection> results = patientRepository.findPatientDataBySubjectId(subjectId);
-
         PatientDTO patientData = new PatientDTO();
         Map<Long, VisitDTO> visitMap = new HashMap<>();
 
@@ -110,8 +114,8 @@ public class PatientService {
                 row.getArrivalTransport(),
                 row.getLabel(),
                 row.getVisitDate(),
-                new ArrayList<>(),  // VitalSigns 리스트 초기화
-                new ArrayList<>()   // AiDTO 리스트 초기화
+                new ArrayList<>(),  // VitalSigns 리스트
+                new HashMap<>()     // wardAssignment Map
             ));
 
             // VitalSigns 정보
@@ -126,28 +130,31 @@ public class PatientService {
                 row.getTemperature(),
                 row.getRegDate()
             );
-            visitData.getVitalSigns().add(vitalSigns);
 
-            // AiTAS 정보 (Optional)
+            // Ward 배정 정보와 AiTAS 정보 추가
             if (row.getChartNum() != null) {
-                AiDTO aiData = new AiDTO(
-                	
-                    row.getChartNum(),
-                    row.getId(),  
-                    row.getLevel1(),
-                    row.getLevel2(),
-                    row.getLevel3()
-                );
-                visitData.getAiTAS().add(aiData);
+                try {
+                    String wardCode = patientAssignmentService.determineWardByAiTAS(row.getChartNum());
+                    if (wardCode != null) {
+                        vitalSigns.setWardCode(wardCode);
+                        Map<String, Object> wardAssignment = new HashMap<>();
+                        wardAssignment.put("wardCode", wardCode);
+                        wardAssignment.put("level1", row.getLevel1());
+                        wardAssignment.put("level2", row.getLevel2());
+                        wardAssignment.put("level3", row.getLevel3());
+                        visitData.setWardAssignment(wardAssignment);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to get ward assignment for chartNum: {}", row.getChartNum());
+                }
             }
+
+            visitData.getVitalSigns().add(vitalSigns);
         }
 
         patientData.setVisits(new ArrayList<>(visitMap.values()));
         return patientData;
     }
-
-
-
     public PatientService(PatientRepository patientRepository, VisitRepository visitRepository) {
         this.patientRepository = patientRepository;
         this.visitRepository = visitRepository;
