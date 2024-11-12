@@ -1,5 +1,6 @@
 package kr.spring.service;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Map;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import kr.spring.dto.FlaDTO;
@@ -90,4 +92,27 @@ public class PatientMonitorService {
         
         return combinedData;
     }
+    
+    @Transactional
+    public Map<String, Object> updatePatientLabelWithLatestVitalSigns(Long stayId, Long newLabel) {
+        // 최신 VitalSigns 데이터 조회
+        VitalSigns latestVitalSigns = vitalSignsRepository.findLatestByStayId(stayId, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No vital signs found for stayId: " + stayId));
+
+        // 전달된 label 값으로 업데이트
+        latestVitalSigns.setLabel(newLabel);
+        latestVitalSigns = vitalSignsRepository.save(latestVitalSigns);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("stayId", stayId);
+        response.put("label", newLabel);
+        response.put("chartTime", latestVitalSigns.getChartTime());
+        response.put("chartNum", latestVitalSigns.getChartNum());
+        response.put("updated", true);
+
+        return response;
+    }
+
 }

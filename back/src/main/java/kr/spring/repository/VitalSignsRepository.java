@@ -14,11 +14,11 @@ import kr.spring.entity.Visit;
 import kr.spring.entity.VitalSigns;
 
 public interface VitalSignsRepository extends JpaRepository<VitalSigns, String> {
-	
-	  @Query("SELECT v FROM VitalSigns v LEFT JOIN WardAssignment w ON v.chartNum = w.chartNum " +
-	           "WHERE w.id IS NULL AND v.visit IS NOT NULL")
-	    Page<VitalSigns> findVitalSignsWithoutWardAssignment(Pageable pageable);
-	
+   
+     @Query("SELECT v FROM VitalSigns v LEFT JOIN WardAssignment w ON v.chartNum = w.chartNum " +
+              "WHERE w.id IS NULL AND v.visit IS NOT NULL")
+       Page<VitalSigns> findVitalSignsWithoutWardAssignment(Pageable pageable);
+   
 
    
    List<VitalSigns> findByVisitStayId(Long stayId);
@@ -51,10 +51,10 @@ public interface VitalSignsRepository extends JpaRepository<VitalSigns, String> 
    int countByVisit(Visit visit);
    
    @Query("SELECT v FROM VitalSigns v " +
-	          "LEFT JOIN v.aiTAS a " +
-	          "LEFT JOIN WardAssignment w ON w.chartNum = v.chartNum " +
-	          "WHERE w.id IS NULL AND v.visit IS NOT NULL")
-	   List<VitalSigns> findVitalSignsWithoutWardAssignment();
+             "LEFT JOIN v.aiTAS a " +
+             "LEFT JOIN WardAssignment w ON w.chartNum = v.chartNum " +
+             "WHERE w.id IS NULL AND v.visit IS NOT NULL")
+      List<VitalSigns> findVitalSignsWithoutWardAssignment();
    @Query("SELECT COUNT(v) > 0 FROM VitalSigns v " +
           "WHERE v.chartNum = :chartNum")
    boolean existsByChartNum(@Param("chartNum") String chartNum);
@@ -89,8 +89,10 @@ public interface VitalSignsRepository extends JpaRepository<VitalSigns, String> 
           "ORDER BY v.chartTime DESC")
    List<VitalSigns> findLatestByStayId(@Param("stayId") Long stayId, Pageable pageable);
    
-
+   @Query("SELECT v FROM VitalSigns v JOIN v.visit vis WHERE vis.stayId = :stayId")
+   Optional<VitalSigns> findVitalSignsByStayId(@Param("stayId") Long stayId);
    
   
-
 }
+
+

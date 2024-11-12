@@ -27,6 +27,7 @@ import kr.spring.dto.FlaDTO;
 import kr.spring.entity.VitalSigns;
 import kr.spring.service.FlaskService;
 import kr.spring.service.PatientAssignmentService;
+import kr.spring.service.PatientMonitorService;
 import kr.spring.service.VitalSignsService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +46,9 @@ public class PatientMonitorController {
     
     @Autowired
     private ThresholdConfig thresholdConfig;
+    
+    @Autowired
+    private PatientMonitorService patientMonitorService;
     
     @GetMapping("/process-ward-assignment")
     public ResponseEntity<String> processWardAssignmentBatch() {
@@ -140,6 +144,22 @@ public class PatientMonitorController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    @PutMapping("/patient/label/latest/{stayId}")
+    public ResponseEntity<Map<String, Object>> updatePatientLabelWithLatestVitalSigns(
+            @PathVariable("stayId") Long stayId, @RequestBody Map<String, Long> requestBody) {
+        try {
+            // 전달받은 label 값을 추출
+            Long newLabel = requestBody.get("label");
+
+            Map<String, Object> result = patientMonitorService.updatePatientLabelWithLatestVitalSigns(stayId, newLabel);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error updating label for stayId: " + stayId + " with latest vital signs", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to update label with latest vital signs");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+
     
-    
+    }
 }

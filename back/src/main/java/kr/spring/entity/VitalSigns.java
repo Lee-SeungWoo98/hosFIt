@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +25,7 @@ public class VitalSigns {
     private Visit visit;
     
     @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @JsonManagedReference
     private Set<AiTAS> aiTAS = new HashSet<>();
     
     @Column(name = "charttime")
@@ -103,4 +106,19 @@ public class VitalSigns {
     public String getWardCode() {
         return this.wardCode;
     }
+
+   public void setLabel(Long label) {
+      // TODO Auto-generated method stub
+      
+   }
+
+   public Object getStayId() {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public Object getLabel() {
+      // TODO Auto-generated method stub
+      return null;
+   }
 }
