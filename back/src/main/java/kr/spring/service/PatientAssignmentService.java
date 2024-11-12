@@ -103,23 +103,25 @@ public class PatientAssignmentService {
         }
     }
 
-    private String determineWardByLevels(AiTAS aiTAS) {
+    String determineWardByLevels(AiTAS aiTAS) {
         float level1 = aiTAS.getLevel1();
         float level2 = aiTAS.getLevel2(); 
         float level3 = aiTAS.getLevel3();
 
+        // 변경된 기준에 맞게 배정 코드 수정
         if (level1 >= thresholdConfig.getCriticalCareThreshold()) {
-            return "CRITICAL_CARE";
+            return "퇴원"; // CRITICAL_CARE -> 퇴원
         } else if (level2 >= thresholdConfig.getIntermediateCareThreshold()) {
-            return "INTERMEDIATE_CARE";
+            return "일반 병동"; // INTERMEDIATE_CARE -> 일반 병동
         } else if (level3 >= thresholdConfig.getGeneralWardThreshold()) {
-            return "GENERAL_WARD";
+            return "중증 병동"; // GENERAL_WARD -> 중증 병동
         }
 
-        return "GENERAL_WARD";
+        return "중증 병동"; // 기본값을 중증 병동으로 설정
     }
 
     public String determineWardByAiTAS(String chartNum) {
+    	
         return aiTASRepository.findFirstByVitalSigns_ChartNum(chartNum)
             .map(this::determineWardByLevels)
             .orElse(null);

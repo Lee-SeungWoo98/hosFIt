@@ -22,7 +22,7 @@ public class VitalSigns {
     @JsonBackReference
     private Visit visit;
     
-    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Set<AiTAS> aiTAS = new HashSet<>();
     
     @Column(name = "charttime")
@@ -47,9 +47,60 @@ public class VitalSigns {
     private String temperature;
     
     public VitalSigns() {}
-
+    @Transient  // DB에 저장되지 않는 임시 필드
+    private Float level1;
+    
+    @Transient
+    private Float level2;
+    
+    @Transient
+    private Float level3;
+    
+    @Transient
+    private String wardCode;
     // getAiTAS 메소드 수정
     public Set<AiTAS> getAiTAS() {
         return this.aiTAS;
+    }
+
+    public Float getLevel1() {
+        if (level1 == null && !aiTAS.isEmpty()) {
+            return aiTAS.iterator().next().getLevel1();
+        }
+        return level1;
+    }
+
+    public Float getLevel2() {
+        if (level2 == null && !aiTAS.isEmpty()) {
+            return aiTAS.iterator().next().getLevel2();
+        }
+        return level2;
+    }
+
+    public Float getLevel3() {
+        if (level3 == null && !aiTAS.isEmpty()) {
+            return aiTAS.iterator().next().getLevel3();
+        }
+        return level3;
+    }
+
+    public void setLevel1(Float level1) {
+        this.level1 = level1;
+    }
+
+    public void setLevel2(Float level2) {
+        this.level2 = level2;
+    }
+
+    public void setLevel3(Float level3) {
+        this.level3 = level3;
+    }
+
+    public void setWardCode(String wardCode) {
+        this.wardCode = wardCode;
+    }
+
+    public String getWardCode() {
+        return this.wardCode;
     }
 }

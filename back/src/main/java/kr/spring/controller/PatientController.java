@@ -39,20 +39,20 @@ public class PatientController {
 	   }
 
     // 1. 환자 목록 조회 (페이징 + 필터링)
-    @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getPatientsList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Long gender,
-            @RequestParam(required = false) Long tas,
-            @RequestParam(required = false) Long pain) {
-        
-        log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
-                name, gender, tas, pain, page);
-        
-        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
-        return ResponseEntity.ok(result);
-    }
+	   @GetMapping("/list")
+	    public ResponseEntity<Map<String, Object>> getPatientsList(
+	            @RequestParam(defaultValue = "0") int page,
+	            @RequestParam(required = false) String name,
+	            @RequestParam(required = false) Long gender,
+	            @RequestParam(required = false) Long tas,
+	            @RequestParam(required = false) Long pain) {
+	        
+	        log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
+	                name, gender, tas, pain, page);
+	        
+	        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
+	        return ResponseEntity.ok(result);
+	    }
 
     // 2. 환자 검색 (이름으로)
     @GetMapping("/search")
