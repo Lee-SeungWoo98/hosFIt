@@ -22,7 +22,7 @@ public class VitalSigns {
     @JsonBackReference
     private Visit visit;
     
-    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Set<AiTAS> aiTAS = new HashSet<>();
     
     @Column(name = "charttime")

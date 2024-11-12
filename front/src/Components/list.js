@@ -13,6 +13,13 @@ import {
 } from "lucide-react";
 
 // =========== 상수 정의 ===========
+const LOCATION_TABS = [
+  { id: "all", label: "전체" },
+  { id: "icu", label: "응급" },
+  { id: "ward", label: "관찰" },
+  { id: "discharge", label: "퇴원" },
+];
+
 const FILTER_OPTIONS = {
   gender: {
     label: "Select Gender",
@@ -400,52 +407,91 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // AI_TAS 값과 위치를 결정하는 함수
+  const determineAiTasAndLocation = useCallback((wardAssignment) => {
+    if (!wardAssignment) {
+      return { aiTas: "-", location: "all" };
+    }
+
+    const { level1, level2, level3 } = wardAssignment;
+    const levels = [
+      { value: level1, label: "퇴원", location: "discharge" },
+      { value: level2, label: "관찰", location: "ward" },
+      { value: level3, label: "응급", location: "icu" },
+    ];
+
+    const maxLevel = levels.reduce((prev, current) => {
+      return (current.value > prev.value) ? current : prev;
+    });
+
+    return {
+      aiTas: maxLevel.label,
+      location: maxLevel.location
+    };
+  }, []);
+
+  // 환자 필터링 함수
+  const filteredPatients = useMemo(() => {
+    if (activeTab === "all") {
+      return memoizedPatients;
+    }
+
+    return memoizedPatients.filter(patient => {
+      const { location } = determineAiTasAndLocation(patient.wardAssignment);
+      return location === activeTab;
+    });
+  }, [memoizedPatients, activeTab, determineAiTasAndLocation]);
+
   // =========== 렌더링 함수 ===========
   /**
    * 환자 행 렌더링
    */
-  const renderPatientRow = useCallback((patient) => (
-    <tr
-      key={patient.subjectId}
-      className="patient-row"
-      style={{
-        opacity: isUpdating ? 0.6 : 1,
-        transition: "opacity 0.3s ease",
-      }}
-    >
-      <td>{patient.subjectId}</td>
-      <td>{patient.icd || '-'}</td>
-      <td>{patient.name}</td>
-      <td>{patient.gender}</td>
-      <td>{patient.age}</td>
-      <td>
-        {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
-          <>
-            {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
-            <br />
-            <span>
-              {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
-            </span>
-          </>
-        ) : '-'}
-      </td>
-      <td>{patient.visits?.[0]?.pain || "-"}</td>
-      <td>{patient.visits?.[0]?.tas || "-"}</td>
-      <td>{patient.ai_tas || "-"}</td>
-      <td className="abnormal-count-cell">
-        {abnormalCounts[patient.subjectId] || ""}
-      </td>
-      <td>
-        <button
-          onClick={() => showPatientDetails(patient)}
-          className="details-button"
-          disabled={loadingDetails}
-        >
-          {loadingDetails ? "로딩 중..." : "상세 보기"}
-        </button>
-      </td>
-    </tr>
-  ), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
+  const renderPatientRow = useCallback((patient) => {
+    const { aiTas } = determineAiTasAndLocation(patient.wardAssignment);
+    
+    return (
+      <tr
+        key={patient.subjectId}
+        className="patient-row"
+        style={{
+          opacity: isUpdating ? 0.6 : 1,
+          transition: "opacity 0.3s ease",
+        }}
+      >
+        <td>{patient.subjectId}</td>
+        <td>{patient.icd || '-'}</td>
+        <td>{patient.name}</td>
+        <td>{patient.gender}</td>
+        <td>{patient.age}</td>
+        <td>
+          {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
+            <>
+              {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
+              <br />
+              <span>
+                {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
+              </span>
+            </>
+          ) : '-'}
+        </td>
+        <td>{patient.visits?.[0]?.pain || "-"}</td>
+        <td>{patient.visits?.[0]?.tas || "-"}</td>
+        <td>{aiTas}</td>
+        <td className="abnormal-count-cell">
+          {abnormalCounts[patient.subjectId]+"건" || ""}
+        </td>
+        <td>
+          <button
+            onClick={() => showPatientDetails(patient)}
+            className="details-button"
+            disabled={loadingDetails}
+          >
+            {loadingDetails ? "로딩 중..." : "상세 보기"}
+          </button>
+        </td>
+      </tr>
+    );
+  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts, determineAiTasAndLocation]);
 
   /**
    * 필터 드롭다운 렌더링
@@ -473,13 +519,13 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
       <div className="content-area">
         {/* 위치 탭 */}
         <div className="location-tabs">
-          {["all", "icu", "ward", "discharge"].map((tab) => (
+          {LOCATION_TABS.map((tab) => (
             <button
-              key={tab}
-              className={`location-tab ${activeTab === tab ? "active" : ""}`}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {tab.toUpperCase()}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -588,9 +634,9 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
                 <th>상세 정보</th>
               </tr>
             </thead>
-            <tbody>
-              {memoizedPatients.length > 0 ? (
-                memoizedPatients.map(renderPatientRow)
+              <tbody>
+              {filteredPatients.length > 0 ? (
+                filteredPatients.map(renderPatientRow)
               ) : (
                 <tr>
                   <td colSpan="11" className="no-data-message">
