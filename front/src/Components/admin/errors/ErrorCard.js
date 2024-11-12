@@ -1,10 +1,10 @@
-// ErrorCard.js
+// ErrorCard.js 
 import React from 'react';
 import { Search } from 'lucide-react';
 
 /**
  * 에러 로그 카드 컴포넌트
- * 각 에러 로그의 세부 정보를 표시하는 카드형 UI
+ * 각 에러 로그의 세부 정보를 표시하는 카드형  UI
  * 
  * @param {Object} log - 에러 로그 데이터
  * @param {Function} onSendToSupport - 이메일 전송 핸들러 함수
