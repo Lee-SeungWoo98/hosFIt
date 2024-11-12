@@ -38,6 +38,7 @@ public class MemberController {
         if (authenticatedMember != null) {
             // 세션에 사용자 정보 저장
             session.setAttribute("loggedInUser", authenticatedMember);
+            service.recordLogintime(username);// 사용자 로그인 시작 기록
             return ResponseEntity.ok(authenticatedMember);
         } else {
             // 인증 실패 시 401 Unauthorized 반환
@@ -87,9 +88,9 @@ public class MemberController {
     	
   
     
-    // 멤버 전체 조회 ( 이름, 직책, 부서, 전공 )
+    // 멤버 전체 조회 ( 이름, 직책, 부서, 전공, 마지막 로그인 시간 )
     @GetMapping("/memberList")
-    public @ResponseBody List<Member> memberList() {
+    public @ResponseBody List<MemberInterface> memberList() {
         return service.getAllMembers();
     }
     
