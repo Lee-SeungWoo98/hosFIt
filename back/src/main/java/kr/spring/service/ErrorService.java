@@ -10,7 +10,6 @@ import kr.spring.repository.ErrorRepository;
 import org.modelmapper.ModelMapper;
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Service
 public class ErrorService {
 
@@ -34,7 +33,7 @@ public class ErrorService {
     }
 
     public ErrorDTO createError(ErrorDTO errorDTO) {
-        ErrorLog error = modelMapper.map(errorDTO, ErrorLog.class);
+        ErrorLog error = modelMapper.map(errorDTO, ErrorLog.class); // Error 대신 ErrorLog 사용
         error = errorRepository.save(error);
         return modelMapper.map(error, ErrorDTO.class);
     }
@@ -42,10 +41,8 @@ public class ErrorService {
     public ErrorDTO updateError(Long id, ErrorDTO errorDTO) {
         ErrorLog existingError = errorRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Error not found"));
-        
-        // id를 제외한 다른 필드들만 복사
+
         modelMapper.map(errorDTO, existingError);
-        // id는 기존 값 유지
         
         existingError = errorRepository.save(existingError);
         return modelMapper.map(existingError, ErrorDTO.class);

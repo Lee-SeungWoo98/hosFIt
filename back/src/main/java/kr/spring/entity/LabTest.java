@@ -86,4 +86,14 @@ public class LabTest {
                ", diagnosisCode='" + diagnosisCode + '\'' +
                ", regDate=" + regDate + "}";
     }
+
+	public Long getValue() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public int getItemid() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
