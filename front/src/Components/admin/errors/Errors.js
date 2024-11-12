@@ -19,11 +19,10 @@ const FilterButton = ({ active, onClick, children, type }) => {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors outline-none focus:outline-none
         ${active 
-          ? `${buttonStyles[type]} text-white` 
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-          style={{ border: 'none' }}  // CSS 스타일로도 경계선 제거
+          ? `${buttonStyles[type]} text-white border-0` 
+          : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"}`}
     >
       {children}
     </button>
