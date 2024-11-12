@@ -102,7 +102,7 @@ const Errors = () => {
 
   /**
    * 에러 로그 이메일 전송
-   * 선택한 로그를 유지보수팀에 이메일로 전송
+   * 선택한 로그를 유지보수팀에 이메일로  전송
    */
   const handleSendToSupport = async (logId) => {
     try {
