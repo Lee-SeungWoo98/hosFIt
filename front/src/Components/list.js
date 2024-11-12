@@ -15,8 +15,8 @@ import {
 // =========== 상수 정의 ===========
 const LOCATION_TABS = [
   { id: "all", label: "전체" },
-  { id: "icu", label: "응급" },
-  { id: "ward", label: "관찰" },
+  { id: "icu", label: "중증 병동" },
+  { id: "ward", label: "일반 병동" },
   { id: "discharge", label: "퇴원" },
 ];
 
@@ -130,7 +130,7 @@ function List({
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
   const previousPatientsRef = useRef([]);
-  
+
   // 환자 데이터 메모이제이션
   const memoizedPatients = useMemo(() => patients, [patients]);
 
@@ -407,47 +407,55 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // AI_TAS 값과 위치를 결정하는 함수
-  const determineAiTasAndLocation = useCallback((wardAssignment) => {
+   // 환자의 wardCode 가져오기
+   const getWardCode = useCallback((patient) => {
+    const latestVisit = patient.visits?.[patient.visits.length - 1];
+    return latestVisit?.wardAssignment?.wardCode || "-";
+  }, []);
+
+   // 환자의 ward level 확인 및 분류
+   const getWardInfo = useCallback((patient) => {
+    const latestVisit = patient.visits?.[patient.visits.length - 1];
+    const wardAssignment = latestVisit?.wardAssignment;
+
     if (!wardAssignment) {
-      return { aiTas: "-", location: "all" };
+      return { label: "-", tabId: "all" };
     }
 
     const { level1, level2, level3 } = wardAssignment;
+    
+    // 가장 높은 level 값 찾기
     const levels = [
-      { value: level1, label: "퇴원", location: "discharge" },
-      { value: level2, label: "관찰", location: "ward" },
-      { value: level3, label: "응급", location: "icu" },
+      { value: Number(level1) || 0, label: "퇴원", tabId: "discharge" },
+      { value: Number(level2) || 0, label: "일반", tabId: "ward" },
+      { value: Number(level3) || 0, label: "중증", tabId: "icu" }
     ];
 
-    const maxLevel = levels.reduce((prev, current) => {
-      return (current.value > prev.value) ? current : prev;
-    });
+    const maxLevel = levels.reduce((prev, current) => 
+      (current.value > prev.value) ? current : prev
+    );
 
-    return {
-      aiTas: maxLevel.label,
-      location: maxLevel.location
-    };
+    return maxLevel;
   }, []);
 
-  // 환자 필터링 함수
-  const filteredPatients = useMemo(() => {
+   // 탭별 환자 필터링
+   const filteredPatients = useMemo(() => {
     if (activeTab === "all") {
       return memoizedPatients;
     }
 
     return memoizedPatients.filter(patient => {
-      const { location } = determineAiTasAndLocation(patient.wardAssignment);
-      return location === activeTab;
+      const { tabId } = getWardInfo(patient);
+      return tabId === activeTab;
     });
-  }, [memoizedPatients, activeTab, determineAiTasAndLocation]);
+  }, [memoizedPatients, activeTab, getWardInfo]);
 
   // =========== 렌더링 함수 ===========
   /**
    * 환자 행 렌더링
    */
   const renderPatientRow = useCallback((patient) => {
-    const { aiTas } = determineAiTasAndLocation(patient.wardAssignment);
+    const { label: wardLabel } = getWardInfo(patient);
     
     return (
       <tr
@@ -466,17 +474,17 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
         <td>
           {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
             <>
-              {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
+              {formatDate(new Date(patient.visits[patient.visits.length - 1].visitDate))}
               <br />
               <span>
-                {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
+                {formatTime(new Date(patient.visits[patient.visits.length - 1].visitDate))}
               </span>
             </>
           ) : '-'}
         </td>
         <td>{patient.visits?.[0]?.pain || "-"}</td>
         <td>{patient.visits?.[0]?.tas || "-"}</td>
-        <td>{aiTas}</td>
+        <td>{wardLabel}</td>
         <td className="abnormal-count-cell">
           {abnormalCounts[patient.subjectId]+"건" || ""}
         </td>
@@ -491,7 +499,7 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
         </td>
       </tr>
     );
-  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts, determineAiTasAndLocation]);
+  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts, getWardInfo]);
 
   /**
    * 필터 드롭다운 렌더링
@@ -526,6 +534,11 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
+              {tab.id !== "all" && (
+                <span className="tab-count">
+                  ({memoizedPatients.filter(p => getWardInfo(p).tabId === tab.id).length})
+                </span>
+              )}
             </button>
           ))}
         </div>

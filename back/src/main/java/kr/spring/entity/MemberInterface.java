@@ -5,4 +5,6 @@ public interface MemberInterface {
     String getPosition();
     String getDepartment();
     String getMajor();
+    String getNum();
+    String getLogintime();
 }
