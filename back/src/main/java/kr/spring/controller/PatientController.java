@@ -24,35 +24,35 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/patients")
 @Slf4j
 public class PatientController {
-	   private final PatientService patientService;
-	   private final PatientAssignmentService patientAssignmentService;
-	   private final AiTASRepository aiTASRepository;
-	   
-	   @Autowired
-	   public PatientController(
-	           PatientService patientService,
-	           PatientAssignmentService patientAssignmentService,
-	           AiTASRepository aiTASRepository) {
-	       this.patientService = patientService;
-	       this.patientAssignmentService = patientAssignmentService;
-	       this.aiTASRepository = aiTASRepository;
-	   }
+      private final PatientService patientService;
+      private final PatientAssignmentService patientAssignmentService;
+      private final AiTASRepository aiTASRepository;
+      
+      @Autowired
+      public PatientController(
+              PatientService patientService,
+              PatientAssignmentService patientAssignmentService,
+              AiTASRepository aiTASRepository) {
+          this.patientService = patientService;
+          this.patientAssignmentService = patientAssignmentService;
+          this.aiTASRepository = aiTASRepository;
+      }
 
     // 1. 환자 목록 조회 (페이징 + 필터링)
-	   @GetMapping("/list")
-	    public ResponseEntity<Map<String, Object>> getPatientsList(
-	            @RequestParam(defaultValue = "0") int page,
-	            @RequestParam(required = false) String name,
-	            @RequestParam(required = false) Long gender,
-	            @RequestParam(required = false) Long tas,
-	            @RequestParam(required = false) Long pain) {
-	        
-	        log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
-	                name, gender, tas, pain, page);
-	        
-	        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
-	        return ResponseEntity.ok(result);
-	    }
+      @GetMapping("/list")
+       public ResponseEntity<Map<String, Object>> getPatientsList(
+               @RequestParam(defaultValue = "0") int page,
+               @RequestParam(required = false) String name,
+               @RequestParam(required = false) Long gender,
+               @RequestParam(required = false) Long tas,
+               @RequestParam(required = false) Long pain) {
+           
+           log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
+                   name, gender, tas, pain, page);
+           
+           Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
+           return ResponseEntity.ok(result);
+       }
 
     // 2. 환자 검색 (이름으로)
     @GetMapping("/search")
@@ -84,11 +84,9 @@ public class PatientController {
                             String wardCode = patientAssignmentService.determineWardByAiTAS(vital.getChartNum());
                             if (wardCode != null) {
                                 vital.setWardCode(wardCode);
-                                // String에서 Object로 변경하여 level 값들도 포함
                                 Map<String, Object> wardAssignment = new HashMap<>();
                                 wardAssignment.put("wardCode", wardCode);
                                 
-                                // AiTAS 정보 가져오기
                                 Optional<AiTAS> aiTAS = aiTASRepository.findFirstByVitalSigns_ChartNum(vital.getChartNum());
                                 if (aiTAS.isPresent()) {
                                     wardAssignment.put("level1", aiTAS.get().getLevel1());

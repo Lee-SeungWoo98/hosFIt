@@ -3,11 +3,16 @@ package kr.spring.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Set;
+import java.util.TreeSet;
 
-@Data
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @NoArgsConstructor
+@Getter
+@Setter
 public class VisitDTO {
     private Long stayId;
     private Long pain;
@@ -16,12 +21,13 @@ public class VisitDTO {
     private Long arrivalTransport;
     private Long label;
     private LocalDateTime visitDate;
-    private List<VitalSignsDTO> vitalSigns;
-    private Map<String, Object> wardAssignment;  // String -> Object로 변경하여 level 값들도 저장
+    private Set<VitalSignsDTO> vitalSigns = new TreeSet<>((v1, v2) -> v1.getChartNum().compareTo(v2.getChartNum()));
+    private Map<String, Object> wardAssignment;
+    private String comment;
 
     public VisitDTO(Long stayId, Long pain, String losHours, Long tas,
                    Long arrivalTransport, Long label, LocalDateTime visitDate,
-                   List<VitalSignsDTO> vitalSigns, Map<String, Object> wardAssignment) {
+                   List<VitalSignsDTO> vitalSignsDTOs, Map<String, Object> wardAssignment, String comment) {
         this.stayId = stayId;
         this.pain = pain;
         this.losHours = losHours;
@@ -29,7 +35,8 @@ public class VisitDTO {
         this.arrivalTransport = arrivalTransport;
         this.label = label;
         this.visitDate = visitDate;
-        this.vitalSigns = vitalSigns;
+        this.vitalSigns.addAll(vitalSignsDTOs); // List를 Set으로 변환하여 추가
         this.wardAssignment = wardAssignment;
+        this.comment = comment;
     }
 }

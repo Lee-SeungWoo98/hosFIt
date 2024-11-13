@@ -38,23 +38,23 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
 
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
     @Query("SELECT DISTINCT p FROM Patient p JOIN p.visits v WHERE " +
-    	       "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-    	       "(:gender IS NULL OR p.gender = :gender) AND " +
-    	       "(:tas IS NULL OR v.tas = :tas) AND " +
-    	       "(:pain IS NULL OR v.pain = :pain) AND " +
-    	       "v.staystatus = 1 AND v.label IS NULL " +
-    	       "ORDER BY p.subjectId ASC") 
-    Page<Patient> findByFilters(
-        @Param("name") String name,
-        @Param("gender") Long gender,
-        @Param("tas") Long tas,
-        @Param("pain") Long pain,
-        Pageable pageable
-    );
+            "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
+            "(:gender IS NULL OR p.gender = :gender) AND " +
+            "(:tas IS NULL OR v.tas = :tas) AND " +
+            "(:pain IS NULL OR v.pain = :pain) AND " +
+            "v.staystatus = 1 AND v.label IS NULL")
+     Page<Patient> findByFilters(
+         @Param("name") String name,
+         @Param("gender") Long gender,
+         @Param("tas") Long tas,
+         @Param("pain") Long pain,
+         Pageable pageable
+     );
     
-    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
+    
+    @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender,p.icd, p.birthdate AS birthdate, p.age, p.address, " +
             "p.pregnancystatus, p.phonenumber, p.residentnum, " +
-            "v.stayid AS stayId, v.pain, v.loshours, v.tas, v.arrivaltransport, v.label, v.visitdate AS visitdate, " +
+            "v.stayid AS stayId, v.pain, v.loshours, v.tas, v.arrivaltransport,v.comment, v.label, v.visitdate AS visitdate, " +
             "vs.chartnum AS chartNum, vs.charttime AS chartTime, vs.heartrate, vs.resprate, vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate AS regdate, " +
             "a.chartnum AS aiTASChartNum, a.level1, a.level2, a.level3 " +
             "FROM patient p " +
