@@ -371,46 +371,42 @@ const VitalSignChart = ({ data, config }) => {
 
 // 시계열 예측 그래프
 const TimeSeriesChart = ({ data, onTimePointClick }) => {
-  // vitalSigns 데이터를 시계열 데이터로 변환
-  const formattedData = data.map(point => ({
-    time: Array.isArray(point.chartTime) 
-      ? new Date(
-          point.chartTime[0],
-          point.chartTime[1] - 1,
-          point.chartTime[2],
-          point.chartTime[3] || 0,
-          point.chartTime[4] || 0
-        ).toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-      : new Date(point.chartTime).toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-    icu: Number(point.level3) || 0,
-    ward: Number(point.level2) || 0,
-    discharge: Number(point.level1) || 0
-  })).sort((a, b) => {
-    const timeA = a.time.split(':').map(Number);
-    const timeB = b.time.split(':').map(Number);
-    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+  // 데이터 검증 로그
+  console.log("TimeSeriesChart received raw data:", data);
+  
+  // 데이터가 유효한지 확인
+  if (!data || !Array.isArray(data)) {
+    console.log("Invalid data format");
+    return <div>Loading data...</div>;
+  }
+
+  if (data.length === 0) {
+    console.log("Empty data array");
+    return <div>Loading data...</div>;
+  }
+
+  // 각 데이터 포인트의 값 확인
+  data.forEach((point, index) => {
+    console.log(`Point ${index}:`, {
+      time: point.time,
+      discharge: point.discharge,
+      ward: point.ward,
+      icu: point.icu
+    });
   });
 
   return (
     <div style={{
-      width: '98.4%',
-      height: '321px',
-      marginLeft: '12px',
+      width: '101.2%',
+      height: '337px',
+      marginLeft: '-9px',
       border: '1px solid #edf2f7',
-      borderRadius:'16px'}}
-      className="bg-white rounded-lg shadow-lg p-6">
+      borderRadius: '16px'
+    }} className="bg-white rounded-lg shadow-lg p-6">
       <div style={{ width: '100%', height: '300px' }}>
         <ResponsiveContainer>
           <LineChart
-            data={formattedData}
+            data={data}
             margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
             onClick={(e) => {
               if (e && e.activePayload) {
@@ -435,8 +431,21 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
               tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
             />
             <Tooltip
-              formatter={(value) => `${(value * 100).toFixed(1)}%`}
+              formatter={(value, name) => {
+                // 각 값의 형식 지정
+                const percentage = (value * 100).toFixed(1);
+                const label = name === 'discharge' ? '퇴원' :
+                            name === 'ward' ? '일반 병동' :
+                            name === 'icu' ? '중증 병동' : name;
+                return [`${percentage}%`, label];
+              }}
               labelFormatter={(label) => `시간: ${label}`}
+              contentStyle={{
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                padding: '0.75rem'
+              }}
             />
             <Legend
               verticalAlign="top"
@@ -452,6 +461,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
             <Line
               type="monotone"
@@ -461,6 +471,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
             <Line
               type="monotone"
@@ -470,6 +481,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -845,7 +857,7 @@ const BloodTestResults = ({ labTests, gender }) => {
  };
 
  // PlacementModal 컴포넌트
-const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
+ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
   const [doctorNote, setDoctorNote] = useState('');
   const [selectedPlacement, setSelectedPlacement] = useState('');
 
@@ -862,17 +874,19 @@ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
   return (
     <div className="modal-backdrop">
       <div className="placement-modal">
-        <div className="modal-header">
-          <h2>환자 배치 결정</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
         <div className="modal-content">
+          <div className="modal-title">
+            <h2>환자 배치 결정</h2>
+            <button className="close-button" onClick={onClose}>&times;</button>
+          </div>
+          
           <div className="ai-recommendation">
             <h3>AI TAS 추천 :</h3>
             <div className="recommendation-box">
               {aiRecommendation || 'AI 분석 중...'}
             </div>
           </div>
+          
           <div className="modal-section">
             <h3>의사 소견</h3>
             <textarea
@@ -883,6 +897,7 @@ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
               className="doctor-note"
             />
           </div>
+          
           <div className="modal-section">
             <h3>배치 결정</h3>
             <select
@@ -891,25 +906,27 @@ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
               className="placement-select"
             >
               <option value="">배치를 선택하세요</option>
-              <option value="응급">응급</option>
-              <option value="관찰">관찰</option>
+              <option value="중증">중증 병동</option>
+              <option value="일반">일반 병동</option>
               <option value="퇴원">퇴원</option>
             </select>
           </div>
-        </div>
-        <div className="modal-footer">
-          <button 
-            className="confirm-button"
-            onClick={handleConfirm}
-            disabled={!selectedPlacement || !doctorNote}
-          >
-            확인
-          </button>
+
+          <div className="confirm-button-container">
+            <button 
+              className="confirm-button"
+              onClick={handleConfirm}
+              disabled={!selectedPlacement || !doctorNote}
+            >
+              확인
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 // 메인 Patient 컴포넌트
 function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
@@ -968,19 +985,65 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     if (patientData?.visits?.[0]?.vitalSigns) {
       const latestVisit = patientData.visits[patientData.visits.length - 1];
       
-      // vitalSigns 데이터 직접 전달
-      setCurrentPredictionData(latestVisit.vitalSigns);
-  
-      // wardAssignment로 도넛 차트 업데이트
-      if (latestVisit.wardAssignment) {
-        setCurrentLatestPrediction({
-          discharge: Number(latestVisit.wardAssignment.level1),
-          ward: Number(latestVisit.wardAssignment.level2),
-          icu: Number(latestVisit.wardAssignment.level3)
+      const predictionData = latestVisit.vitalSigns.map(vitalSign => {
+        console.log("Raw vitalSign data:", {
+          chartNum: vitalSign.chartNum,
+          chartTime: vitalSign.chartTime,
+          levels: {
+            level1: vitalSign.level1,
+            level2: vitalSign.level2,
+            level3: vitalSign.level3
+          }
         });
+  
+        const timeString = Array.isArray(vitalSign.chartTime) 
+          ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
+          : new Date(vitalSign.chartTime).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+  
+        // 직접 값에 접근
+        const dataPoint = {
+          time: timeString,
+          discharge: parseFloat(vitalSign.level1),  // 퇴원
+          ward: parseFloat(vitalSign.level2),       // 일반 병동
+          icu: parseFloat(vitalSign.level3)         // 중증 병동
+        };
+  
+        console.log(`Data point for ${timeString}:`, dataPoint);
+        return dataPoint;
+      }).sort((a, b) => {
+        const timeA = a.time.split(':').map(Number);
+        const timeB = b.time.split(':').map(Number);
+        return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+      });
+  
+      console.log("Final sorted prediction data:", predictionData);
+  
+      // 실제 데이터가 있는 경우만 설정
+      if (predictionData.some(point => 
+        !isNaN(point.discharge) && 
+        !isNaN(point.ward) && 
+        !isNaN(point.icu)
+      )) {
+        setCurrentPredictionData(predictionData);
+      } else {
+        console.error("No valid prediction data found");
+      }
+  
+      if (latestVisit.wardAssignment) {
+        const latestPrediction = {
+          discharge: parseFloat(latestVisit.wardAssignment.level1),
+          ward: parseFloat(latestVisit.wardAssignment.level2),
+          icu: parseFloat(latestVisit.wardAssignment.level3)
+        };
+        setCurrentLatestPrediction(latestPrediction);
       }
     }
   }, [patientData]);
+  
 
   // 차트 시간 포맷팅 함수
   const formatChartTime = (chartTime) => {
@@ -1010,43 +1073,45 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       const labTestsResponse = await fetchLabTests(stay_id);
       const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
       
-      if (selectedVisit) {
-        const vitalSigns = selectedVisit.vitalSigns || [];
+      if (selectedVisit?.vitalSigns?.length > 0) {
+        const predictionData = selectedVisit.vitalSigns.map(vitalSign => ({
+          chartNum: vitalSign.chartNum,
+          time: Array.isArray(vitalSign.chartTime) 
+            ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
+            : new Date(vitalSign.chartTime).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }),
+          discharge: vitalSign.level1,
+          ward: vitalSign.level2,
+          icu: vitalSign.level3
+        })).sort((a, b) => {
+          const timeA = a.time.split(':').map(Number);
+          const timeB = b.time.split(':').map(Number);
+          return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+        });
+  
+        setCurrentPredictionData(predictionData);
         
-        if (vitalSigns.length > 0) {
-          // 시계열 그래프용 각 시점의 level 값으로 예측 데이터 생성
-          const predictions = vitalSigns.map(sign => ({
-            time: formatChartTime(sign.chartTime),
-            icu: Number(sign.level3) || 0,
-            ward: Number(sign.level2) || 0,
-            discharge: Number(sign.level1) || 0
-          }));
-  
-          setCurrentPredictionData(predictions);
-          
-          // wardAssignment로 도넛 차트 업데이트
-          if (selectedVisit.wardAssignment) {
-            setCurrentLatestPrediction({
-              icu: Number(selectedVisit.wardAssignment.level3) || 0,
-              ward: Number(selectedVisit.wardAssignment.level2) || 0,
-              discharge: Number(selectedVisit.wardAssignment.level1) || 0
-            });
-            setSelectedTimePoint(null);
-          }
+        if (selectedVisit.wardAssignment) {
+          setCurrentLatestPrediction({
+            discharge: selectedVisit.wardAssignment.level1,
+            ward: selectedVisit.wardAssignment.level2,
+            icu: selectedVisit.wardAssignment.level3
+          });
+          setSelectedTimePoint(null);
         }
-  
-        // 피검사 데이터 포맷팅
-        const formattedLabTests = formatLabTests(labTestsResponse);
-  
-        // 환자 정보 업데이트
-        setPatientInfo(prev => ({
-          ...prev,
-          emergencyLevel: `Level ${selectedVisit.tas}`,
-          stayDuration: `${selectedVisit.losHours}시간`,
-          vitalSigns: vitalSigns,
-          bloodTestData: formattedLabTests
-        }));
       }
+      
+      const formattedLabTests = formatLabTests(labTestsResponse);
+      setPatientInfo(prev => ({
+        ...prev,
+        emergencyLevel: `Level ${selectedVisit.tas}`,
+        stayDuration: `${selectedVisit.losHours}시간`,
+        vitalSigns: selectedVisit.vitalSigns || [],
+        bloodTestData: formattedLabTests
+      }));
     } catch (error) {
       console.error("날짜 선택 시 데이터 로드 실패:", error);
       setError("데이터 로드에 실패했습니다.");

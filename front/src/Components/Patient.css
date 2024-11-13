@@ -43,6 +43,10 @@
   padding: 16px;
   margin-bottom: 24px;
   box-shadow: 0 2px 12px rgba(20, 20, 50, 0.06);
+  width: 100%; /* 가로 폭을 80%로 설정 */
+  max-width: 1710px; /* 최대 가로 폭 */
+  margin-left: auto;
+  margin-right: auto; /* 중앙 정렬 */
 }
 
 .banner-item {
@@ -93,6 +97,7 @@
 .value.ai-recommendation {
   position: relative;
   padding-right: 1.5rem;  /* 구분선을 위한 여백 */
+  width: 650px;
 }
 
 .value.ai-recommendation::after {
@@ -968,58 +973,72 @@
   justify-content: center;
 }
 
+/* 모달 백드롭 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
 /* 모달 컨테이너 */
 .placement-modal {
   background-color: white;
   border-radius: 20px;
-  width: 650px;
-  max-width: 800px;
-  height: 80vh;
-  max-height: 800px;
+  width: 600px;
+  height: 800px;
   box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
   position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   border: 1px solid rgba(37, 99, 235, 0.1);
 }
 
 /* 컨텐츠 영역 */
 .modal-content {
-  padding: 1.5rem;
+  width: 100% !important; /* override 이전 스타일 */
+  max-width: none !important; /* 이전 max-width 제거 */
+  height: 100%;
+  padding: 2rem;
   background-color: #f8fafc;
-  display: grid;
-  gap: 1.5rem;
-  flex: 1; 
-  overflow-y: auto;
-  
-}
-
-/* 모달 헤더 */
-.modal-header {
-  padding: 2rem 1.5rem;
-  background: linear-gradient(to right, rgba(37, 99, 235, 0.03), rgba(37, 99, 235, 0.07));
-  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
   display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  box-shadow: none; /* 이전 box-shadow 제거 */
+  border-radius: 20px; /* placement-modal과 동일한 border-radius */
 }
 
-.modal-header h2 {
+/* 모달 제목 */
+.modal-title {
+  text-align: center;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.modal-title h2 {
   color: #1e293b;
   font-size: 1.5rem;
   font-weight: 600;
-  margin: 0.5rem 0;  /* 상하 마진 추가 */
+  margin: 0;
 }
 
-/* 푸터 영역 */
-.modal-footer {
-  padding: 1.5rem;
-  background: linear-gradient(to right, rgba(37, 99, 235, 0.02), rgba(37, 99, 235, 0.05));
-  border-top: 1px solid rgba(37, 99, 235, 0.1);
-  display: flex;
-  justify-content: flex-end;
+/* 닫기 버튼 */
+.close-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
 }
 
 /* 의사 소견 & 배치 결정 컨테이너 */
@@ -1029,7 +1048,6 @@
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.05);
   border: 1px solid rgba(37, 99, 235, 0.1);
-  margin-bottom: 1rem;
 }
 
 .modal-section h3 {
@@ -1039,6 +1057,48 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* AI 추천 박스 */
+.ai-recommendation {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.recommendation-box {
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+/* 입력 필드 스타일 */
+.doctor-note {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 180px;
+}
+
+.placement-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 8px;
+  background-color: white;
+}
+
+/* 확인 버튼 컨테이너 */
+.confirm-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .confirm-button {
@@ -1051,6 +1111,7 @@
   font-weight: 500;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+  width: 200px;
 }
 
 .confirm-button:hover:not(:disabled) {

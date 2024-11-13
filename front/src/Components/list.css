@@ -326,7 +326,7 @@ table td:nth-child(6) br {
 }
 
 .pagination-arrow {
-  background-color: #2563eb;
+  background-color: #aeaeae;
   color: white;
   border: none;
   border-radius: 4px;
@@ -336,10 +336,12 @@ table td:nth-child(6) br {
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
+  width: 32px; /* 버튼의 너비 */
+  height: 32px; /* 버튼의 높이 */
 }
 
 .pagination-arrow:hover:not(:disabled) {
-  background-color: #1d4ed8;
+  background-color: #969696;
 }
 
 .pagination-arrow:disabled {
