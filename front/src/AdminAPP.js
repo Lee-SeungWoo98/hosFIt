@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Layout from './Components/layout/Layout';
 import Dashboard from './Components/admin/dashboard';
-import AIModel from './Components/admin/model';
 import Staff from './Components/admin/staff/Staff';
-import Stats from './Components/admin/stats';
 import Errors from './Components/admin/errors/Errors';
-import Settings from './Components/admin/settings';
+import Settings from './Components/admin/settings/Settings';  // 경로 수정
 import AdminHeader from './Components/admin/AdminHeader';
 import NotificationContainer from './Components/admin/NotificationContainer';
-import { ScoreProvider } from './Components/ScoreContext';
+import { ScoreProvider } from './context/ScoreContext';
 import './Components/admin/styles/AdminApp.css';
 
 const AdminApp = ({logout}) => {
@@ -72,8 +70,7 @@ const AdminApp = ({logout}) => {
       dashboard: '대시보드',
       model: 'AI 모델 관리',
       staff: '의료진 관리',
-      stats: '통계 분석',
-      errors: '에러 로그',
+      errors: '로그',
       settings: '설정'
     };
     return titles[activeTab] || '대시보드';
@@ -83,12 +80,8 @@ const AdminApp = ({logout}) => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard loading={loading} onTabChange={setActiveTab} />;
-      case 'model':
-        return <AIModel />;
       case 'staff':
         return <Staff showNotification={showNotification} />;
-      case 'stats':
-        return <Stats />;
       case 'errors':
         return <Errors />;
       case 'settings':
