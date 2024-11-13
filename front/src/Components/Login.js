@@ -34,9 +34,8 @@ function Login({ onLogin }) {
                   <div className="text-center mb-4">
                       <span className="logo">hos
                         <span className='logo-highlight'> 
-                          F
+                          Fit
                         </span>
-                        it
                       </span>
                   </div>
                   
