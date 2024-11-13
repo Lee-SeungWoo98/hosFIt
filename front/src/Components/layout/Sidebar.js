@@ -80,27 +80,16 @@ const Sidebar = ({ activeTab, onTabChange, logout }) => (
           onClick={() => onTabChange('dashboard')} // 클릭 시 탭 변경 함수 호출
         />
         <NavLink
-          active={activeTab === 'model'}
-          icon={Settings}
-          label="AI 모델 관리"
-          onClick={() => onTabChange('model')}
-        />
-        <NavLink
           active={activeTab === 'staff'}
           icon={Users}
           label="의료진 관리"
           onClick={() => onTabChange('staff')}
         />
-        <NavLink
-          active={activeTab === 'stats'}
-          icon={BarChart2}
-          label="통계 분석"
-          onClick={() => onTabChange('stats')}
-        />
+      
         <NavLink
           active={activeTab === 'errors'}
           icon={AlertCircle}
-          label="에러 로그"
+          label="로그"
           onClick={() => onTabChange('errors')}
         />
         <NavLink
