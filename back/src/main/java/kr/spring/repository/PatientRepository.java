@@ -38,11 +38,12 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
 
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
     @Query("SELECT DISTINCT p FROM Patient p JOIN p.visits v WHERE " +
-           "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-           "(:gender IS NULL OR p.gender = :gender) AND " +
-           "(:tas IS NULL OR v.tas = :tas) AND " +
-           "(:pain IS NULL OR v.pain = :pain) AND " +
-           "v.staystatus = 1")
+    	       "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
+    	       "(:gender IS NULL OR p.gender = :gender) AND " +
+    	       "(:tas IS NULL OR v.tas = :tas) AND " +
+    	       "(:pain IS NULL OR v.pain = :pain) AND " +
+    	       "v.staystatus = 1 AND v.label IS NULL " +
+    	       "ORDER BY p.subjectId ASC") 
     Page<Patient> findByFilters(
         @Param("name") String name,
         @Param("gender") Long gender,
