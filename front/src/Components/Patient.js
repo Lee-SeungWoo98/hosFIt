@@ -130,6 +130,8 @@ const koreanNames = {
   pco2: "이산화탄소분압(PCO2)"
 };
 
+const COLORS = ['#ef4444', '#3b82f6', '#22c55e'];
+
 // 날짜 포맷팅 함수  // Patiet만 건드리려고 App에서 복붙
 const formatVisitDate = (dateArray) => {
   if (!Array.isArray(dateArray) || dateArray.length < 5) return null;
@@ -142,18 +144,20 @@ const getWardInfo = (wardAssignment) => {
     return { label: "-", value: 0 };
   }
 
-  const { level1, level2, level3 } = wardAssignment;
-  
-  // 가장 높은 level 값 찾기
   const levels = [
-    { value: Number(level1) || 0, label: "퇴원" },
-    { value: Number(level2) || 0, label: "일반 병동" },
-    { value: Number(level3) || 0, label: "중증 병동" }
+    { value: Number(wardAssignment.level1) || 0, label: "퇴원" },
+    { value: Number(wardAssignment.level2) || 0, label: "일반 병동" },
+    { value: Number(wardAssignment.level3) || 0, label: "중증 병동" }
   ];
 
-  return levels.reduce((prev, current) => 
+  const highest = levels.reduce((prev, current) => 
     (current.value > prev.value) ? current : prev
   );
+
+  return {
+    label: highest.label,
+    value: highest.value
+  };
 };
 
 // 유틸리티 함수들
@@ -367,32 +371,33 @@ const VitalSignChart = ({ data, config }) => {
 
 // 시계열 예측 그래프
 const TimeSeriesChart = ({ data, onTimePointClick }) => {
-  // CustomTooltip 컴포넌트를 내부에 정의
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-          <p className="text-sm font-semibold mb-1">
-            {payload[0].payload.time}
-          </p>
-          {payload.map((entry, index) => {
-            // 라벨 매핑
-            const labelMap = {
-              icu: "중증 병동",
-              ward: "일반 병동",
-              discharge: "퇴원"
-            };
-            return (
-              <p key={index} className="text-sm" style={{ color: entry.stroke }}>
-                {labelMap[entry.dataKey]}: {(entry.value * 100).toFixed(1)}%
-              </p>
-            );
-          })}
-        </div>
-      );
-    }
-    return null;
-  };
+  // vitalSigns 데이터를 시계열 데이터로 변환
+  const formattedData = data.map(point => ({
+    time: Array.isArray(point.chartTime) 
+      ? new Date(
+          point.chartTime[0],
+          point.chartTime[1] - 1,
+          point.chartTime[2],
+          point.chartTime[3] || 0,
+          point.chartTime[4] || 0
+        ).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })
+      : new Date(point.chartTime).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }),
+    icu: Number(point.level3) || 0,
+    ward: Number(point.level2) || 0,
+    discharge: Number(point.level1) || 0
+  })).sort((a, b) => {
+    const timeA = a.time.split(':').map(Number);
+    const timeB = b.time.split(':').map(Number);
+    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+  });
 
   return (
     <div style={{
@@ -405,7 +410,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
       <div style={{ width: '100%', height: '300px' }}>
         <ResponsiveContainer>
           <LineChart
-            data={data}
+            data={formattedData}
             margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
             onClick={(e) => {
               if (e && e.activePayload) {
@@ -429,47 +434,42 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
               tick={{ fill: '#666', fontSize: 12 }}
               tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip
+              formatter={(value) => `${(value * 100).toFixed(1)}%`}
+              labelFormatter={(label) => `시간: ${label}`}
+            />
             <Legend
               verticalAlign="top"
               height={36}
               iconType="circle"
               iconSize={8}
-              formatter={(value) => {
-                const labelMap = {
-                  icu: "중증 병동",
-                  ward: "일반 병동",
-                  discharge: "퇴원"
-                };
-                return labelMap[value];
-              }}
             />
             <Line
               type="monotone"
               dataKey="icu"
-              stroke="#ef4444"
               name="중증 병동"
-              strokeWidth={2.5}
+              stroke="#ef4444"
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0 }}
+              activeDot={{ r: 6 }}
             />
             <Line
               type="monotone"
               dataKey="ward"
-              stroke="#3b82f6"
               name="일반 병동"
-              strokeWidth={2.5}
+              stroke="#3b82f6"
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0 }}
+              activeDot={{ r: 6 }}
             />
             <Line
               type="monotone"
               dataKey="discharge"
-              stroke="#22c55e"
               name="퇴원"
-              strokeWidth={2.5}
+              stroke="#22c55e"
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0 }}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -480,11 +480,10 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
 
 // 도넛 차트 컴포넌트
 const DonutChart = ({ data, title }) => {
-  const COLORS = ['#ef4444', '#3b82f6', '#22c55e'];
   const chartData = [
-    { name: '중증 병동', value: Number(data.icu) || 0 },
-    { name: '일반 병동', value: Number(data.ward) || 0 },
-    { name: '퇴원', value: Number(data.discharge) || 0 }
+    { name: '중증 병동', value: data.icu || 0 },
+    { name: '일반 병동', value: data.ward || 0 },
+    { name: '퇴원', value: data.discharge || 0 }
   ];
 
   return (
@@ -914,6 +913,7 @@ const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
 
 // 메인 Patient 컴포넌트
 function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
+  // 기본 상태 관리
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -921,6 +921,19 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const [currentPredictionData, setCurrentPredictionData] = useState([]);
   const [currentLatestPrediction, setCurrentLatestPrediction] = useState(null);
 
+  // 가장 최근 방문 데이터로 초기화
+  const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
+
+  const [patientInfo, setPatientInfo] = useState({
+    name: patientData?.name,
+    age: patientData?.age,
+    emergencyLevel: `Level ${latestVisit?.tas}`,
+    stayDuration: `${latestVisit?.losHours}시간`,
+    vitalSigns: latestVisit?.vitalSigns || [],
+    bloodTestData: labTests
+  });
+
+  // 툴팁 관련 이벤트 핸들러 설정
   useEffect(() => {
     const tooltipContainer = document.querySelector('.tooltip-container');
     const tooltipText = document.querySelector('.tooltip-text');
@@ -931,8 +944,6 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       const handleMouseEnter = () => {
         const iconRect = infoIcon.getBoundingClientRect();
         const tableRect = historyTable.getBoundingClientRect();
-        
-        // 테이블의 상단에서 충분히 위로 올라간 위치에 툴팁 배치
         tooltipText.style.left = `${iconRect.left + (iconRect.width / 2)}px`;
         tooltipText.style.top = `${tableRect.top - tooltipText.offsetHeight - 3}px`;
         tooltipText.setAttribute('data-show', 'true');
@@ -952,115 +963,46 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     }
   }, []);
 
-  // 예측 중 가장 높은 값을 찾는 함수
-  const getHighestPrediction = (prediction) => {
-    if (!prediction) return null;
-    
-    const predictions = {
-      ICU: prediction.icu,
-      WARD: prediction.ward,
-      DISCHARGE: prediction.discharge
-    };
-
-    const highestValue = Math.max(...Object.values(predictions));
-    const highestKey = Object.keys(predictions).find(key => predictions[key] === highestValue);
-
-    return {
-      type: highestKey,
-      value: highestValue,
-      prediction: prediction  // 전체 예측값도 함께 반환
-    };
-  };
-
-  // 임시 예측 데이터 생성 함수
-  const generatePredictionData = (vitalSigns) => {
-    if (!vitalSigns || vitalSigns.length === 0) return [];
-    
-    const predictions = vitalSigns.map(sign => {
-      const total = Math.random() * 0.3 + 0.7;
-      const icu = Math.random() * 0.4 * total;
-      const ward = Math.random() * 0.4 * total;
-      const discharge = total - icu - ward;
-      
-      return {
-        time: new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        icu,
-        ward,
-        discharge
-      };
-    }).sort((a, b) => {
-      const timeA = a.time.split(':').map(Number);
-      const timeB = b.time.split(':').map(Number);
-      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-    });
-
-    return predictions;
-  };
-
-  // 가장 최근 방문 데이터로 초기화
-  const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
-
-const [patientInfo, setPatientInfo] = useState({
-  name: patientData?.name,
-  age: patientData?.age,
-  emergencyLevel: `Level ${latestVisit?.tas}`,
-  stayDuration: `${latestVisit?.losHours}시간`,
-  vitalSigns: latestVisit?.vitalSigns || [],
-  bloodTestData: labTests
-});
-
-  // 배치결정 함수 추가
-  const handlePlacementConfirm = (placementData) => {
-    // 여기서 서버로 데이터를 전송하고
-    console.log("배치 결정:", placementData);
-    // 성공 시 리스트로 돌아가기
-    onBack();
-  };
-  
-
-  // 방문 기록을 날짜 기준 내림차순으로 정렬
-  const patientHistory = patientData?.visits?.map(visit => ({
-    date: formatVisitDate(visit.visitDate)?.toLocaleDateString() || 'Invalid Date',
-    originalDate: visit.visitDate,
-    stay_id: visit.stayId,
-    ktas: visit.tas,
-    stayDuration: `${visit.losHours}시간`,
-    placement: visit.staystatus === 0 ? '퇴원' : '입원',
-    wardAssignment: visit.wardAssignment,
-    vitalSigns: visit.vitalSigns || []
-  })).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) || [];
-
-  // AI TAS 텍스트 생성 함수 추가
-const getAITasText = (wardAssignment) => {
-  if (!wardAssignment) return "-";
-  
-  const { level1, level2, level3 } = wardAssignment;
-  const levels = [
-      { value: level1, label: "퇴원" },
-      { value: level2, label: "관찰" },
-      { value: level3, label: "응급" }
-  ];
-
-  const maxLevel = levels.reduce((prev, current) => 
-      current.value > prev.value ? current : prev
-  );
-
-  return `${maxLevel.label} (${(maxLevel.value * 100).toFixed(1)}%)`;
-};
-
-  // 컴포넌트 마운트 시 초기 데이터 설정
+  // 초기 데이터 설정
   useEffect(() => {
-    const initialPredictions = generatePredictionData(patientInfo?.vitalSigns || []);
-    setCurrentPredictionData(initialPredictions);
-    if (initialPredictions.length > 0) {
-      const latestPrediction = initialPredictions[initialPredictions.length - 1];
-      setCurrentLatestPrediction(latestPrediction);
+    if (patientData?.visits?.[0]?.vitalSigns) {
+      const latestVisit = patientData.visits[patientData.visits.length - 1];
+      
+      // vitalSigns 데이터 직접 전달
+      setCurrentPredictionData(latestVisit.vitalSigns);
+  
+      // wardAssignment로 도넛 차트 업데이트
+      if (latestVisit.wardAssignment) {
+        setCurrentLatestPrediction({
+          discharge: Number(latestVisit.wardAssignment.level1),
+          ward: Number(latestVisit.wardAssignment.level2),
+          icu: Number(latestVisit.wardAssignment.level3)
+        });
+      }
     }
-  }, [patientInfo?.vitalSigns]);
+  }, [patientData]);
+
+  // 차트 시간 포맷팅 함수
+  const formatChartTime = (chartTime) => {
+    if (Array.isArray(chartTime)) {
+      return new Date(
+        chartTime[0],
+        chartTime[1] - 1,
+        chartTime[2],
+        chartTime[3] || 0,
+        chartTime[4] || 0
+      ).toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    return new Date(chartTime).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
 
   // 날짜 클릭 핸들러
   const handleDateClick = async (date, stay_id) => {
@@ -1072,61 +1014,31 @@ const getAITasText = (wardAssignment) => {
         const vitalSigns = selectedVisit.vitalSigns || [];
         
         if (vitalSigns.length > 0) {
-          // 각 시점별 wardAssignment의 level 값들로 예측 데이터 생성
-          const predictions = vitalSigns.map(sign => {
-            const wardAssignment = sign.wardAssignment || {};
-            return {
-              time: Array.isArray(sign.chartTime) 
-                ? new Date(
-                    sign.chartTime[0], 
-                    sign.chartTime[1] - 1, 
-                    sign.chartTime[2], 
-                    sign.chartTime[3] || 0, 
-                    sign.chartTime[4] || 0
-                  ).toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  })
-                : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  }),
-              icu: Number(wardAssignment.level3) || 0,
-              ward: Number(wardAssignment.level2) || 0,
-              discharge: Number(wardAssignment.level1) || 0
-            };
-          });
+          // 시계열 그래프용 각 시점의 level 값으로 예측 데이터 생성
+          const predictions = vitalSigns.map(sign => ({
+            time: formatChartTime(sign.chartTime),
+            icu: Number(sign.level3) || 0,
+            ward: Number(sign.level2) || 0,
+            discharge: Number(sign.level1) || 0
+          }));
   
           setCurrentPredictionData(predictions);
           
-          // 가장 최근 wardAssignment로 도넛차트 업데이트
-          const latestVitalSign = vitalSigns[vitalSigns.length - 1];
-          if (latestVitalSign?.wardAssignment) {
-            const latestPrediction = {
-              icu: Number(latestVitalSign.wardAssignment.level3) || 0,
-              ward: Number(latestVitalSign.wardAssignment.level2) || 0,
-              discharge: Number(latestVitalSign.wardAssignment.level1) || 0
-            };
-            setCurrentLatestPrediction(latestPrediction);
+          // wardAssignment로 도넛 차트 업데이트
+          if (selectedVisit.wardAssignment) {
+            setCurrentLatestPrediction({
+              icu: Number(selectedVisit.wardAssignment.level3) || 0,
+              ward: Number(selectedVisit.wardAssignment.level2) || 0,
+              discharge: Number(selectedVisit.wardAssignment.level1) || 0
+            });
             setSelectedTimePoint(null);
           }
         }
   
-        // 포맷팅 된 피검사 데이터 생성
-        const formattedLabTests = labTestsResponse && Array.isArray(labTestsResponse) && labTestsResponse.length > 0 
-          ? [{
-              blood_levels: labTestsResponse[0].bloodLevels || [],
-              electrolyte_levels: labTestsResponse[0].electrolyteLevels || [],
-              enzymes_metabolisms: labTestsResponse[0].enzymesMetabolisms || [],
-              chemical_examinations_enzymes: labTestsResponse[0].chemicalExaminationsEnzymes || [],
-              blood_gas_analysis: labTestsResponse[0].bloodGasAnalysis || []
-            }]
-          : null;
+        // 피검사 데이터 포맷팅
+        const formattedLabTests = formatLabTests(labTestsResponse);
   
-        // 환자 정보 업데이트 시 wardAssignment도 함께 업데이트
-        const latestVitalSign = vitalSigns[vitalSigns.length - 1];
+        // 환자 정보 업데이트
         setPatientInfo(prev => ({
           ...prev,
           emergencyLevel: `Level ${selectedVisit.tas}`,
@@ -1141,55 +1053,74 @@ const getAITasText = (wardAssignment) => {
     }
   };
 
-  // AI TAS 추천 텍스트 생성 함수
-  const getAIRecommendationText = (vitalSigns) => {
-    if (!vitalSigns || vitalSigns.length === 0) {
-      return "예측 데이터가 없습니다.";
-    }
-  
-    const latestVitalSign = vitalSigns[vitalSigns.length - 1];
-    if (!latestVitalSign?.wardAssignment) {
-      return "예측 데이터가 없습니다.";
-    }
-  
-    const result = getWardInfo(latestVitalSign.wardAssignment);
+  // 피검사 데이터 포맷팅 함수
+  const formatLabTests = (response) => {
+    if (!response || !Array.isArray(response) || response.length === 0) return null;
+    
+    return [{
+      blood_levels: response[0].bloodLevels || [],
+      electrolyte_levels: response[0].electrolyteLevels || [],
+      enzymes_metabolisms: response[0].enzymesMetabolisms || [],
+      chemical_examinations_enzymes: response[0].chemicalExaminationsEnzymes || [],
+      blood_gas_analysis: response[0].bloodGasAnalysis || []
+    }];
+  };
+
+  // AI TAS 추천 텍스트 생성
+  const getAIRecommendationText = (wardAssignment) => {
+    if (!wardAssignment) return "예측 데이터가 없습니다.";
+    
+    const result = getWardInfo(wardAssignment);
     return `${result.label} 배치 권장 (${(result.value * 100).toFixed(1)}%)`;
   };
 
-  const predictionData = generatePredictionData(patientInfo?.vitalSigns || []);
-  
-  // 기본값 설정
-  const defaultPrediction = { icu: 0.33, ward: 0.33, discharge: 0.34 };
-  
-  // latestPrediction 설정
-  const latestPrediction = predictionData.length > 0 
-    ? predictionData[predictionData.length - 1] 
-    : defaultPrediction;
+  // 히스토리 테이블용 AI TAS 텍스트
+  const getHistoryAITasText = (vitalSigns) => {
+    if (!vitalSigns || vitalSigns.length === 0) return "-";
+    
+    const latestVitalSign = vitalSigns[vitalSigns.length - 1];
+    if (!latestVitalSign) return "-";
+
+    const levels = [
+      { value: Number(latestVitalSign.level1) || 0, label: "퇴원" },
+      { value: Number(latestVitalSign.level2) || 0, label: "일반 병동" },
+      { value: Number(latestVitalSign.level3) || 0, label: "중증 병동" }
+    ];
+
+    const highest = levels.reduce((prev, current) => 
+      current.value > prev.value ? current : prev
+    );
+
+    return `${highest.label} (${(highest.value * 100).toFixed(1)}%)`;
+  };
+
+  // 방문 기록 정렬
+  const patientHistory = patientData?.visits?.map(visit => ({
+    date: formatVisitDate(visit.visitDate)?.toLocaleDateString() || 'Invalid Date',
+    originalDate: visit.visitDate,
+    stay_id: visit.stayId,
+    ktas: visit.tas,
+    stayDuration: `${visit.losHours}시간`,
+    placement: visit.staystatus === 0 ? '퇴원' : '입원',
+    vitalSigns: visit.vitalSigns || []
+  })).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) || [];
 
   // 차트 데이터 포맷팅
-  const vitalSignsData = patientInfo.vitalSigns.map(sign => {
-    // chartTime 데이터 변환
-    const formattedTime = Array.isArray(sign.chartTime) 
-        ? new Date(
-            sign.chartTime[0],          // year
-            sign.chartTime[1] - 1,      // month (0-11)
-            sign.chartTime[2],          // day
-            sign.chartTime[3] || 0,     // hour
-            sign.chartTime[4] || 0,     // minute
-            sign.chartTime[5] || 0      // second
-          ).toISOString()
-        : sign.chartTime;
+  const vitalSignsData = patientInfo.vitalSigns.map(sign => ({
+    chartTime: formatChartTime(sign.chartTime),
+    heartRate: sign.heartrate,
+    bloodPressure: sign.sbp,
+    bloodPressureDiastolic: sign.dbp,
+    oxygenSaturation: parseFloat(sign.o2sat),
+    respirationRate: sign.resprate,
+    temperature: parseFloat(sign.temperature)
+  })).sort((a, b) => new Date(a.chartTime) - new Date(b.chartTime));
 
-    return {
-        chartTime: formattedTime,  // 변환된 시간 데이터 사용
-        heartRate: sign.heartrate,
-        bloodPressure: sign.sbp,
-        bloodPressureDiastolic: sign.dbp,
-        oxygenSaturation: parseFloat(sign.o2sat),
-        respirationRate: sign.resprate,
-        temperature: parseFloat(sign.temperature)
-    };
-}).sort((a, b) => new Date(a.chartTime) - new Date(b.chartTime));
+  // 배치 결정 핸들러
+  const handlePlacementConfirm = (placementData) => {
+    console.log("배치 결정:", placementData);
+    onBack();
+  };
 
   // 차트 설정 객체
   const chartConfigs = {
@@ -1234,7 +1165,7 @@ const getAITasText = (wardAssignment) => {
       <PatientInfoBanner
         patientInfo={{
           ...patientInfo,
-          aiRecommendation: getAIRecommendationText(patientInfo.vitalSigns)
+          aiRecommendation: getAIRecommendationText(latestVisit?.wardAssignment)
         }}
         error={error}
         onPlacementConfirm={handlePlacementConfirm}
@@ -1295,22 +1226,24 @@ const getAITasText = (wardAssignment) => {
                       </tr>
                   </thead>
                   <tbody>
-                      {patientHistory.map((record, index) => (
-                          <tr key={index}>
-                              <td>
-                                  <button
-                                      className="date-button"
-                                      onClick={() => handleDateClick(record.date, record.stay_id)}
-                                  >
-                                      {record.date}
-                                  </button>
-                              </td>
-                              <td>{record.ktas}</td>
-                              <td>{record.stayDuration}</td>
-                              <td>{getAITasText(record.wardAssignment)}</td>
-                              <td>{record.placement}</td>
-                          </tr>
-                      ))}
+                  {patientHistory.map((record, index) => (
+                    <tr key={index}>
+                      <td>
+                        <button
+                          className="date-button"
+                          onClick={() => handleDateClick(record.date, record.stay_id)}
+                        >
+                          {record.date}
+                        </button>
+                      </td>
+                      <td>{record.ktas}</td>
+                      <td>{record.stayDuration}</td>
+                      <td>{getAIRecommendationText(
+                        patientData.visits.find(v => v.stayId === record.stay_id)?.wardAssignment
+                      )}</td>
+                      <td>{record.placement}</td>
+                    </tr>
+                  ))}
                   </tbody>
               </table>
           )}
