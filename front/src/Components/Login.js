@@ -24,7 +24,7 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="page-wrapper min-vh-100">
+    <div className="login-page-wrapper min-vh-100">
       <div className="radial-gradient min-vh-100">
         <div className="container min-vh-100">
           <div className="row min-vh-100 align-items-center justify-content-center">

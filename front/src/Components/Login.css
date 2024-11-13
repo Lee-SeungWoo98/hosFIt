@@ -1,9 +1,13 @@
-.page-wrapper {
+.login-page-wrapper {
   position: relative;
-  background: #f6f8fa;
+  background: #ecf1f8;
   width: 100%;
   overflow-x: hidden;
   min-height: 100vh;
+  background-image: url("./assets/images/");
+  background-size: cover; 
+  background-position: center; 
+  background-repeat: no-repeat; 
 }
 
 .radial-gradient {
@@ -12,7 +16,8 @@
   min-height: 100vh;
 }
 
-.radial-gradient::before {
+/* 배경 이미지 사용으로 인한 미사용 */
+/* .radial-gradient::before {
   content: "";
   position: absolute;
   height: 100%;
@@ -20,9 +25,9 @@
   top: 0;
   left: 0;
   opacity: 0.3;
-  background: radial-gradient(rgb(210, 241, 223), rgb(211, 215, 250), rgb(186, 216, 244)) 0% 0%/400% 400%;
+  background: radial-gradient(rgb(25, 0, 255), rgb(55, 0, 255), rgb(25, 0, 255)) 0% 0%/400% 400%;
   animation: 15s ease 0s infinite normal none running gradient;
-}
+} */
 
 @keyframes gradient {
   0% {
@@ -46,8 +51,9 @@
 }
 
 .card {
-  background: #fff;
-  box-shadow: 0px 3px 4px 0px rgba(0, 0, 0, 0.03);
+  background: #fff; 
+  box-shadow: 
+    3px 3px 8px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   border: none;
   width: 100%;
@@ -57,6 +63,12 @@
 .card-body {
   position: relative;
   z-index: 1;
+}
+
+.card:hover {
+  box-shadow: 
+    5px 5px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease;
 }
 
 /* Bootstrap utilities overrides */
