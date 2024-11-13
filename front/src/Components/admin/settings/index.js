@@ -250,23 +250,7 @@ const Settings = ({ showNotification }) => {
         </div>
       </SettingsCard>
 
-      {/* 대시보드 설정 */}
-      <SettingsCard title="대시보드 설정" icon={Database}>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">데이터 갱신 주기</label>
-            <select
-              value={dashboardSettings.refreshInterval}
-              onChange={(e) => handleDashboardChange('refreshInterval', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="30">30초</option>
-              <option value="60">1분</option>
-              <option value="300">5분</option>
-            </select>
-          </div>         
-        </div>
-      </SettingsCard>
+      
 
       {/* 저장 버튼 */}
       <div className="flex justify-end space-x-3">
