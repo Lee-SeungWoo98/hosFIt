@@ -1,6 +1,9 @@
 package kr.spring.entity;
 
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,6 +30,7 @@ public class AiTAS {
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "chartnum", referencedColumnName = "chartnum", insertable = false, updatable = false)
+    @JsonBackReference
     private VitalSigns vitalSigns;
     
     public AiTAS() {}
