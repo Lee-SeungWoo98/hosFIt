@@ -47,25 +47,9 @@ const Dashboard = ({ loading, onTabChange }) => {
 
   return (
     <div className="space-y-6 p-6">
-      {/* 메트릭 그리드 */}
+      {/* 메트릭 그리드 - 순서 변경됨 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <DashboardCard
-          title="AI 퇴실배치 일치도"
-          value="85.5%"
-          trend="up"
-          trendValue="1.2%"
-          target="목표: 90% 
-          
-          ???일치도/내원환자 % 상승여부는 어느 시점을 기준으로 삼을지?/ 제거할지"
-        />
-        
-        <DashboardCard
-          title="일일 응급실 내원 환자"
-          value="127명"
-          trend="up"
-          trendValue="12.5%"
-          target="2024.10.25 10:30:00 기준 ???or 날릴지"
-        />
+        {/* 배치 기준 점수 */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-gray-500 text-sm font-medium">배치기준 점수</h3>
@@ -100,10 +84,27 @@ const Dashboard = ({ loading, onTabChange }) => {
 
           <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 text-gray-500 text-sm">
             <AlertCircle size={16} />
-            <span>설정 변경은 AI 모델 관리에서 가능합니다</span>
-            <span>???설정버튼 누르면 AI 모델 관리 페이지로 이동합니다. </span>
+            <span>설정 버튼을 누르면 배치기준 설정 페이지로 이동합니다.</span>
           </div>
         </div>
+
+        {/* AI 퇴실배치 일치도 */}
+        <DashboardCard
+          title="AI 퇴실배치 일치도"
+          value="85.5%"
+          trend="up"
+          trendValue="1.2%"
+          target="목표: 90%"
+        />
+        
+        {/* 일일 응급실 내원 환자 */}
+        <DashboardCard
+          title="일일 응급실 내원 환자"
+          value="127명"
+          trend="up"
+          trendValue="12.5%"
+          target="2024.10.25 10:30:00 기준"
+        />
       </div>
 
       {/* 추가 섹션들을 위한 공간 */}
@@ -113,7 +114,7 @@ const Dashboard = ({ loading, onTabChange }) => {
           <h3 className="text-gray-900 font-semibold mb-4">실시간 모니터링</h3>
           {/* 차트나 실시간 데이터 컴포넌트 */}
           <div className="h-[300px] flex items-center justify-center text-gray-500">
-            차트 영역??? 무슨 차트 넣을지 흐름도 보여주는 그래프 좋을듯
+            모델이 높게 모델이 낮게 평가한 6가지 케이스 보여주기
           </div>
         </div>
 
