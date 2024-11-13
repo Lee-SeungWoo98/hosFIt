@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+
 import javax.persistence.criteria.Predicate;
 import java.util.stream.Collectors;
 
@@ -24,7 +27,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-
+import org.springframework.data.domain.Sort;
 import kr.spring.dto.AiDTO;
 import kr.spring.dto.PatientDTO;
 import kr.spring.dto.VisitDTO;
@@ -42,11 +45,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class PatientService {
-	
-	@Autowired
+   
+   @Autowired
     private VitalSignsService vitalSignsService;
-	
-	@Autowired
+   
+   @Autowired
     private PatientAssignmentService patientAssignmentService;
 
     @Autowired
@@ -99,6 +102,7 @@ public class PatientService {
             patientData.setGender(row.getGender());
             patientData.setBirthdate(row.getBirthdate());
             patientData.setAge(row.getAge());
+            patientData.setIcd(row.getIcd());
             patientData.setAddress(row.getAddress());
             patientData.setPregnancystatus(row.getPregnancystatus());
             patientData.setPhoneNumber(row.getPhoneNumber());
@@ -114,7 +118,8 @@ public class PatientService {
                 row.getLabel(),
                 row.getVisitDate(),
                 new ArrayList<>(),
-                new HashMap<>()
+                new HashMap<>(),
+                row.getComment()
             ));
 
             // AiTAS에서 wardCode와 level 정보 조회
@@ -163,7 +168,9 @@ public class PatientService {
             }
 
             visitData.getVitalSigns().add(vitalSigns);
+            
         }
+        
 
         patientData.setVisits(new ArrayList<>(visitMap.values()));
         return patientData;
@@ -175,7 +182,7 @@ public class PatientService {
     }
     //필터링 + 페이징 
     public Map<String, Object> getPatientsByStaystatus(int page, String name, Long gender, Long tas, Long pain) {
-        PageRequest pageable = PageRequest.of(page, 10);
+        PageRequest pageable = PageRequest.of(page, 10, Sort.by("subjectId").ascending());  
         
         Specification<Patient> spec = (root, query, builder) -> {
             Join<Patient, Visit> visitJoin = root.join("visits", JoinType.INNER);
@@ -209,6 +216,7 @@ public class PatientService {
                 patientDTO.setGender(patient.getGender());
                 patientDTO.setBirthdate(patient.getBirthdate());
                 patientDTO.setAge(patient.getAge());
+                patientDTO.setIcd(patient.getIcd());
                 patientDTO.setAddress(patient.getAddress());
                 patientDTO.setPregnancystatus(patient.getPregnancystatus());
                 patientDTO.setPhoneNumber(patient.getPhoneNumber());
@@ -224,44 +232,45 @@ public class PatientService {
                         visitDTO.setTas(visit.getTas());
                         visitDTO.setArrivalTransport(visit.getArrivalTransport());
                         visitDTO.setLabel(visit.getLabel());
+                        visitDTO.setComment(visit.getComment());
                         visitDTO.setVisitDate(visit.getVisitDate());
 
-                        List<VitalSignsDTO> vitalSignsDTOs = visit.getVitalSigns().stream()
-                            .map(vitalSign -> {
-                                VitalSignsDTO vitalSignsDTO = new VitalSignsDTO();
-                                vitalSignsDTO.setChartNum(vitalSign.getChartNum());
-                                vitalSignsDTO.setChartTime(vitalSign.getChartTime());
-                                vitalSignsDTO.setHeartrate(vitalSign.getHeartrate());
-                                vitalSignsDTO.setResprate(vitalSign.getResprate());
-                                vitalSignsDTO.setO2sat(vitalSign.getO2sat());
-                                vitalSignsDTO.setSbp(vitalSign.getSbp());
-                                vitalSignsDTO.setDbp(vitalSign.getDbp());
-                                vitalSignsDTO.setTemperature(vitalSign.getTemperature());
+                        Set<VitalSignsDTO> vitalSignsDTOs = visit.getVitalSigns().stream()
+                               .map(vitalSign -> {
+                                   VitalSignsDTO vitalSignsDTO = new VitalSignsDTO();
+                                   vitalSignsDTO.setChartNum(vitalSign.getChartNum());
+                                   vitalSignsDTO.setChartTime(vitalSign.getChartTime());
+                                   vitalSignsDTO.setHeartrate(vitalSign.getHeartrate());
+                                   vitalSignsDTO.setResprate(vitalSign.getResprate());
+                                   vitalSignsDTO.setO2sat(vitalSign.getO2sat());
+                                   vitalSignsDTO.setSbp(vitalSign.getSbp());
+                                   vitalSignsDTO.setDbp(vitalSign.getDbp());
+                                   vitalSignsDTO.setTemperature(vitalSign.getTemperature());
 
-                                // AiTAS 정보 설정
-                                if (!vitalSign.getAiTAS().isEmpty()) {
-                                    AiTAS aiTAS = vitalSign.getAiTAS().iterator().next();
-                                    String wardCode = patientAssignmentService.determineWardByLevels(aiTAS);
-                                    
-                                    vitalSignsDTO.setWardCode(wardCode);
-                                    vitalSignsDTO.setLevel1(aiTAS.getLevel1());
-                                    vitalSignsDTO.setLevel2(aiTAS.getLevel2());
-                                    vitalSignsDTO.setLevel3(aiTAS.getLevel3());
+                                   // AiTAS 정보 설정
+                                   if (!vitalSign.getAiTAS().isEmpty()) {
+                                       AiTAS aiTAS = vitalSign.getAiTAS().iterator().next();
+                                       String wardCode = patientAssignmentService.determineWardByLevels(aiTAS);
+                                       
+                                       vitalSignsDTO.setWardCode(wardCode);
+                                       vitalSignsDTO.setLevel1(aiTAS.getLevel1());
+                                       vitalSignsDTO.setLevel2(aiTAS.getLevel2());
+                                       vitalSignsDTO.setLevel3(aiTAS.getLevel3());
 
-                                    Map<String, Object> wardAssignment = new HashMap<>();
-                                    wardAssignment.put("wardCode", wardCode);
-                                    wardAssignment.put("level1", aiTAS.getLevel1());
-                                    wardAssignment.put("level2", aiTAS.getLevel2());
-                                    wardAssignment.put("level3", aiTAS.getLevel3());
-                                    
-                                    visitDTO.setWardAssignment(wardAssignment);
-                                }
+                                       Map<String, Object> wardAssignment = new HashMap<>();
+                                       wardAssignment.put("wardCode", wardCode);
+                                       wardAssignment.put("level1", aiTAS.getLevel1());
+                                       wardAssignment.put("level2", aiTAS.getLevel2());
+                                       wardAssignment.put("level3", aiTAS.getLevel3());
+                                       
+                                       visitDTO.setWardAssignment(wardAssignment);
+                                   }
+                                   return vitalSignsDTO;
+                               })
+                               .collect(Collectors.toCollection(() -> new TreeSet<>((v1, v2) -> 
+                                   v1.getChartNum().compareTo(v2.getChartNum()))));
 
-                                return vitalSignsDTO;
-                            })
-                            .collect(Collectors.toList());
-
-                        visitDTO.setVitalSigns(vitalSignsDTOs);
+                           visitDTO.setVitalSigns(vitalSignsDTOs);
                         return visitDTO;
                     })
                     .collect(Collectors.toList());
@@ -294,30 +303,30 @@ public class PatientService {
         return response;
     }
 
-	
-	public Map<Integer, Long> getPatientsByTas() {
-		   System.out.println("[PatientService - getPatientsByTas] Service method called");
-	        List<Object[]> result = patientRepository.countPatientsByTas();
-	        Map<Integer, Long> tasCountMap = new HashMap<>();
+   
+   public Map<Integer, Long> getPatientsByTas() {
+         System.out.println("[PatientService - getPatientsByTas] Service method called");
+           List<Object[]> result = patientRepository.countPatientsByTas();
+           Map<Integer, Long> tasCountMap = new HashMap<>();
 
-	        // SQL 쿼리 결과를 Map에 저장
-	        for (Object[] row : result) {
-	            Integer tas = ((Number) row[0]).intValue();
-	            Long count = (Long) row[1];
-	            tasCountMap.put(tas, count);
-	        }
+           // SQL 쿼리 결과를 Map에 저장
+           for (Object[] row : result) {
+               Integer tas = ((Number) row[0]).intValue();
+               Long count = (Long) row[1];
+               tasCountMap.put(tas, count);
+           }
 
-	        // tas 1부터 5까지의 값을 반환, 없으면 0 처리
-	        for (int i = 1; i <= 5; i++) {
-	            tasCountMap.putIfAbsent(i, 0L);  // 없는 tas 값은 0으로 처리
-	        }
+           // tas 1부터 5까지의 값을 반환, 없으면 0 처리
+           for (int i = 1; i <= 5; i++) {
+               tasCountMap.putIfAbsent(i, 0L);  // 없는 tas 값은 0으로 처리
+           }
 
-	        return tasCountMap;
-	    }
-	// 환자 생체 데이터
+           return tasCountMap;
+       }
+   // 환자 생체 데이터
     public List<VitalSigns> getVitalSigns(Long stayId) {
-    	Visit visit = visitRepository.findByStayId(stayId);
-		return vitalSignsRepository.findByVisit(visit);
+       Visit visit = visitRepository.findByStayId(stayId);
+      return vitalSignsRepository.findByVisit(visit);
     }
     
     
