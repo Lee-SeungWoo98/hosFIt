@@ -37,4 +37,5 @@ public interface PatientProjection {
     Float getLevel1();   // Long에서 Float으로 변경
     Float getLevel2();   // Long에서 Float으로 변경
     Float getLevel3();   // Long에서 Float으로 변경
+	String getComment();
 }
