@@ -29,7 +29,7 @@ public class Visit implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subjectid")
-    @JsonBackReference	
+    @JsonBackReference   
     private Patient patient;
 
     @Column(name = "pain")
@@ -53,6 +53,9 @@ public class Visit implements Serializable {
 
     @Column(name = "staystatus")
     private Long staystatus;
+    
+    @Column(name = "comment")
+    private String comment;
 
     @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL)
     @JsonIgnore
