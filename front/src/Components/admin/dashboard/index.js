@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, AlertCircle } from 'lucide-react';
-import { useScores } from '../../ScoreContext';
+import { useScores } from '../../../context/ScoreContext';
 
 const DashboardCard = ({ title, value, trend, trendValue, target }) => {
   const isPositive = trend === 'up';
@@ -42,7 +42,7 @@ const Dashboard = ({ loading, onTabChange }) => {
   const { scores } = useScores();
 
   const handleSettingsClick = () => {
-    onTabChange("model");
+    onTabChange("settings"); // "model" 대신 "settings"로 변경(설정 페이지 변경됨.)
   };
 
   return (
