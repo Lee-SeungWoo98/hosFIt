@@ -264,20 +264,7 @@ const Settings = ({ showNotification }) => {
               <option value="60">1분</option>
               <option value="300">5분</option>
             </select>
-          </div>
-
-          <div className="space-y-3">
-            <Checkbox
-              label="추세선 표시"
-              checked={dashboardSettings.showTrendLine}
-              onChange={() => handleDashboardChange('showTrendLine')}
-            />
-            <Checkbox
-              label="툴팁 표시"
-              checked={dashboardSettings.showTooltip}
-              onChange={() => handleDashboardChange('showTooltip')}
-            />
-          </div>
+          </div>         
         </div>
       </SettingsCard>
 
