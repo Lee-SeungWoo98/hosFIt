@@ -1,7 +1,8 @@
 import React from 'react';
 import { TrendingUp, AlertCircle } from 'lucide-react';
 import { useScores } from '../../../context/ScoreContext';
-
+import { ArrowRight } from 'lucide-react';
+// 대시보드 카드 컴포넌트
 const DashboardCard = ({ title, value, trend, trendValue, target }) => {
   const isPositive = trend === 'up';
   return (
@@ -22,6 +23,7 @@ const DashboardCard = ({ title, value, trend, trendValue, target }) => {
   );
 };
 
+// 점수 박스 컴포넌트
 const ScoreBox = ({ label, value, unit, color }) => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-700',
@@ -38,16 +40,48 @@ const ScoreBox = ({ label, value, unit, color }) => {
   );
 };
 
+// 불일치 케이스 컴포넌트
+const MismatchCase = ({ doctor, ai, percentage }) => {
+  const getColors = (type) => {
+    switch(type) {
+      case 'ICU': return 'bg-red-50 text-red-700 border-red-100';
+      case '일반병동': return 'bg-blue-50 text-blue-700 border-blue-100';
+      case '퇴원': return 'bg-green-50 text-green-700 border-green-100';
+      default: return 'bg-gray-50 text-gray-700 border-gray-100';
+    }
+  };
+
+  return (
+    <div className={`${getColors(doctor)} rounded-xl p-4 border flex flex-col h-full`}>
+      <div className="text-xs text-gray-500 mb-2">의사 → AI</div>
+      <div className="font-bold mb-1 text-xl">{percentage}%</div>
+      <div className="text-sm">
+        {doctor} → {ai}
+      </div>
+    </div>
+  );
+};
+
+// 메인 대시보드 컴포넌트
 const Dashboard = ({ loading, onTabChange }) => {
   const { scores } = useScores();
 
   const handleSettingsClick = () => {
-    onTabChange("settings"); // "model" 대신 "settings"로 변경(설정 페이지 변경됨.)
+    onTabChange("settings");
   };
+
+  const cases = [
+    { doctor: 'ICU', ai: '퇴원', percentage: 1.2 },
+    { doctor: 'ICU', ai: '일반병동', percentage: 4.2 },
+    { doctor: '일반병동', ai: 'ICU', percentage: 3.8 },
+    { doctor: '일반병동', ai: '퇴원', percentage: 2.5 },
+    { doctor: '퇴원', ai: 'ICU', percentage: 0.7 },
+    { doctor: '퇴원', ai: '일반병동', percentage: 2.1 }
+  ];
 
   return (
     <div className="space-y-6 p-6">
-      {/* 메트릭 그리드 - 순서 변경됨 */}
+      {/* 상단 메트릭 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* 배치 기준 점수 */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
@@ -107,34 +141,18 @@ const Dashboard = ({ loading, onTabChange }) => {
         />
       </div>
 
-      {/* 추가 섹션들을 위한 공간 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 차트나 추가 정보를 위한 섹션 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-gray-900 font-semibold mb-4">실시간 모니터링</h3>
-          {/* 차트나 실시간 데이터 컴포넌트 */}
-          <div className="h-[300px] flex items-center justify-center text-gray-500">
-            모델이 높게 모델이 낮게 평가한 6가지 케이스 보여주기
-          </div>
+      {/* 불일치 비율 섹션 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="mb-4">
+          <h3 className="text-gray-900 font-semibold">퇴실 후 환자배치 불일치 비율</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            전체 불일치: {cases.reduce((acc, curr) => acc + curr.percentage, 0).toFixed(1)}%
+          </p>
         </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-gray-900 font-semibold mb-4">최근 알림</h3>
-          <div className="space-y-4">
-            {/* 알림 목록 예시 */}
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-              <div className="p-1.5 bg-blue-100 rounded-full">
-                <AlertCircle size={16} className="text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-blue-900">시스템 업데이트</p>
-                <p className="text-sm text-blue-700 mt-0.5">
-                  AI 모델 v2.1.0 업데이트가 완료되었습니다
-                </p>
-                <p className="text-xs text-blue-600 mt-1">10분 전</p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {cases.map((c, i) => (
+            <MismatchCase key={i} {...c} />
+          ))}
         </div>
       </div>
     </div>
