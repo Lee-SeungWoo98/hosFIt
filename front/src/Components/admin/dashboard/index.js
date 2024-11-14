@@ -96,7 +96,7 @@ const MismatchCase = ({ doctor, ai, percentage }) => {
       </div>
       
       <div className="flex flex-col gap-2.5">
-        {/* 의사 예측 */}
+        {/* 의사 실제 배치 */}
         <div>
           <span className="text-xs text-gray-500 mb-1 block">의사 예측</span>
           <div className={`px-2 py-1 rounded-md text-xs ${getTypeAndStyle(doctor)} border`}>
