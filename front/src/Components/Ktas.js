@@ -125,10 +125,7 @@ const ktasChartData = useMemo(() => {
   })) || [];
 
   // 미사용 병상 데이터 추가
-  return [
-    ...tasData,
-    { name: "미사용", value: unusedBeds, color: "#bbbbbb" }
-  ];
+  return tasData;
 }, [ktasData]);
 
 const predictionChartData = useMemo(() => {
