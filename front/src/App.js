@@ -100,6 +100,8 @@ function App() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [isPageChanging, setIsPageChanging] = useState(false);
+  const [userName, setUserName] = useState("");
+  
   const abortControllerRef = useRef(null);
 
   // =========== API 통신 함수 ===========
@@ -329,10 +331,18 @@ function App() {
       const result = await axios.get(API_ENDPOINTS.AUTH.CHECK_SESSION, { 
         withCredentials: true 
       });
+      if (result.data.isAuthenticated) {
 
-      if (result.data.isAuthenticated && !isAuthenticated) {
-        handleAuthenticationSuccess(result.data.user.position);
-      } else if (!result.data.isAuthenticated && isAuthenticated) {
+        const username = result.data.user?.name;
+        if (username) {
+          setUserName(username);
+          console.log("Username set to:", username);
+        }
+  
+        if (!isAuthenticated) {
+          handleAuthenticationSuccess(result.data.user.position);
+        }
+      } else if (isAuthenticated) {
         handleLogout();
       }
     } catch (error) {
@@ -461,6 +471,7 @@ function App() {
                       totalPages={totalPages}
                       totalElements={totalElements}
                       onPageChange={handlePageChange}
+                      userName={userName}
                     />
                   </React.Suspense>
                 ) : (
