@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Layout from './Components/layout/Layout';
-import Dashboard from './Components/admin/dashboard';
+import Dashboard from './Components/admin/dashboard/Dashboard';
 import Staff from './Components/admin/staff/Staff';
 import Errors from './Components/admin/errors/Errors';
 import Settings from './Components/admin/settings/Settings';  // 경로 수정
