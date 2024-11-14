@@ -43,8 +43,7 @@
   padding: 16px;
   margin-bottom: 24px;
   box-shadow: 0 2px 12px rgba(20, 20, 50, 0.06);
-  width: 100%; /* 가로 폭을 80%로 설정 */
-  max-width: 1710px; /* 최대 가로 폭 */
+  width: 98%;
   margin-left: auto;
   margin-right: auto; /* 중앙 정렬 */
 }
@@ -79,7 +78,6 @@
 .value-container {
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .banner-item .value {
@@ -302,10 +300,7 @@
 .abnormal-count {
   margin: 0;
   font-size: 1.75rem;
-
   color: #000000;
-  align-items: center;
-  margin-left: 111px;
   padding-bottom: 2px;
 }
 

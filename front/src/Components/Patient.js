@@ -253,19 +253,35 @@ const VitalSignChart = ({ data, config }) => {
       <h4>{title}</h4>
       <div style={getContainerStyle()}>
         <ResponsiveContainer width={title === "예측 확률" ? "100%" : "100%"} height={title === "예측 확률" ? "100%" : "100%"}>
-          {(dataKey === "oxygenSaturation" || dataKey === "respirationRate") ? (
-            <AreaChart
-              data={data}
-              margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
-              style={{ minHeight: title === "예측 확률" ? "auto" : "130%" }}
-            >
-              <defs>
-                <linearGradient id={`colorArea${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#CCE4FF" stopOpacity={0.8}/>
-                  <stop offset="50%" stopColor="#99CCFF" stopOpacity={0.9}/>
-                  <stop offset="100%" stopColor="#66B2FF" stopOpacity={1}/>
-                </linearGradient>
-              </defs>
+        {(dataKey === "oxygenSaturation" || dataKey === "respirationRate") ? (
+              <AreaChart
+                data={data}
+                margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
+                style={{ minHeight: title === "예측 확률" ? "auto" : "130%" }}
+              >
+                <defs>
+                  <linearGradient id={`colorArea${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+                    {dataKey === "oxygenSaturation" ? (
+                      <>
+                        <stop offset="0%" stopColor="#E1F5FE" stopOpacity={0.8}/>
+                        <stop offset="50%" stopColor="#B3E5FC" stopOpacity={0.9}/>
+                        <stop offset="100%" stopColor="#81D4FA" stopOpacity={1}/>
+                      </>
+                    ) : dataKey === "respirationRate" ? (
+                      <>
+                        <stop offset="0%" stopColor="#E0F7FF" stopOpacity={0.8}/>
+                        <stop offset="50%" stopColor="#A5E9FF" stopOpacity={0.9}/>
+                        <stop offset="100%" stopColor="#6CD9FF" stopOpacity={1}/>
+                      </>
+                    ) : (
+                      <>
+                        <stop offset="0%" stopColor="#CCE4FF" stopOpacity={0.8}/>
+                        <stop offset="50%" stopColor="#99CCFF" stopOpacity={0.9}/>
+                        <stop offset="100%" stopColor="#66B2FF" stopOpacity={1}/>
+                      </>
+                    )}
+                  </linearGradient>
+                </defs>
               <CartesianGrid 
                 stroke="#eee" 
                 vertical={false}
@@ -430,7 +446,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
       marginLeft: '-9px',
       border: '1px solid #edf2f7',
       borderRadius: '16px'
-    }} className="bg-white rounded-lg shadow-lg p-6">
+    }} className="bg-white rounded-lg shadow p-6">
       <div style={{ width: '100%', height: '300px' }}>
         <ResponsiveContainer>
           <LineChart
