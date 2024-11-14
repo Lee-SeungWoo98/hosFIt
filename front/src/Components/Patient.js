@@ -194,19 +194,35 @@ const getRangeDisplay = (key, gender, ranges) => {
 const VitalSignChart = ({ data, config }) => {
   const { title, dataKey, dataName, yDomain, yTicks, color = "#2196F3", additionalLine } = config;
 
+  // containerSize를 결정하는 로직 추가
+  const getContainerStyle = () => {
+    // 예측 확률(도넛차트)일 경우 기본 크기 유지
+    if (title === "예측 확률") {
+      return { 
+        width: '100%', 
+        height: 'calc(100% - 24px)' 
+      };
+    }
+    // 그 외의 차트는 크기를 확대
+    return {
+      width: '113%',
+      height: '160%',
+      marginLeft: '-5.7%',
+      marginTop: '-14%',
+      overflow: 'visible',
+      position: 'relative',
+      zIndex: 1
+    };
+  };
+
   // 시간 포맷팅 함수
   const formatChartTime = (chartTime) => {
     try {
-      // chartTime이 ISOString 형식으로 전달됨
-      const date = new Date(chartTime);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleTimeString('ko-KR', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          hour12: false 
-        });
+      if (Array.isArray(chartTime)) {
+        // 시와 분만 표시 (24시간 형식)
+        return `${String(chartTime[3]).padStart(2, '0')}:${String(chartTime[4]).padStart(2, '0')}`;
       }
-      return '시간 오류';
+      return chartTime;
     } catch (error) {
       console.error('Time formatting error:', error, chartTime);
       return '시간 오류';
@@ -235,12 +251,13 @@ const VitalSignChart = ({ data, config }) => {
   return (
     <div className="vital-chart">
       <h4>{title}</h4>
-      <div style={{ width: '100%', height: 'calc(100% - 24px)' }}>
-        <ResponsiveContainer>
+      <div style={getContainerStyle()}>
+        <ResponsiveContainer width={title === "예측 확률" ? "100%" : "100%"} height={title === "예측 확률" ? "100%" : "100%"}>
           {(dataKey === "oxygenSaturation" || dataKey === "respirationRate") ? (
             <AreaChart
               data={data}
               margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
+              style={{ minHeight: title === "예측 확률" ? "auto" : "130%" }}
             >
               <defs>
                 <linearGradient id={`colorArea${dataKey}`} x1="0" y1="0" x2="0" y2="1">
@@ -254,16 +271,22 @@ const VitalSignChart = ({ data, config }) => {
                 vertical={false}
                 strokeDasharray="5 5"
               />
-              <XAxis 
+               <XAxis 
                 dataKey="chartTime"
                 tickFormatter={formatChartTime}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#999', fontSize: 12 }}
+                tick={{ 
+                  fill: '#999', 
+                  fontSize: 12,
+                  angle: -45,  // 45도 회전
+                  textAnchor: 'end',  // 텍스트 정렬 조정
+                  dy: 10  // 수직 위치 조정
+                }}
+                height={60}  // X축 영역 높이 증가
                 padding={{ left: 10, right: 10 }}
-                dy={5}
-                interval="preserveStartEnd"
-                minTickGap={50}
+                interval={0}  // 모든 시간 표시
+                minTickGap={5}  // 최소 간격 축소
               />
               <YAxis 
                 domain={yDomain}
@@ -302,6 +325,7 @@ const VitalSignChart = ({ data, config }) => {
             <ComposedChart
               data={data}
               margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
+              style={{ minHeight: title === "예측 확률" ? "auto" : "130%" }}
             >
               <CartesianGrid 
                 stroke="#eee" 
@@ -313,11 +337,17 @@ const VitalSignChart = ({ data, config }) => {
                 tickFormatter={formatChartTime}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#999', fontSize: 12 }}
+                tick={{ 
+                  fill: '#999', 
+                  fontSize: 12,
+                  angle: -45,  // 45도 회전
+                  textAnchor: 'end',  // 텍스트 정렬 조정
+                  dy: 10  // 수직 위치 조정
+                }}
+                height={60}  // X축 영역 높이 증가
                 padding={{ left: 10, right: 10 }}
-                dy={5}
-                interval="preserveStartEnd"
-                minTickGap={50}
+                interval={0}  // 모든 시간 표시
+                minTickGap={5}  // 최소 간격 축소
               />
               <YAxis 
                 domain={yDomain}
@@ -374,7 +404,6 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
   // 데이터 검증 로그
   console.log("TimeSeriesChart received raw data:", data);
   
-  // 데이터가 유효한지 확인
   if (!data || !Array.isArray(data)) {
     console.log("Invalid data format");
     return <div>Loading data...</div>;
@@ -385,15 +414,14 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
     return <div>Loading data...</div>;
   }
 
-  // 각 데이터 포인트의 값 확인
-  data.forEach((point, index) => {
-    console.log(`Point ${index}:`, {
-      time: point.time,
-      discharge: point.discharge,
-      ward: point.ward,
-      icu: point.icu
-    });
-  });
+  // 시간 포맷팅 함수
+  const formatTime = (chartTime) => {
+    if (Array.isArray(chartTime)) {
+      // 시와 분만 표시 (24시간 형식)
+      return `${String(chartTime[3]).padStart(2, '0')}:${String(chartTime[4]).padStart(2, '0')}`;
+    }
+    return chartTime; // 이미 포맷된 시간이면 그대로 반환
+  };
 
   return (
     <div style={{
@@ -416,7 +444,8 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
-              dataKey="time"
+              dataKey="chartTime"
+              tickFormatter={formatTime}
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#666', fontSize: 12 }}
@@ -432,14 +461,13 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
             />
             <Tooltip
               formatter={(value, name) => {
-                // 각 값의 형식 지정
                 const percentage = (value * 100).toFixed(1);
                 const label = name === 'discharge' ? '퇴원' :
                             name === 'ward' ? '일반 병동' :
                             name === 'icu' ? '중증 병동' : name;
                 return [`${percentage}%`, label];
               }}
-              labelFormatter={(label) => `시간: ${label}`}
+              labelFormatter={formatTime}
               contentStyle={{
                 backgroundColor: 'white',
                 border: '1px solid #e5e7eb',
@@ -1004,9 +1032,10 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
               hour12: false
             });
   
-        // 직접 값에 접근
+        // chartTime을 추가하고 time은 정렬용으로만 사용
         const dataPoint = {
-          time: timeString,
+          chartTime: timeString,  // X축에 표시될 시간
+          time: timeString,       // 정렬용
           discharge: parseFloat(vitalSign.level1),  // 퇴원
           ward: parseFloat(vitalSign.level2),       // 일반 병동
           icu: parseFloat(vitalSign.level3)         // 중증 병동
@@ -1074,44 +1103,66 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
       
       if (selectedVisit?.vitalSigns?.length > 0) {
-        const predictionData = selectedVisit.vitalSigns.map(vitalSign => ({
-          chartNum: vitalSign.chartNum,
-          time: Array.isArray(vitalSign.chartTime) 
+        // 예측 데이터 포맷팅
+        const predictionData = selectedVisit.vitalSigns.map(vitalSign => {
+          const timeFormatted = Array.isArray(vitalSign.chartTime)
             ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
-            : new Date(vitalSign.chartTime).toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }),
-          discharge: vitalSign.level1,
-          ward: vitalSign.level2,
-          icu: vitalSign.level3
-        })).sort((a, b) => {
-          const timeA = a.time.split(':').map(Number);
-          const timeB = b.time.split(':').map(Number);
-          return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+            : '00:00';
+  
+          return {
+            chartTime: timeFormatted,
+            time: timeFormatted,
+            discharge: parseFloat(vitalSign.level1) || 0,
+            ward: parseFloat(vitalSign.level2) || 0,
+            icu: parseFloat(vitalSign.level3) || 0
+          };
+        }).sort((a, b) => {
+          const [hoursA, minutesA] = a.time.split(':').map(Number);
+          const [hoursB, minutesB] = b.time.split(':').map(Number);
+          return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
         });
   
         setCurrentPredictionData(predictionData);
         
         if (selectedVisit.wardAssignment) {
           setCurrentLatestPrediction({
-            discharge: selectedVisit.wardAssignment.level1,
-            ward: selectedVisit.wardAssignment.level2,
-            icu: selectedVisit.wardAssignment.level3
+            discharge: parseFloat(selectedVisit.wardAssignment.level1) || 0,
+            ward: parseFloat(selectedVisit.wardAssignment.level2) || 0,
+            icu: parseFloat(selectedVisit.wardAssignment.level3) || 0
           });
           setSelectedTimePoint(null);
         }
+  
+        // vitalSigns 데이터 포맷팅 추가
+        const formattedVitalSigns = selectedVisit.vitalSigns.map(sign => ({
+          chartTime: Array.isArray(sign.chartTime)
+            ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
+            : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }),
+          heartRate: sign.heartrate,
+          bloodPressure: sign.sbp,
+          bloodPressureDiastolic: sign.dbp,
+          oxygenSaturation: parseFloat(sign.o2sat),
+          respirationRate: sign.resprate,
+          temperature: parseFloat(sign.temperature)
+        })).sort((a, b) => {
+          const [hoursA, minutesA] = a.chartTime.split(':').map(Number);
+          const [hoursB, minutesB] = b.chartTime.split(':').map(Number);
+          return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
+        });
+  
+        const formattedLabTests = formatLabTests(labTestsResponse);
+        setPatientInfo(prev => ({
+          ...prev,
+          emergencyLevel: `Level ${selectedVisit.tas}`,
+          stayDuration: `${selectedVisit.losHours}시간`,
+          vitalSigns: formattedVitalSigns,  // 포맷팅된 vitalSigns 사용
+          bloodTestData: formattedLabTests
+        }));
       }
-      
-      const formattedLabTests = formatLabTests(labTestsResponse);
-      setPatientInfo(prev => ({
-        ...prev,
-        emergencyLevel: `Level ${selectedVisit.tas}`,
-        stayDuration: `${selectedVisit.losHours}시간`,
-        vitalSigns: selectedVisit.vitalSigns || [],
-        bloodTestData: formattedLabTests
-      }));
     } catch (error) {
       console.error("날짜 선택 시 데이터 로드 실패:", error);
       setError("데이터 로드에 실패했습니다.");
@@ -1172,14 +1223,25 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
 
   // 차트 데이터 포맷팅
   const vitalSignsData = patientInfo.vitalSigns.map(sign => ({
-    chartTime: formatChartTime(sign.chartTime),
+    chartTime: Array.isArray(sign.chartTime) 
+      ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
+      : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }),
     heartRate: sign.heartrate,
     bloodPressure: sign.sbp,
     bloodPressureDiastolic: sign.dbp,
     oxygenSaturation: parseFloat(sign.o2sat),
     respirationRate: sign.resprate,
     temperature: parseFloat(sign.temperature)
-  })).sort((a, b) => new Date(a.chartTime) - new Date(b.chartTime));
+  })).sort((a, b) => {
+    // HH:MM 형식의 시간을 비교하여 정렬
+    const [hoursA, minutesA] = a.chartTime.split(':').map(Number);
+    const [hoursB, minutesB] = b.chartTime.split(':').map(Number);
+    return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
+  });
 
   // 배치 결정 핸들러
   const handlePlacementConfirm = (placementData) => {
@@ -1200,6 +1262,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       dataName: "수축기 혈압(mmHg)",
       yDomain: [10, 200],
       yTicks: [30, 70, 110, 150, 190],
+       color: "#2563eb",
       additionalLine: {
         dataKey: "bloodPressureDiastolic",
         name: "이완기 혈압(mmHg)",

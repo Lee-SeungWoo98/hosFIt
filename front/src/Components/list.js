@@ -22,7 +22,7 @@ const LOCATION_TABS = [
 
 const FILTER_OPTIONS = {
   gender: {
-    label: "Select Gender",
+    label: "성별",
     options: [
       { value: "", label: "All" },
       { value: 1, label: "남자" },
@@ -30,7 +30,7 @@ const FILTER_OPTIONS = {
     ],
   },
   tas: {
-    label: "Select KTAS",
+    label: "KTAS",
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 5 }, (_, i) => ({
@@ -40,7 +40,7 @@ const FILTER_OPTIONS = {
     ],
   },
   painScore: {
-    label: "Select Pain Score",
+    label: "통증 점수",
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 10 }, (_, i) => ({
@@ -393,34 +393,44 @@ function List({
   }, []);
 
    // 환자의 wardCode 가져오기
-   const getWardCode = useCallback((patient) => {
-    const latestVisit = patient.visits?.[patient.visits.length - 1];
-    return latestVisit?.wardAssignment?.wardCode || "-";
-  }, []);
-
-   // 환자의 ward level 확인 및 분류
    const getWardInfo = useCallback((patient) => {
     const latestVisit = patient.visits?.[patient.visits.length - 1];
-    const wardAssignment = latestVisit?.wardAssignment;
-  
-    if (!wardAssignment) {
+    
+    if (!latestVisit?.vitalSigns?.length) {
       return { label: "-", tabId: "all" };
     }
   
-    // wardAssignment의 level 값들로 직접 비교
+    // chartNum 문자열 비교로 정렬
+    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
+      b.chartNum.localeCompare(a.chartNum)
+    );
+  
+    // 가장 큰 chartNum을 가진 기록 사용
+    const lastVitalSign = sortedVitalSigns[0];
+    
+    if (!lastVitalSign || 
+        typeof lastVitalSign.level1 !== 'number' || 
+        typeof lastVitalSign.level2 !== 'number' || 
+        typeof lastVitalSign.level3 !== 'number') {
+      return { label: "-", tabId: "all" };
+    }
+  
+    console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+      chartNum: lastVitalSign.chartNum,
+      level1: lastVitalSign.level1,
+      level2: lastVitalSign.level2,
+      level3: lastVitalSign.level3
+    });
+  
     const levels = [
-      { value: Number(wardAssignment.level1) || 0, label: "퇴원", tabId: "discharge" },
-      { value: Number(wardAssignment.level2) || 0, label: "일반 병동", tabId: "ward" },
-      { value: Number(wardAssignment.level3) || 0, label: "중증 병동", tabId: "icu" }
+      { value: lastVitalSign.level1, label: "퇴원", tabId: "discharge" },
+      { value: lastVitalSign.level2, label: "일반 병동", tabId: "ward" },
+      { value: lastVitalSign.level3, label: "중증 병동", tabId: "icu" }
     ];
   
-    // 가장 높은 확률을 가진 level 찾기
     const highest = levels.reduce((prev, current) => 
       current.value > prev.value ? current : prev
     );
-  
-    console.log(`Patient ${patient.subjectId} WardAssignment:`, wardAssignment);
-    console.log(`Selected ward:`, highest);
   
     return {
       label: highest.label,
@@ -448,36 +458,45 @@ function List({
    */
   const renderPatientRow = useCallback((patient) => {
     const latestVisit = patient.visits?.[patient.visits.length - 1];
-    const wardAssignment = latestVisit?.wardAssignment;
-  
-    // wardAssignment가 있는 경우에만 AI_TAS 계산
+    
     let aiTasLabel = "-";
-    if (patient.subjectId === 6) {
-      // subjectId가 6인 경우의 고정된 level 값들  // 다른 것들은 다 잘 나옴
-      const levels = [
-        { value: Number(0.0204346), label: "퇴원" },
-        { value: Number(0.116284), label: "일반 병동" },
-        { value: Number(0.863281), label: "중증 병동" }
-      ];
-      
-      const highest = levels.reduce((prev, current) => 
-        current.value > prev.value ? current : prev
+    
+    if (latestVisit?.vitalSigns?.length > 0) {
+      // chartNum 기준으로 정렬
+      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
+        b.chartNum.localeCompare(a.chartNum)
       );
-      
-      aiTasLabel = highest.label;
-    } else if (wardAssignment && wardAssignment.level1 !== undefined && 
-               wardAssignment.level2 !== undefined && wardAssignment.level3 !== undefined) {
-      const levels = [
-        { value: Number(wardAssignment.level1), label: "퇴원" },
-        { value: Number(wardAssignment.level2), label: "일반 병동" },
-        { value: Number(wardAssignment.level3), label: "중증 병동" }
-      ];
   
-      const highest = levels.reduce((prev, current) => 
-        current.value > prev.value ? current : prev
-      );
+      const lastVitalSign = sortedVitalSigns[0];
       
-      aiTasLabel = highest.label;
+      if (typeof lastVitalSign.level1 === 'number' && 
+          typeof lastVitalSign.level2 === 'number' && 
+          typeof lastVitalSign.level3 === 'number') {
+        
+        console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+          chartNum: lastVitalSign.chartNum,
+          level1: lastVitalSign.level1,
+          level2: lastVitalSign.level2,
+          level3: lastVitalSign.level3
+        });
+  
+        const levels = [
+          { value: lastVitalSign.level1, label: "퇴원" },
+          { value: lastVitalSign.level2, label: "일반 병동" },
+          { value: lastVitalSign.level3, label: "중증 병동" }
+        ];
+  
+        const highest = levels.reduce((prev, current) => 
+          current.value > prev.value ? current : prev
+        );
+        
+        aiTasLabel = highest.label;
+        
+        console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
+          label: highest.label,
+          value: highest.value
+        });
+      }
     }
   
     return (
@@ -593,7 +612,7 @@ function List({
                   <Search size={16} className="search-icon" />
                   <input
                     type="text"
-                    placeholder="Search by Patient ID or Name"
+                    placeholder="환자이름 or PID 검색"
                     value={searchInputValue}
                     onChange={(e) => setSearchInputValue(e.target.value)}
                     onKeyDown={(e) => {
