@@ -4,6 +4,8 @@ package kr.spring.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,8 +19,13 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     // 환자 기록들
     List<Visit> findByPatient(Patient patient);
 
-	Visit findByStayId(Long stayId);
-	  @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
-	    Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
+   Visit findByStayId(Long stayId);
+     @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
+       Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
+     
+     @Query("SELECT v FROM Visit v WHERE v.label IS NOT NULL")
+       Page<Visit> findByLabelIsNotNullWithPaging(Pageable pageable);
+     
+       long countByLabelIsNotNull();
   
 }

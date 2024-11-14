@@ -35,4 +35,8 @@ public class WardAssignment {
     
     @Column(name = "chartnum", nullable = false)
     private String chartNum;
+
+    public Long getStayId() {
+        return visit != null ? visit.getStayId() : null;
+    }
 }

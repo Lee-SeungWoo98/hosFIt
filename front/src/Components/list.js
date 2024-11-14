@@ -415,12 +415,12 @@ function List({
       return { label: "-", tabId: "all" };
     }
   
-    console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
-      chartNum: lastVitalSign.chartNum,
-      level1: lastVitalSign.level1,
-      level2: lastVitalSign.level2,
-      level3: lastVitalSign.level3
-    });
+    // console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+    //   chartNum: lastVitalSign.chartNum,
+    //   level1: lastVitalSign.level1,
+    //   level2: lastVitalSign.level2,
+    //   level3: lastVitalSign.level3
+    // });
   
     const levels = [
       { value: lastVitalSign.level1, label: "퇴원", tabId: "discharge" },
@@ -473,12 +473,12 @@ function List({
           typeof lastVitalSign.level2 === 'number' && 
           typeof lastVitalSign.level3 === 'number') {
         
-        console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
-          chartNum: lastVitalSign.chartNum,
-          level1: lastVitalSign.level1,
-          level2: lastVitalSign.level2,
-          level3: lastVitalSign.level3
-        });
+        // console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+        //   chartNum: lastVitalSign.chartNum,
+        //   level1: lastVitalSign.level1,
+        //   level2: lastVitalSign.level2,
+        //   level3: lastVitalSign.level3
+        // });
   
         const levels = [
           { value: lastVitalSign.level1, label: "퇴원" },
@@ -492,10 +492,10 @@ function List({
         
         aiTasLabel = highest.label;
         
-        console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
-          label: highest.label,
-          value: highest.value
-        });
+        // console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
+        //   label: highest.label,
+        //   value: highest.value
+        // });
       }
     }
   
