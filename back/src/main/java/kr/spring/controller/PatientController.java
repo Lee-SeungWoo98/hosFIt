@@ -1,9 +1,13 @@
 package kr.spring.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -40,19 +44,34 @@ public class PatientController {
 
     // 1. 환자 목록 조회 (페이징 + 필터링)
       @GetMapping("/list")
-       public ResponseEntity<Map<String, Object>> getPatientsList(
-               @RequestParam(defaultValue = "0") int page,
-               @RequestParam(required = false) String name,
-               @RequestParam(required = false) Long gender,
-               @RequestParam(required = false) Long tas,
-               @RequestParam(required = false) Long pain) {
-           
-           log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, page={}", 
-                   name, gender, tas, pain, page);
-           
-           Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain);
-           return ResponseEntity.ok(result);
-       }
+      public ResponseEntity<Map<String, Object>> getPatientsList(
+              @RequestParam(defaultValue = "0") int page,
+              @RequestParam(required = false) String name,
+              @RequestParam(required = false) Long gender,
+              @RequestParam(required = false) Long tas,
+              @RequestParam(required = false) Long pain,
+              @RequestParam(required = false) String maxLevel) {
+          
+          log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, maxLevel={}, page={}", 
+                  name, gender, tas, pain, maxLevel, page);
+          
+          Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain, maxLevel);
+          
+          // 중복 제거: patients 리스트에서 subjectId 기준으로 중복 제거
+          List<PatientDTO> patients = ((List<PatientDTO>) result.get("patients"))
+              .stream()
+              .filter(Objects::nonNull)
+              .collect(Collectors.collectingAndThen(
+                  Collectors.toMap(
+                      PatientDTO::getSubjectId,  // 키로 사용할 필드
+                      Function.identity(),        // 값으로 사용할 객체
+                      (existing, replacement) -> existing  // 중복 시 기존 것 유지
+                  ),
+                  map -> new ArrayList<>(map.values())
+              ));
+          
+          result.put("patients", patients);
+          return ResponseEntity.ok(result);}
 
     // 2. 환자 검색 (이름으로)
     @GetMapping("/search")

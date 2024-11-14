@@ -91,6 +91,13 @@ public interface VitalSignsRepository extends JpaRepository<VitalSigns, String> 
    
    @Query("SELECT v FROM VitalSigns v JOIN v.visit vis WHERE vis.stayId = :stayId")
    Optional<VitalSigns> findVitalSignsByStayId(@Param("stayId") Long stayId);
+   //stayid범위에따라 
+   @Query("SELECT v FROM VitalSigns v WHERE v.visit.stayId BETWEEN :startId AND :endId")
+   List<VitalSigns> findByVisit_StayIdBetween(
+       @Param("startId") Long startId, 
+       @Param("endId") Long endId, 
+       Pageable pageable
+   );
    
   
 }
