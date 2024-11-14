@@ -217,6 +217,31 @@ function App() {
       const result = await axios.get(
         `${API_ENDPOINTS.DETAILS}/${subject_id}/details`
       );
+      
+      // 데이터 구조 확인
+      console.log("Raw visit info:", result.data);
+      
+      // vitalSigns 데이터에 level 값들이 있는지 확인
+      if (result.data?.visits?.length > 0) {
+        const formattedData = {
+          ...result.data,
+          visits: result.data.visits.map(visit => ({
+            ...visit,
+            vitalSigns: (visit.vitalSigns || []).map(sign => ({
+              ...sign,
+              // 명시적으로 level 값들을 포함
+              level1: sign.level1 || 0,
+              level2: sign.level2 || 0,
+              level3: sign.level3 || 0,
+              wardCode: sign.wardCode
+            }))
+          }))
+        };
+        console.log("Formatted visit info:", formattedData);
+        setVisitInfo(formattedData);
+        return formattedData;
+      }
+      
       setVisitInfo(result.data);
       return result.data;
     } catch (error) {
