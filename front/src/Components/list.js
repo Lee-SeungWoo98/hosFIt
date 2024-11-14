@@ -13,9 +13,16 @@ import {
 } from "lucide-react";
 
 // =========== 상수 정의 ===========
+const LOCATION_TABS = [
+  { id: "all", label: "전체" },
+  { id: "icu", label: "중증 병동" },
+  { id: "ward", label: "일반 병동" },
+  { id: "discharge", label: "퇴원" },
+];
+
 const FILTER_OPTIONS = {
   gender: {
-    label: "Select Gender",
+    label: "성별",
     options: [
       { value: "", label: "All" },
       { value: 1, label: "남자" },
@@ -23,7 +30,7 @@ const FILTER_OPTIONS = {
     ],
   },
   tas: {
-    label: "Select KTAS",
+    label: "KTAS",
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 5 }, (_, i) => ({
@@ -33,7 +40,7 @@ const FILTER_OPTIONS = {
     ],
   },
   painScore: {
-    label: "Select Pain Score",
+    label: "통증 점수",
     options: [
       { value: "", label: "All" },
       ...Array.from({ length: 10 }, (_, i) => ({
@@ -123,7 +130,7 @@ function List({
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
   const previousPatientsRef = useRef([]);
-  
+
   // 환자 데이터 메모이제이션
   const memoizedPatients = useMemo(() => patients, [patients]);
 
@@ -217,71 +224,56 @@ function List({
  * - 이전에 계산된 결과 재사용
  * - 필요한 경우에만 새로 계산
  */
-const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => {
-  const counts = {};
-  
-  patients.forEach(patient => {
-    // 이미 계산된 환자의 경우 캐시된 값 사용
-    const cachedCount = abnormalCounts[patient.subjectId];
-    if (cachedCount !== undefined && 
-        previousPatientsRef.current.some(p => 
-          p.subjectId === patient.subjectId && 
-          p.visits?.[p.visits.length - 1]?.stayId === patient.visits?.[patient.visits.length - 1]?.stayId
-        )) {
-      counts[patient.subjectId] = cachedCount;
-      return;
-    }
-
-    // 새로운 환자나 데이터가 변경된 환자의 경우 계산 수행
-    const latestVisit = patient.visits?.[patient.visits.length - 1];
-    if (!latestVisit?.stayId) {
-      counts[patient.subjectId] = 0;
-      return;
-    }
-
-    const labTestsData = labTestsMap.get(latestVisit.stayId);
-    if (!labTestsData || !Array.isArray(labTestsData) || labTestsData.length === 0) {
-      counts[patient.subjectId] = 0;
-      return;
-    }
-
-    let abnormalCount = 0;
-    const formattedLabTests = {
-      blood_levels: labTestsData[0]?.bloodLevels || [],
-      electrolyte_levels: labTestsData[0]?.electrolyteLevels || [],
-      enzymes_metabolisms: labTestsData[0]?.enzymesMetabolisms || [],
-      chemical_examinations_enzymes: labTestsData[0]?.chemicalExaminationsEnzymes || [],
-      blood_gas_analysis: labTestsData[0]?.bloodGasAnalysis || []
-    };
-
-    // 카테고리별로 한 번만 순회하도록 최적화
-    for (const category of Object.values(formattedLabTests)) {
-      if (category?.length > 0) {
-        const data = category[0];
-        for (const [key, value] of Object.entries(data)) {
-          // 메타데이터 필드 건너뛰기
-          if (key === 'blood_idx' || 
-              key === 'bloodIdx' || 
-              key === 'reg_date' || 
-              key === 'regDate' || 
-              key === 'regdate' || 
-              key === 'labtest' || 
-              value === null) {
-            continue;
-          }
-
-          if (!checkNormalRange(key, value, patient.gender)) {
-            abnormalCount++;
-          }
-        }
+  const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => {
+    const counts = {};
+    
+    patients.forEach(patient => {
+      const latestVisit = patient.visits?.[patient.visits.length - 1];
+      if (!latestVisit?.stayId) {
+        counts[patient.subjectId] = 0;
+        return;
       }
-    }
 
-    counts[patient.subjectId] = abnormalCount;
-  });
+      const labTestsData = labTestsMap.get(latestVisit.stayId);
+      if (!labTestsData || !Array.isArray(labTestsData) || labTestsData.length === 0) {
+        counts[patient.subjectId] = 0;
+        return;
+      }
 
-  return counts;
-}, [abnormalCounts, checkNormalRange]);
+      let abnormalCount = 0;
+      const categories = [
+        'bloodLevels',
+        'electrolyteLevels',
+        'enzymesMetabolisms',
+        'chemicalExaminationsEnzymes',
+        'bloodGasAnalysis'
+      ];
+
+      categories.forEach(category => {
+        const categoryData = labTestsData[0]?.[category]?.[0];
+        if (categoryData) {
+          Object.entries(categoryData).forEach(([key, value]) => {
+            if (key !== 'blood_idx' && 
+                key !== 'bloodIdx' && 
+                key !== 'reg_date' && 
+                key !== 'regDate' && 
+                key !== 'regdate' && 
+                key !== 'labtest' && 
+                value !== null) {
+              const isNormal = checkNormalRange(key, value, patient.gender);
+              if (isNormal === false) {
+                abnormalCount++;
+              }
+            }
+          });
+        }
+      });
+
+      counts[patient.subjectId] = abnormalCount;
+    });
+
+    return counts;
+  }, [checkNormalRange]);
 
   // =========== 이벤트 핸들러 ===========
   /**
@@ -400,52 +392,156 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+   // 환자의 wardCode 가져오기
+   const getWardInfo = useCallback((patient) => {
+    const latestVisit = patient.visits?.[patient.visits.length - 1];
+    
+    if (!latestVisit?.vitalSigns?.length) {
+      return { label: "-", tabId: "all" };
+    }
+  
+    // chartNum 문자열 비교로 정렬
+    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
+      b.chartNum.localeCompare(a.chartNum)
+    );
+  
+    // 가장 큰 chartNum을 가진 기록 사용
+    const lastVitalSign = sortedVitalSigns[0];
+    
+    if (!lastVitalSign || 
+        typeof lastVitalSign.level1 !== 'number' || 
+        typeof lastVitalSign.level2 !== 'number' || 
+        typeof lastVitalSign.level3 !== 'number') {
+      return { label: "-", tabId: "all" };
+    }
+  
+    console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+      chartNum: lastVitalSign.chartNum,
+      level1: lastVitalSign.level1,
+      level2: lastVitalSign.level2,
+      level3: lastVitalSign.level3
+    });
+  
+    const levels = [
+      { value: lastVitalSign.level1, label: "퇴원", tabId: "discharge" },
+      { value: lastVitalSign.level2, label: "일반 병동", tabId: "ward" },
+      { value: lastVitalSign.level3, label: "중증 병동", tabId: "icu" }
+    ];
+  
+    const highest = levels.reduce((prev, current) => 
+      current.value > prev.value ? current : prev
+    );
+  
+    return {
+      label: highest.label,
+      tabId: highest.tabId,
+      value: highest.value
+    };
+  }, []);
+
+    // 탭별 환자 필터링 수정 (전체 환자 대상)
+  const filteredPatients = useMemo(() => {
+    if (activeTab === "all") {
+      return memoizedPatients;
+    }
+
+    // AI_TAS 기반으로 환자 필터링
+    return memoizedPatients.filter(patient => {
+      const { tabId } = getWardInfo(patient);
+      return tabId === activeTab;
+    });
+  }, [memoizedPatients, activeTab, getWardInfo]);
+
   // =========== 렌더링 함수 ===========
   /**
    * 환자 행 렌더링
    */
-  const renderPatientRow = useCallback((patient) => (
-    <tr
-      key={patient.subjectId}
-      className="patient-row"
-      style={{
-        opacity: isUpdating ? 0.6 : 1,
-        transition: "opacity 0.3s ease",
-      }}
-    >
-      <td>{patient.subjectId}</td>
-      <td>{patient.icd || '-'}</td>
-      <td>{patient.name}</td>
-      <td>{patient.gender}</td>
-      <td>{patient.age}</td>
-      <td>
-        {patient.visits?.length > 0 && patient.visits[patient.visits.length - 1].visitDate ? (
-          <>
-            {formatDate(patient.visits[patient.visits.length - 1].visitDate)}
-            <br />
-            <span>
-              {formatTime(patient.visits[patient.visits.length - 1].visitDate)}
-            </span>
-          </>
-        ) : '-'}
-      </td>
-      <td>{patient.visits?.[0]?.pain || "-"}</td>
-      <td>{patient.visits?.[0]?.tas || "-"}</td>
-      <td>{patient.ai_tas || "-"}</td>
-      <td className="abnormal-count-cell">
-        {abnormalCounts[patient.subjectId] || ""}
-      </td>
-      <td>
-        <button
-          onClick={() => showPatientDetails(patient)}
-          className="details-button"
-          disabled={loadingDetails}
-        >
-          {loadingDetails ? "로딩 중..." : "상세 보기"}
-        </button>
-      </td>
-    </tr>
-  ), [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
+  const renderPatientRow = useCallback((patient) => {
+    const latestVisit = patient.visits?.[patient.visits.length - 1];
+    
+    let aiTasLabel = "-";
+    
+    if (latestVisit?.vitalSigns?.length > 0) {
+      // chartNum 기준으로 정렬
+      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
+        b.chartNum.localeCompare(a.chartNum)
+      );
+  
+      const lastVitalSign = sortedVitalSigns[0];
+      
+      if (typeof lastVitalSign.level1 === 'number' && 
+          typeof lastVitalSign.level2 === 'number' && 
+          typeof lastVitalSign.level3 === 'number') {
+        
+        console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
+          chartNum: lastVitalSign.chartNum,
+          level1: lastVitalSign.level1,
+          level2: lastVitalSign.level2,
+          level3: lastVitalSign.level3
+        });
+  
+        const levels = [
+          { value: lastVitalSign.level1, label: "퇴원" },
+          { value: lastVitalSign.level2, label: "일반 병동" },
+          { value: lastVitalSign.level3, label: "중증 병동" }
+        ];
+  
+        const highest = levels.reduce((prev, current) => 
+          current.value > prev.value ? current : prev
+        );
+        
+        aiTasLabel = highest.label;
+        
+        console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
+          label: highest.label,
+          value: highest.value
+        });
+      }
+    }
+  
+    return (
+      <tr
+        key={patient.subjectId}
+        className="patient-row"
+        style={{
+          opacity: isUpdating ? 0.6 : 1,
+          transition: "opacity 0.3s ease",
+        }}
+      >
+        <td>{patient.subjectId}</td>
+        <td>{patient.icd || '-'}</td>
+        <td>{patient.name}</td>
+        <td>{patient.gender}</td>
+        <td>{patient.age}</td>
+        <td>
+          {latestVisit?.visitDate ? (
+            <>
+              {formatDate(new Date(latestVisit.visitDate))}
+              <br />
+              <span>
+                {formatTime(new Date(latestVisit.visitDate))}
+              </span>
+            </>
+          ) : '-'}
+        </td>
+        <td>{latestVisit?.pain || "-"}</td>
+        <td>{latestVisit?.tas || "-"}</td>
+        <td>{aiTasLabel}</td>
+        <td className="abnormal-count-cell">
+          {abnormalCounts[patient.subjectId] ? `${abnormalCounts[patient.subjectId]}건` : "-"}
+        </td>
+        <td>
+          <button
+            onClick={() => showPatientDetails(patient)}
+            className="details-button"
+            disabled={loadingDetails}
+          >
+            {loadingDetails ? "로딩 중..." : "상세 보기"}
+          </button>
+        </td>
+      </tr>
+    );
+  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
 
   /**
    * 필터 드롭다운 렌더링
@@ -473,15 +569,29 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
       <div className="content-area">
         {/* 위치 탭 */}
         <div className="location-tabs">
-          {["all", "icu", "ward", "discharge"].map((tab) => (
-            <button
-              key={tab}
-              className={`location-tab ${activeTab === tab ? "active" : ""}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
+          {LOCATION_TABS.map((tab) => {
+            // 각 탭에 해당하는 환자 수 계산
+            const tabCount = memoizedPatients.filter(p => {
+              if (tab.id === "all") return true;
+              const { tabId } = getWardInfo(p);
+              return tabId === tab.id;
+            }).length;
+
+            return (
+              <button
+                key={tab.id}
+                className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+                {tab.id !== "all" && (
+                  <span className="tab-count">
+                    ({tabCount})
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* 테이블 컨테이너 */}
@@ -502,7 +612,7 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
                   <Search size={16} className="search-icon" />
                   <input
                     type="text"
-                    placeholder="Search by Patient ID or Name"
+                    placeholder="환자이름 or PID 검색"
                     value={searchInputValue}
                     onChange={(e) => setSearchInputValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -588,9 +698,9 @@ const calculateAbnormalCountsOptimized = useCallback((patients, labTestsMap) => 
                 <th>상세 정보</th>
               </tr>
             </thead>
-            <tbody>
-              {memoizedPatients.length > 0 ? (
-                memoizedPatients.map(renderPatientRow)
+              <tbody>
+              {filteredPatients.length > 0 ? (
+                filteredPatients.map(renderPatientRow)
               ) : (
                 <tr>
                   <td colSpan="11" className="no-data-message">

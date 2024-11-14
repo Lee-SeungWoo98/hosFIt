@@ -95,7 +95,12 @@ function MainPage({
         o2sat: parseFloat(sign.o2sat || 0),
         sbp: parseFloat(sign.sbp || 0),
         dbp: parseFloat(sign.dbp || 0),
-        temperature: parseFloat(sign.temperature || 0)
+        temperature: parseFloat(sign.temperature || 0),
+        // level 값들 추가
+        level1: sign.level1,
+        level2: sign.level2,
+        level3: sign.level3,
+        wardCode: sign.wardCode
       }))
     }));
   }, []);
