@@ -5,6 +5,11 @@
   font-style: normal;
 }
 
+/* Pretendard 기본 폰트 적용 */
+body, *:not(.logo) {
+  font-family: 'Pretendard', sans-serif !important;
+}
+
 .login-page-wrapper {
   position: relative;
   background: #ecf1f8;
@@ -50,8 +55,9 @@
 .text-center{
   font-family: 'ChosunLo';
 }
-
+/* 조선로고체를 로고에만 적용 */
 .logo{
+  font-family: 'ChosunLo', sans-serif !important;
   font-size: 3rem;
   /* color: #2563EB; */
 }
