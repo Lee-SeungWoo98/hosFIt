@@ -88,27 +88,25 @@ body {
 .name-logout-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.5rem;
   margin-bottom: -3px;
+  margin-left: 12px;
 }
 
 .user-name {
-
   font-size: 21px;
   font-weight: 500;
   color: var(--text-color, #333);
   margin-top: 6.5px;
-  margin-left: 71px;
+  margin-left: 2px;
 }
 
 .user-role {
-
   font-size: 0.875rem;
   color: var(--text-light, #666);
   margin-top: 6px; /* 위로 이동 */
-  margin-left: 99px;
-  
+  margin-left: -120px;
 }
 
 /* 로그아웃 부분 */
@@ -122,19 +120,12 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   transform: translateY(15px);
   margin-right: 1px;
-}
-
-.logout-icon {
-  width: 21.8px;
-  height: 21.8px;
-  object-fit: contain;
-  margin-bottom: 2px;
+  text-decoration: underline;
+  position: relative; 
+  top : -37px;
+  left : 62px;
 }
 
 .logout-text {

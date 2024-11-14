@@ -1,7 +1,8 @@
 import React from "react";
 import Ktas from "../Components/Ktas";
+import LoginImg from './assets/images/doctor.png';
 
-function Header({ onSearch, ktasData, predictionData, username, onTASClick, logout, ktasFilter }) {
+function Header({ onSearch, ktasData, predictionData, userName, onTASClick, logout, ktasFilter }) {
   return (
     <div className="user-layout">
       <div className="user-sidebar">
@@ -11,19 +12,14 @@ function Header({ onSearch, ktasData, predictionData, username, onTASClick, logo
             <div className="user-profile-container">
               <div className="user-details">
                 <div className="name-logout-container">
-                  <span className="user-name">{username}</span>
-                  <div className="logout-container">
-                    <button className="logout-button" onClick={logout}>
-                      <img
-                        src="/static/media/logout.6f56a90e6db30bd89e4b.png"
-                        alt="logout"
-                        className="logout-icon"
-                      />
-                      <span className="logout-text">Logout</span>
-                    </button>
-                  </div>
+                  <span className="user-name">{userName}</span>
                 </div>
-                <span className="user-role">의료진</span>
+                <div className="logout-container">
+                  <span className="user-role">응급의학과 전문의</span>
+                  <button className="logout-button" onClick={logout}>
+                    로그아웃
+                  </button>
+                </div>
               </div>
             </div>
           </div>

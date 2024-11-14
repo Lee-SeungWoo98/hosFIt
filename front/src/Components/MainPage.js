@@ -29,15 +29,16 @@ function MainPage({
   currentPage,
   totalPages,
   totalElements,
-  onPageChange
+  onPageChange,
+  userName,
 }) {
   // =========== 상태 관리 ===========
-  const location = useLocation();
-  const username = useMemo(() => 
-    location.state?.username || "익명 사용자",
-    [location.state]
-  );
-
+  // const location = useLocation();
+  // const username = useMemo(() => 
+  //   location.state?.username || "익명 사용자",
+  //   [location.state]
+  // );
+  console.log("main", userName);
   const [selectedPatient, setSelectedPatient] = useState({
     patientData: null,
     labTests: null,
@@ -182,14 +183,14 @@ function MainPage({
       />
     );
   };
-  console.log("혈액", labTests);
-  console.log("바이탈", visitInfo);
+  // console.log("혈액", labTests);
+  // console.log("바이탈", visitInfo);
   return (
     <div className="app">
       <Header
         onSearch={handleSearch}
         ktasData={ktasData}
-        username={username}
+        userName={userName}
         onTASClick={onTASClick}
         logout={logout}
         ktasFilter={ktasFilter}

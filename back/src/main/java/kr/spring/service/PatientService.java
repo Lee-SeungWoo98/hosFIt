@@ -181,7 +181,7 @@ public class PatientService {
         this.visitRepository = visitRepository;
     }
     //필터링 + 페이징 
-    public Map<String, Object> getPatientsByStaystatus(int page, String name, Long gender, Long tas, Long pain) {
+    public Map<String, Object> getPatientsByStaystatus(int page, String name, Long gender, Long tas, Long pain, String maxLevel) {
         PageRequest pageable = PageRequest.of(page, 10, Sort.by("subjectId").ascending());  
         
         Specification<Patient> spec = (root, query, builder) -> {
@@ -201,9 +201,41 @@ public class PatientService {
             if (pain != null) {
                 predicates.add(builder.equal(visitJoin.get("pain"), pain));
             }
+            // maxLevel 필터링 추가
+            if (maxLevel != null) {
+                Join<Visit, VitalSigns> vitalSignsJoin = visitJoin.join("vitalSigns", JoinType.LEFT);
+                Join<VitalSigns, AiTAS> aiTASJoin = vitalSignsJoin.join("aiTAS", JoinType.LEFT);
+                
+                switch (maxLevel) {
+                    case "level1":
+                        // level1이 가장 큰 경우
+                        predicates.add(builder.and(
+                            builder.greaterThan(aiTASJoin.get("level1"), aiTASJoin.get("level2")),
+                            builder.greaterThan(aiTASJoin.get("level1"), aiTASJoin.get("level3"))
+                        ));
+                        break;
+                    case "level2":
+                        // level2가 가장 큰 경우
+                        predicates.add(builder.and(
+                            builder.greaterThan(aiTASJoin.get("level2"), aiTASJoin.get("level1")),
+                            builder.greaterThan(aiTASJoin.get("level2"), aiTASJoin.get("level3"))
+                        ));
+                        break;
+                    case "level3":
+                        // level3이 가장 큰 경우
+                        predicates.add(builder.and(
+                            builder.greaterThan(aiTASJoin.get("level3"), aiTASJoin.get("level1")),
+                            builder.greaterThan(aiTASJoin.get("level3"), aiTASJoin.get("level2"))
+                        ));
+                        break;
+                }
+            }
+
             query.orderBy(builder.asc(root.get("subjectId")));
             return builder.and(predicates.toArray(new Predicate[0]));
         };
+
+        
 
         Page<Patient> pageResult = patientRepository.findAll(spec, pageable);
 
