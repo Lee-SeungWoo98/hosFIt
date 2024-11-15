@@ -81,40 +81,6 @@ const Sidebar = ({ activeTab, onTabChange, logout, userName }) => (
         />
       </nav>
     </div>
-
-    {/* 로그아웃 버튼 - 하단에 고정 */}
-    <div className="p-4 flex justify-center border-t border-gray-200">
-      <button
-        onClick={logout} // 클릭 시 로그아웃 함수 실행
-        style={{
-          backgroundColor: 'transparent',
-          border: 'none',
-          boxShadow: 'none',
-          padding: 0,
-          margin: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '2px'
-        }}
-      >
-        {/* 로그아웃 아이콘 */}
-        <img
-          src={logoutIcon}
-          alt="Logout" // 접근성 지원을 위한 alt 텍스트
-          className="h-5 w-5"
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: 0,
-            margin: 0,
-            display: 'block'
-          }}
-        />
-        <span className="text-[13px] text-black">로그아웃</span> {/* 로그아웃 텍스트 */}
-      </button>
-    </div>
   </aside>
 );
 
