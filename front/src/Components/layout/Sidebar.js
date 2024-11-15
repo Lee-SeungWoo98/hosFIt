@@ -1,6 +1,5 @@
 import React from 'react';
 import { Grid, Settings, Users, BarChart2, AlertCircle, Sliders } from 'lucide-react'; // 필요한 아이콘을 lucide-react 라이브러리에서 불러옵니다.
-import logoutIcon from '../assets/images/logout.png'; // 로그아웃 아이콘을 위한 이미지 파일을 불러옵니다.
 import "../layout/Sidbar.css"
 
 // NavLink 컴포넌트: 네비게이션 버튼을 생성하며 현재 활성화 상태에 따라 스타일이 변경됩니다.
