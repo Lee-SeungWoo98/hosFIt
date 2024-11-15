@@ -1,0 +1,80 @@
+/* ChartSection.css */
+
+.dashboard-top-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 상단 3개의 카드 */
+  gap: 2vw;
+  margin-bottom: 2vh;
+  width: 100%;
+}
+
+.top-card {
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  padding: 2vw;
+  box-shadow: var(--shadow);
+  height: auto;
+  min-height: 15vh; /* 최소 높이 */
+  width: 100%; /* 너비 100%로 확장 */
+}
+
+.admin-charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* 반응형 열 구성 */
+  gap: 2vw;
+  margin: 2vh 0;
+  width: 100%;
+}
+
+.admin-chart-card {
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  padding: 2vw;
+  box-shadow: var(--shadow);
+  height: auto;
+  min-height: 30vh; /* 최소 높이 */
+  width: 100%; /* 차트 카드가 전체 너비 사용 */
+}
+
+.chart-wrapper {
+  position: relative;
+  height: auto;
+  width: 100%;
+  min-height: 25vh; /* 최소 높이 */
+}
+
+/* 미디어 쿼리 - 태블릿 이하 화면 */
+@media (max-width: 1024px) {
+  .dashboard-top-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-charts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    min-height: 20vh; /* 작은 화면에서 차트 높이 축소 */
+  }
+}
+
+/* 모바일 화면 */
+@media (max-width: 768px) {
+  .admin-charts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-chart-card {
+    min-height: 20vh; /* 최소 높이 반응형으로 조절 */
+  }
+  
+  .admin-chart-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .admin-chart-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

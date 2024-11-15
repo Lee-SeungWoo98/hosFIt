@@ -1,0 +1,348 @@
+/* ktas.css */
+/* 폰트 import */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
+  background-color: #f4f5f7;
+  font-weight: 400;
+}
+
+/* 전체 차트 컨테이너 */
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: -66px;
+}
+
+/* KTAS 섹션 */
+.ktas-section {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1px;
+}
+
+/* 예측 섹션 */
+.prediction-section {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: -22px;
+}
+
+/* KTAS 차트 */
+.ktas-wrapper {
+  width: 100%;
+  height: 180px;
+  margin-bottom: -8px;  /* dot과의 간격 조정 */
+}
+
+/* 예측 차트 */
+.prediction-wrapper {
+  width: 100%;
+  height: 180px;
+  margin-bottom: 1rem;  /* dot과의 간격 조정 */
+}
+
+/* KTAS 레이블 컨테이너 */
+.label-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* 3열 */
+  grid-template-rows: repeat(2, auto);    /* 2행 */
+  gap: 5.3px;
+  padding: 0.7rem;
+  width: 130%;
+  margin-top: -1px;
+  margin-left: -30px;
+}
+
+/* 예측 레이블 컨테이너 */
+.prediction-label-container {
+  display: flex;
+  flex-direction: row;          /* 가로 방향으로 변경 */
+  justify-content: center;      /* 중앙 정렬 */
+  gap: 10px;                    /* 레이블 간 간격 증가 */
+  padding: 0.5rem;
+  margin-top: 10px;
+}
+
+/* KTAS 레이블 도트 */
+.label-dot {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 0.5rem;
+  margin-top: -5px;
+}
+
+/* 예측 레이블 도트 */
+.prediction-label-dot {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 0.5rem;
+  margin-top: -29px;
+  gap: -10px;
+}
+
+/* Dot indicators */
+.label-dot::before,
+.prediction-label-dot::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 
+    0 2px 4px -2px rgba(0, 0, 0, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* KTAS 타이틀 */
+.chart-title {
+
+  font-size: 19px;
+  color: #000;
+  white-space: nowrap;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* 예측 타이틀 */
+.prediction-title {
+  font-size: 19px;
+
+  text-align: center;
+  margin-bottom: 1rem;
+  margin-top: 5px;
+}
+
+/* KTAS dot text */
+.ktas-label-text {
+
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 툴팁 관련 스타일 */
+.label-tooltip,
+.prediction-label-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease, visibility 0s ease;
+}
+
+/* 호버 효과 */
+.label-dot:hover,
+.prediction-label-dot:hover {
+  transform: translateX(2px);
+}
+
+/* 호버 시 툴팁 표시 */
+.label-dot:hover .label-tooltip,
+.prediction-label-dot:hover .prediction-label-tooltip,
+.label-tooltip.visible,
+.prediction-label-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 툴팁 화살표 */
+.label-tooltip::after,
+.prediction-label-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* KTAS 색상 - 도넛차트 스타일의 그라데이션 적용 */
+.label-dot:nth-child(1)::before { 
+  background: #3b82f6;
+  background: linear-gradient(145deg, 
+    #3b82f6 0%, 
+    #4287f7 40%,
+    #3b82f6 60%,
+    #2563eb 100%
+  );
+}
+.label-dot:nth-child(2)::before { 
+  background: #ef4444;
+  background: linear-gradient(145deg,
+    #ef4444 0%,
+    #f15555 40%,
+    #ef4444 60%,
+    #dc2626 100%
+  );
+}
+.label-dot:nth-child(3)::before { 
+  background: #fde047;
+  background: linear-gradient(145deg,
+    #fde047 0%,
+    #fee158 40%,
+    #fde047 60%,
+    #facc15 100%
+  );
+}
+.label-dot:nth-child(4)::before { 
+  background: #22c55e;
+  background: linear-gradient(145deg,
+    #22c55e 0%,
+    #27cc65 40%,
+    #22c55e 60%,
+    #16a34a 100%
+  );
+}
+.label-dot:nth-child(5)::before { 
+  background: #e7e7e7;
+  background: linear-gradient(145deg,
+    #e7e7e7 0%,
+    #ebebeb 40%,
+    #e7e7e7 60%,
+    #d1d1d1 100%
+  );
+}
+.label-dot:nth-child(6)::before { 
+  background: #bbbbbb;
+  background: linear-gradient(145deg,
+    #bbbbbb 0%,
+    #c2c2c2 40%,
+    #bbbbbb 60%,
+    #a3a3a3 100%
+  );
+}
+
+/* 예측 색상 - 도넛차트 스타일의 그라데이션 적용 */
+.prediction-label-dot:nth-child(1)::before { 
+  background: #ef4444;
+  background: linear-gradient(145deg,
+    #ef4444 0%,
+    #f15555 40%,
+    #ef4444 60%,
+    #dc2626 100%
+  );
+}
+.prediction-label-dot:nth-child(2)::before { 
+  background: #3b82f6;
+  background: linear-gradient(145deg,
+    #3b82f6 0%,
+    #4287f7 40%,
+    #3b82f6 60%,
+    #2563eb 100%
+  );
+}
+.prediction-label-dot:nth-child(3)::before { 
+  background: #22c55e;
+  background: linear-gradient(145deg,
+    #22c55e 0%,
+    #27cc65 40%,
+    #22c55e 60%,
+    #16a34a 100%
+  );
+}
+
+/* Dot indicators 호버 효과 */
+.label-dot:hover::before,
+.prediction-label-dot:hover::before {
+  transform: scale(1.1);
+  box-shadow: 
+    0 3px 6px -2px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+
+/* Active 상태 */
+.active {
+  font-weight: 600;
+}
+
+.active::before {
+  transform: scale(1.05);
+  box-shadow: 
+    0 2px 5px -2px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
+    inset 0 1px 2px rgba(255, 255, 255, 0.22);
+}
+
+.ktas-value {
+  font-size: 10px;
+  color: #666;
+  margin-left: 4px;
+}
+
+/* 선택된 dot 스타일 */
+.ktas-selected {
+  background: rgba(243, 244, 246, 0.9);
+  transform: translateX(4px);
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.ktas-selected::before {
+  transform: scale(1.2);
+  box-shadow: 
+    0 4px 10px -2px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.35);
+  animation: selectedPulse 2s infinite;
+}
+
+.ktas-selected .ktas-label-text {
+  font-weight: 700;
+  color: #111827;
+}
+
+@keyframes selectedPulse {
+  0% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 0 rgba(0, 0, 0, 0.3);
+  }
+  70% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 6px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 
+      0 4px 10px -2px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.35),
+      0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}

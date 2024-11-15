@@ -1,0 +1,56 @@
+.card {
+    background-color: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+.trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.trend.up {
+    color: var(--success-color);
+    background-color: #dcfce7;
+}
+
+.trend.down {
+    color: var(--error-color);
+    background-color: #fee2e2;
+}
+
+.value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0.5rem 0;
+}
+
+.sub-text {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}

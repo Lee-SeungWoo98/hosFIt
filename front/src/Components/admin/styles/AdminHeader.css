@@ -1,0 +1,54 @@
+.admin-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5vh;
+}
+
+.admin-header-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header-title h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.admin-last-updated {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.admin-header-actions {
+  display: flex;
+  gap: 1vw;
+}
+
+.admin-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4vh 0.8vh;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.admin-refresh-btn:hover {
+  background-color: var(--background-color);
+}
+
+.admin-refresh-btn .admin-icon {
+  width: 16px;
+  height: 16px;
+}
+.admin-chart-wrapper {
+  height: 30vh;  /* 차트 높이도 비율에 맞게 조정 */
+}
