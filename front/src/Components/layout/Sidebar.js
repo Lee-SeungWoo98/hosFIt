@@ -1,6 +1,7 @@
 import React from 'react';
 import { Grid, Settings, Users, BarChart2, AlertCircle, Sliders } from 'lucide-react'; // 필요한 아이콘을 lucide-react 라이브러리에서 불러옵니다.
 import logoutIcon from '../assets/images/logout.png'; // 로그아웃 아이콘을 위한 이미지 파일을 불러옵니다.
+import "../layout/Sidbar.css"
 
 // NavLink 컴포넌트: 네비게이션 버튼을 생성하며 현재 활성화 상태에 따라 스타일이 변경됩니다.
 const NavLink = ({ active, icon: Icon, label, onClick }) => (
@@ -27,17 +28,24 @@ const NavLink = ({ active, icon: Icon, label, onClick }) => (
 );
 
 // Sidebar 컴포넌트: 사이드바 전체 레이아웃을 구성합니다.
-const Sidebar = ({ activeTab, onTabChange, logout }) => (
+const Sidebar = ({ activeTab, onTabChange, logout, userName }) => (
   <aside className="w-full max-w-xs h-full bg-white md:fixed md:left-0 md:top-0 md:w-60 flex flex-col">
     <div className="p-4 md:p-6 flex-1">
       {/* 로고 섹션 */}
       <h1 className="text-2xl font-bold text-blue-600 text-center mb-4 md:mb-6">hosFit</h1>
       
-      {/* 관리자 정보 */}
-      <div className="flex flex-col items-center text-center text-gray-600 mb-6 md:mb-8">
-        <h2 className="text-base font-medium">관리자</h2> {/* 관리자 정보 섹션 제목 */}
-        <div className="flex items-center text-sm mb-1">
-          <span>홍길동</span> {/* 관리자 이름 */}
+      {/* 사용자 정보 섹션 - Header 스타일로 수정 */}
+      <div className="user-profile-container mb-8">
+        <div className="user-details">
+          <div className="name-logout-container">
+            <span className="user-name">{userName}</span>
+          </div>
+          <div className="logout-container">
+            <span className="user-role">관리자</span>
+            <button className="logout-button" onClick={logout}>
+              로그아웃
+            </button>
+          </div>
         </div>
       </div>
 

@@ -488,7 +488,10 @@ function App() {
           element={
             isAuthenticated && position === "관리자" ? (
               <React.Suspense fallback={null}>
-                <AdminAPP logout={logout} />
+                <AdminAPP 
+                  logout={logout}
+                  userName={userName} 
+                />
               </React.Suspense>
             ) : (
               <Navigate to="/login" replace />

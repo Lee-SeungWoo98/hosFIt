@@ -10,7 +10,7 @@ import NotificationContainer from './Components/admin/NotificationContainer';
 import { ScoreProvider } from './context/ScoreContext';
 import './Components/admin/styles/AdminApp.css';
 
-const AdminApp = ({logout}) => {
+const AdminApp = ({logout, userName}) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
 
@@ -90,10 +90,9 @@ const AdminApp = ({logout}) => {
         return <Dashboard loading={loading} onTabChange={setActiveTab} />;
     }
   };
-
   return (
     <ScoreProvider>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout}>
+      <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout} userName={userName}>
         <AdminHeader 
           title={getPageTitle()} 
           lastUpdated="2024-10-25 10:30:00"
