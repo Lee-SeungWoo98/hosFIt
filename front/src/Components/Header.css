@@ -1,0 +1,150 @@
+/* 폰트 import */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
+  background-color: #f4f5f7;
+  font-weight: 400;
+}
+
+.user-layout {
+  display: flex;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 291px;
+  z-index: 40;
+}
+
+.user-sidebar {
+  width: 291px;
+  background-color: var(--card-background, white);
+  padding: 1rem;
+  box-shadow: var(--shadow, 0 2px 4px rgba(0,0,0,0.1));
+  position: fixed;
+  height: 100vh;
+  z-index: 40;
+  border-right: 1px solid var(--border-color, #e0e0e0);
+}
+
+.user-sidebar-header {
+  padding-bottom: 27px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.user-sidebar-header h2 {
+  color: var(--primary-color, #222930);
+  font-size: 37.3px;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-profile-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 8px;
+  margin-top: -2px;
+}
+
+.profile-image {
+  width: 45px;
+  height: 46px;
+  border-radius: 4px; /* 배경만 사각형으로 */
+  background-color: #e4e4e4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+.profile-icon {
+  width: 32px;
+  height: 32px;
+  color: #858585;
+  border-radius: 10px; /* SVG 아이콘은 원형 유지 */
+}
+
+.user-details {
+
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  flex: 1;
+}
+
+.name-logout-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-bottom: -3px;
+  margin-left: 12px;
+}
+
+.user-name {
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--text-color, #333);
+  margin-top: 6.5px;
+  margin-left: 2px;
+}
+
+.user-role {
+  font-size: 0.875rem;
+  color: var(--text-light, #666);
+  margin-top: 6px; /* 위로 이동 */
+  margin-left: -120px;
+}
+
+/* 로그아웃 부분 */
+.logout-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transform: translateY(15px);
+  margin-right: 1px;
+  text-decoration: underline;
+  position: relative; 
+  top : -37px;
+  left : 62px;
+}
+
+.logout-text {
+
+  font-size: 9px;
+  color: #000000;
+  margin-top: -2px;
+}
+
+.logout-button:hover {
+  background-color: var(--background-color, #f5f5f5);
+  border-radius: 8px;
+}
+
+.logout-button:hover .logout-text {
+  color: #333;
+}
+
+.ktas-section {
+  margin-top: 2rem;
+}
+

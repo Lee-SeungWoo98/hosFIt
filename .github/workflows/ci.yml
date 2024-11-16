@@ -1,0 +1,119 @@
+name: CI Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './front/package-lock.json'
+    
+    - name: Install Dependencies
+      run: |
+        rm -f package-lock.json
+        npm install
+        npm install -D @babel/preset-env @babel/preset-react babel-jest identity-obj-proxy jest @babel/plugin-transform-modules-commonjs @testing-library/jest-dom @testing-library/react @testing-library/user-event
+      working-directory: ./front
+    
+    - name: Run Frontend Tests
+      id: test
+      run: |
+        npm run test:ci
+      working-directory: ./front
+      env:
+        CI: true
+        NODE_ENV: test
+      continue-on-error: true
+
+    - name: Add Test Results Comment
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          try {
+            // 테스트 결과 파일 읽기
+            const resultContent = fs.readFileSync('./front/test-results.json', 'utf8');
+            const testResults = JSON.parse(resultContent);
+            
+            // 테스트 결과 요약 생성
+            const testSummary = `**전체 상태:** ${testResults.numFailedTests > 0 ? '❌ 일부 테스트 실패' : '✅ 모든 테스트 통과'}
+            - 총 테스트 수: ${testResults.numTotalTests}
+            - 통과: ${testResults.numPassedTests}
+            - 실패: ${testResults.numFailedTests}`;
+            
+            // 테스트 상세 결과 생성
+            let detailedResults = '';
+            
+            testResults.testResults.forEach(suite => {
+              const fileName = suite.name.split('/').pop();
+              detailedResults += `\n### ${fileName}\n\n`;
+              
+              suite.assertionResults.forEach(test => {
+                const status = test.status === 'passed' ? '✅' : '❌';
+                const fullTitle = test.fullName || test.title;
+                detailedResults += `${status} ${fullTitle}\n`;
+                
+                if (test.failureMessages && test.failureMessages.length > 0) {
+                  detailedResults += '```\n' + test.failureMessages.join('\n') + '\n```\n';
+                }
+              });
+            });
+            
+            // 코드 커버리지 정보 추출
+            let coverageInfo = '';
+            if (testResults.coverageMap) {
+              const totalCoverage = Object.values(testResults.coverageMap).reduce((acc, file) => {
+                const statements = file.s || {};
+                const covered = Object.values(statements).filter(v => v > 0).length;
+                const total = Object.values(statements).length;
+                return {
+                  covered: acc.covered + covered,
+                  total: acc.total + total
+                };
+              }, { covered: 0, total: 0 });
+              
+              const coveragePercent = (totalCoverage.covered / totalCoverage.total * 100).toFixed(2);
+              coverageInfo = `\n### 코드 커버리지\n전체 커버리지: ${coveragePercent}%\n`;
+            }
+            
+            // 최종 메시지 구성
+            const message = `## 테스트 결과 요약
+            ${testSummary}
+            
+            ## 상세 테스트 결과
+            ${detailedResults || '상세 테스트 결과를 불러올 수 없습니다.'}
+            
+            ${coverageInfo}
+            
+            🕒 테스트 실행 시간: ${new Date().toLocaleString()}`;
+            
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message
+              });
+            }
+          } catch (error) {
+            console.error('Error in test result processing:', error);
+            core.setFailed(`Action failed with error: ${error.message}`);
+          }

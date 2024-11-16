@@ -1,0 +1,66 @@
+.admin-notification-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .notification {
+    background-color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideIn 0.3s ease;
+    transition: opacity 0.3s ease;
+    min-width: 300px;
+  }
+  
+  .notification.success {
+    border-left: 4px solid var(--success-color);
+  }
+  
+  .notification.error {
+    border-left: 4px solid var(--error-color);
+  }
+  
+  .notification.warning {
+    border-left: 4px solid var(--warning-color);
+  }
+  
+  .notification.info {
+    border-left: 4px solid var(--primary-color);
+  }
+  
+  .notification-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .notification-icon .icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .notification-content {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--text-color);
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }

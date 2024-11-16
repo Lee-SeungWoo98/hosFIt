@@ -1,0 +1,17 @@
+.admin-chart-container {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+}
+
+.admin-chart-base-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.admin-chart-base-wrapper {
+    position: relative;
+    height: 300px;
+}

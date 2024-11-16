@@ -1,0 +1,371 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
+  background-color: #f4f5f7;
+  font-weight: 400;
+}
+.content {
+  margin-top: 0;
+}
+
+.page-wrapper {
+  background-color: #d7d7d7;
+  height: 1080px;
+}
+
+.content-area {
+  padding: 20px;
+}
+
+/* 테이블 컨테이너 */
+.table-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 5px 5px 9px rgb(81 81 81);
+  width: calc(100% - 312px);
+  margin-left: 301px;
+  box-sizing: border-box;
+}
+
+/* 탭 스타일 */
+.location-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 20px;
+  background-color: white;
+  padding: 4px;
+  border-radius: 8px;
+  margin-left: 301px;
+  margin-top: 36px;
+  width: 1550px;
+  box-shadow: 5px 5px 9px rgb(141, 141, 141);
+}
+
+.location-tab {
+  padding: 8px 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.location-tab.active {
+  background-color: #2563eb;
+  color: white;
+}
+
+.location-tab:hover:not(.active) {
+  background-color: #e5e7eb;
+}
+
+/* 드롭다운 필터 스타일 */
+.filter-dropdowns {
+  display: flex;
+  margin-bottom: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filters-left {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex: 1;
+}
+
+.dropdown-container {
+  position: relative;
+  min-width: 180px;
+}
+
+.search-container {
+  min-width: 250px;
+}
+
+.total-count-filter {
+  color: #585757;
+  font-size: 14px;
+  white-space: nowrap;
+  margin-right: 2vh;
+}
+
+.dropdown-trigger {
+  width: 100%;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.dropdown-trigger:hover {
+  border-color: #3f51b5;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+  color: #333;
+}
+
+.dropdown-item:first-child {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-item.selected {
+  background-color: #e8eaf6;
+  color: #3f51b5;
+  font-weight: 500;
+}
+
+/* 초기화 버튼 스타일 */
+.reset-filters-button {
+  padding: 8px;
+  background-color: white;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 37px;
+  width: 37px;
+}
+
+.reset-filters-button:hover {
+  color: #3f51b5;
+  border-color: #3f51b5;
+}
+
+/* 검색 입력창 스타일 */
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.search-input-wrapper:hover,
+.search-input-wrapper:focus-within {
+  border-color: #3f51b5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+  color: #666;
+  min-width: 16px;
+}
+
+.patient-search-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  background: none;
+}
+
+.patient-search-input::placeholder {
+  color: #666;
+}
+
+/* 테이블 스타일 */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 20px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+th {
+  padding: 12px;
+  text-align: center;  /* 가운데 정렬 추가 */
+  background-color: #f5f5f5;
+  font-weight: bold;
+  color: #333;
+  position: relative;
+}
+
+tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* 정렬 가능한 헤더 스타일 */
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding: 8px 25px 8px 12px !important;
+  transition: background-color 0.2s;
+}
+
+.sortable-header:hover {
+  background-color: #eee;
+}
+
+.sort-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+/* 컬럼 너비 설정 */
+table th:nth-child(1), table td:nth-child(1) { width: 8%; }   /* PID */
+table th:nth-child(2), table td:nth-child(2) { width: 8%; }   /* ICD */
+table th:nth-child(3), table td:nth-child(3) { width: 10%; }  /* 이름 */
+table th:nth-child(4), table td:nth-child(4) { width: 6%; }   /* 성별 */
+table th:nth-child(5), table td:nth-child(5) { width: 6%; }   /* 나이 */
+table th:nth-child(6), table td:nth-child(6) { width: 15%; }  /* 입실시간 */
+table th:nth-child(7), table td:nth-child(7) { width: 8%; }   /* 통증점수 */
+table th:nth-child(8), table td:nth-child(8) { width: 8%; }   /* KTAS */
+table th:nth-child(9), table td:nth-child(9) { width: 8%; }   /* AI_TAS */
+table th:nth-child(10), table td:nth-child(10) { width: 8%; } /* 상세정보 */
+table th:nth-child(11), table td:nth-child(11) { width: 10%; } /* 상세정보 */
+
+/* 중앙 정렬이 필요한 컬럼들 */
+table th:nth-child(1), table td:nth-child(1),
+table th:nth-child(2), table td:nth-child(2),
+table th:nth-child(3), table td:nth-child(3),
+table th:nth-child(4), table td:nth-child(4),
+table th:nth-child(5), table td:nth-child(5),
+table th:nth-child(6), table td:nth-child(6),
+table th:nth-child(7), table td:nth-child(7),
+table th:nth-child(8), table td:nth-child(8),
+table th:nth-child(9), table td:nth-child(9),
+table th:nth-child(10), table td:nth-child(10),
+table th:nth-child(11), table td:nth-child(11) {  /* 상세정보 컬럼 추가 */
+  text-align: center;
+}
+
+/* 입실시간 컬럼 스타일링 */
+table td:nth-child(6) {
+  text-align: center;
+}
+
+table td:nth-child(6) br {
+  margin: 4px 0;
+}
+
+/* 상세보기 버튼 */
+.details-button {
+  padding: 6px 12px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.details-button:hover {
+  background-color: #1d4ed8;
+}
+
+.details-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.pagination-arrow {
+  background-color: #aeaeae;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  width: 32px; /* 버튼의 너비 */
+  height: 32px; /* 버튼의 높이 */
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  background-color: #969696;
+}
+
+.pagination-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 데이터가 없을 때 메시지 */
+.no-data-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+  background-color: #f9f9f9;
+}
