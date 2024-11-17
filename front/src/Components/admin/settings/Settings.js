@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Info, Bell, Hospital, Building, Phone, Mail, MapPin } from 'lucide-react';
 import axios from 'axios';
 
@@ -26,11 +26,10 @@ const SettingsCard = ({ title, icon: Icon, children }) => (
 );
 
 const Settings = ({ showNotification }) => {
-   // 가중치 설정 상태 - 테스트용 초기값
   const [weights, setWeights] = useState({
-    discharge: 0.5,  // 퇴원 가중치 테스트값
-    ward: 0.6,  // 일반병동 가중치 테스트값
-    icu: 0.7  // 중환자실 가중치 테스트값
+    discharge: 0.5,
+    ward: 0.6,
+    icu: 0.7
   });
   
   // 병상 설정 상태
@@ -40,10 +39,40 @@ const Settings = ({ showNotification }) => {
     regularBeds: 38
   });
 
-  // 알림 설정 상태
- 
-  // 가중치 변경 핸들러 
- const handleWeightChange = (type, value) => {
+  // 초기 가중치 값을 서버에서 로드
+  useEffect(() => {
+    const fetchWeights = async () => {
+      try {
+        const response = await axios.get('http://localhost:8082/boot/thresholds/display');
+        const thresholds = response.data;
+        
+        console.log('Received thresholds:', thresholds);
+        
+        // 데이터 매핑
+        const thresholdMap = {};
+        thresholds.forEach(item => {
+          if(item.key && typeof item.value === 'number') {
+            thresholdMap[item.key] = item.value;
+          }
+        });
+
+        console.log('Mapped thresholds:', thresholdMap);
+
+        setWeights({
+          discharge: thresholdMap.DISCHARGE || 0.5,
+          ward: thresholdMap.WARD || 0.6,
+          icu: thresholdMap.ICU || 0.7
+        });
+      } catch (error) {
+        console.error('가중치 로드 오류:', error);
+        showNotification('가중치 로드 중 오류가 발생했습니다.', 'error');
+      }
+    };
+
+    fetchWeights();
+  }, []);
+
+  const handleWeightChange = (type, value) => {
     const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 0.9);
     setWeights(prev => ({
       ...prev,
@@ -65,21 +94,17 @@ const Settings = ({ showNotification }) => {
     });
   };
 
-  // 설정 유효성 검사
   const validateSettings = () => {
-    // 가중치 검증
-    if (weights.icu < weights.ward || weights.ward < weights.discharge) {
+    if (weights.discharge > weights.ward || weights.ward > weights.icu) {
       showNotification('가중치는 중환자실 > 일반병동 > 퇴원 순서로 설정되어야 합니다.', 'error');
       return false;
     }
 
-    if (weights.icu > 0.9 || weights.ward > 0.9 || weights.discharge > 0.9) {
-      showNotification('가중치는 0.9를 초과할 수 없습니다.', 'error');
+    if (Object.values(weights).some(w => w > 0.9 || w < 0)) {
+      showNotification('가중치는 0.0에서 0.9 사이의 값이어야 합니다.', 'error');
       return false;
     }
 
-
-    // 병상 수 검증
     if (bedCapacity.totalBeds <= 0) {
       showNotification('전체 병상 수는 0보다 커야 합니다.', 'error');
       return false;
@@ -92,22 +117,48 @@ const Settings = ({ showNotification }) => {
     if (!validateSettings()) return;
     
     try {
-      const requests = [
-        { key: '0', value: weights.discharge }, // 퇴원
-        { key: '1', value: weights.ward },      // 일반병동
-        { key: '2', value: weights.icu }        // 중환자실
-      ];
-  
-      for (const { key, value } of requests) {
-        await axios.put(`http://localhost:8082/boot/thresholds/${key}`, null, {
-          params: { value: value }
-        });
-      }
+      console.log('Saving weights:', weights);
+      
+      await Promise.all([
+        axios.put(`http://localhost:8082/boot/thresholds/DISCHARGE`, {
+          value: weights.discharge  // thresholdKey 제거, value만 전송
+        }),
+        axios.put(`http://localhost:8082/boot/thresholds/WARD`, {
+          value: weights.ward  // thresholdKey 제거, value만 전송
+        }),
+        axios.put(`http://localhost:8082/boot/thresholds/ICU`, {
+          value: weights.icu  // thresholdKey 제거, value만 전송
+        })
+      ]);
         
       showNotification('가중치 설정이 저장되었습니다.', 'success');
+
+      // 저장 성공 후 가중치 다시 로드
+      const response = await axios.get('http://localhost:8082/boot/thresholds/display');
+      const thresholds = response.data;
+      
+      // 데이터 매핑
+      const thresholdMap = {};
+      thresholds.forEach(item => {
+        if(item.key && typeof item.value === 'number') {
+          thresholdMap[item.key] = item.value;
+        }
+      });
+
+      setWeights({
+        discharge: thresholdMap.DISCHARGE || weights.discharge,
+        ward: thresholdMap.WARD || weights.ward,
+        icu: thresholdMap.ICU || weights.icu
+      });
+
     } catch (error) {
       console.error('가중치 저장 오류:', error);
-      showNotification('가중치 저장 중 오류가 발생했습니다.', 'error');
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      const errorMessage = error.response?.data?.message || '가중치 저장 중 오류가 발생했습니다.';
+      showNotification(errorMessage, 'error');
     }
   };
 
