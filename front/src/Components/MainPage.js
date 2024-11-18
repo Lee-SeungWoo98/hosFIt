@@ -31,6 +31,7 @@ function MainPage({
   totalElements,
   onPageChange,
   userName,
+  onPatientDataUpdate
 }) {
   // =========== 상태 관리 ===========
   // const location = useLocation();
@@ -180,6 +181,7 @@ function MainPage({
         totalElements={totalElements}
         onPageChange={onPageChange}
         loading={loading}
+        onPatientDataUpdate={onPatientDataUpdate}
       />
     );
   };

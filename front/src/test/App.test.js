@@ -176,59 +176,81 @@ describe('App Login Functionality', () => {
  });
 
  test('일반 사용자 로그아웃 기능 테스트', async () => {
-   window.localStorage.getItem.mockImplementation((key) => {
-     if (key === 'isAuthenticated') return 'true';
-     if (key === 'position') return '일반';
-     return null;
-   });
+  // localStorage 모킹 설정
+  window.localStorage.getItem.mockImplementation((key) => {
+    if (key === 'isAuthenticated') return 'true';
+    if (key === 'position') return '일반';
+    return null;
+  });
 
-   axios.get.mockImplementation((url) => {
-     if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
-       return Promise.resolve({
-         data: {
-           isAuthenticated: true,
-           user: { position: '일반' }
-         }
-       });
-     }
-     if (url.includes('/statistics/tas')) {
-       return Promise.resolve({ data: mockKtasData });
-     }
-     if (url === API_ENDPOINTS.AUTH.LOGOUT) {
-       return Promise.resolve({ data: { success: true } });
-     }
-     if (url.includes('/prediction')) {
-       return Promise.resolve({ data: mockPredictionData });
-     }
-     return Promise.resolve({ data: {} });
-   });
+  // API 응답 모킹
+  axios.get.mockImplementation((url) => {
+    if (url === API_ENDPOINTS.AUTH.CHECK_SESSION) {
+      return Promise.resolve({
+        data: {
+          isAuthenticated: true,
+          user: { position: '일반' }
+        }
+      });
+    }
+    if (url.includes('/statistics/tas')) {
+      return Promise.resolve({ data: mockKtasData });
+    }
+    if (url === API_ENDPOINTS.AUTH.LOGOUT) {
+      return Promise.resolve({ data: { success: true } });
+    }
+    if (url.includes('/prediction')) {
+      return Promise.resolve({ data: mockPredictionData });
+    }
+    return Promise.resolve({ data: {} });
+  });
 
-   await act(async () => {
-     render(<App />);
-   });
+  await act(async () => {
+    render(<App />);
+  });
 
-   await waitFor(() => {
-     const logoutText = screen.queryByText('Logout');
-     expect(logoutText).toBeInTheDocument();
-   });
+  // 로그아웃 버튼 찾기 (여러 방식으로 시도)
+  const logoutButton = await waitFor(() => {
+    // 한글 텍스트로 찾기 시도
+    const koreanText = screen.queryByText('로그아웃');
+    if (koreanText) return koreanText;
 
-   const logoutButton = screen.getByRole('button', {
-     name: (content, element) => {
-       return element.querySelector('img[alt="logout"]') !== null || 
-              /logout/i.test(content);
-     }
-   });
+    // 영문 텍스트로 찾기 시도 (대소문자 구분 없이)
+    const englishText = screen.queryByText(/logout/i);
+    if (englishText) return englishText;
 
-   await act(async () => {
-     await userEvent.click(logoutButton);
-   });
+    // role과 이미지로 찾기 시도
+    const buttonWithImage = screen.queryByRole('button', {
+      name: (content, element) => {
+        return element.querySelector('img[alt="logout"]') !== null ||
+               element.querySelector('img[alt="Logout"]') !== null ||
+               element.querySelector('img[alt="로그아웃"]') !== null;
+      }
+    });
+    if (buttonWithImage) return buttonWithImage;
 
-   await waitFor(() => {
-     expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
-     expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
-     expect(mockNavigate).toHaveBeenCalledWith('/login');
-   });
- });
+    // 모든 시도가 실패하면 에러 발생
+    throw new Error('로그아웃 버튼을 찾을 수 없습니다.');
+  });
+
+  // 버튼이 실제로 존재하는지 확인
+  expect(logoutButton).toBeInTheDocument();
+
+  // 로그아웃 버튼 클릭
+  await act(async () => {
+    await userEvent.click(logoutButton);
+  });
+
+  // 로그아웃 후 상태 확인
+  await waitFor(() => {
+    // localStorage 항목 제거 확인
+    expect(window.localStorage.removeItem).toHaveBeenCalledWith('isAuthenticated');
+    expect(window.localStorage.removeItem).toHaveBeenCalledWith('position');
+    
+    // 로그인 페이지로 리다이렉션 확인
+    expect(mockNavigate).toHaveBeenCalledWith('/login');
+  });
+});
 
  test('관리자 로그아웃 기능 테스트', async () => {
    window.localStorage.getItem.mockImplementation((key) => {

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect  } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, ComposedChart, AreaChart} from 'recharts';
 import { ArrowLeft } from 'lucide-react';
+import axios from 'axios';
 import './Patient.css';
 
 // 상수 정의
@@ -613,6 +614,23 @@ const DonutChart = ({ data, title }) => {
   );
 };
 
+const AlertModal = ({ message, isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="alert-modal">
+        <div className="modal-content">
+          <p>{message}</p>
+          <button onClick={onClose} className="alert-confirm-button">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // PatientInfoBanner 컴포넌트
 const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -680,7 +698,7 @@ const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
   );
 };
 
-// CommentModal 컴포넌트 추가
+  // CommentModal 컴포넌트에서 AlertModal 제거
 const CommentModal = ({ isOpen, onClose, comment }) => {
   if (!isOpen) return null;
 
@@ -1009,7 +1027,7 @@ const BloodTestResults = ({ labTests, gender }) => {
 
 
 // 메인 Patient 컴포넌트
-function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
+function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPatientDataUpdate }) {
   // 기본 상태 관리
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1020,6 +1038,8 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
   const [vitalSignsData, setVitalSignsData] = useState([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   // 가장 최근 방문 데이터로 초기화
   const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
@@ -1306,11 +1326,82 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
 
   
 
-  // 배치 결정 핸들러
-  const handlePlacementConfirm = (placementData) => {
-    console.log("배치 결정:", placementData);
-    onBack();
+  const handlePlacementConfirm = async (placementData) => {
+    try {
+      let label;
+      switch(placementData.placement) {
+        case '중증':
+          label = 2;
+          break;
+        case '일반':
+          label = 1;
+          break;
+        case '퇴원':
+          label = 0;
+          break;
+        default:
+          throw new Error('잘못된 배치 결정입니다.');
+      }
+  
+      const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
+      if (latestVisit) {
+        try {
+          // 스프링 부트 서버의 전체 URL 사용
+          const labelResponse = await axios.put(
+            `http://localhost:8080/patient/label/latest/${latestVisit.stayId}`,
+            { label },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+  
+          if (labelResponse.data) {
+            const updatedVisits = patientData.visits.map(visit => {
+              if (visit.stayId === latestVisit.stayId) {
+                return {
+                  ...visit,
+                  label,
+                  comment: placementData.doctorNote
+                };
+              }
+              return visit;
+            });
+  
+            const updatedPatientData = {
+              ...patientData,
+              visits: updatedVisits
+            };
+  
+            if (onPatientDataUpdate) {
+              onPatientDataUpdate(updatedPatientData);
+            }
+  
+            setAlertMessage("배치가 완료되었습니다.");
+            setShowAlert(true);
+          }
+        } catch (error) {
+          console.error('API Error:', error);
+          throw new Error(
+            error.response?.data?.error || 
+            error.response?.data?.message || 
+            '서버 통신 오류'
+          );
+        }
+      }
+    } catch (error) {
+      console.error("배치 결정 처리 중 에러 발생:", error);
+      setAlertMessage(error.message || "배치 결정 중 오류가 발생했습니다.");
+      setShowAlert(true);
+    }
   };
+
+// 알림 모달 닫기 핸들러
+const handleAlertClose = () => {
+  setShowAlert(false);
+  onBack(); // 알림 모달을 닫으면서 리스트 페이지로 돌아감
+};
 
   // 차트 설정 객체
   const chartConfigs = {
@@ -1463,11 +1554,11 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
                   </table>
                   )}
                   </div>
-                  <CommentModal
-                    isOpen={showCommentModal}
-                    onClose={() => setShowCommentModal(false)}
-                    comment={selectedComment}
-                  />
+                  <AlertModal 
+                      isOpen={showAlert}
+                      message={alertMessage}
+                      onClose={handleAlertClose}
+                    />
                   </div>
   );
 }
