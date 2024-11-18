@@ -1,9 +1,6 @@
 package kr.spring.entity;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -12,26 +9,27 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "labtest")
-@Data
+@Getter @Setter
+@NoArgsConstructor
 public class LabTest {
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stayid", referencedColumnName = "stayid")
-    @JsonBackReference  // Visit 엔티티에서 순환 참조 방지
+    @JoinColumn(name = "stayid")
+    @JsonBackReference
     private Visit visit;
 
     @Column(name = "testname")
@@ -55,45 +53,56 @@ public class LabTest {
     @Column(name = "regdate")
     private LocalDateTime regDate;
 
-    @EqualsAndHashCode.Exclude
-    @OneToMany(mappedBy = "labtest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore  // 순환 참조 방지를 위해 JSON 직렬화에서 제외
-    private Set<BloodLevels> bloodLevels = new HashSet<>();
+    @OneToOne(mappedBy = "labTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ChemicalExaminationsEnzymes chemicalExaminationsEnzymes;
 
-    // hashCode와 equals 메서드 간소화
-    @Override
-    public int hashCode() {
-        return Objects.hash(bloodIdx);
+    @OneToOne(mappedBy = "labTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private EnzymesMetabolism enzymesMetabolism;
+
+    @OneToOne(mappedBy = "labTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private BloodLevels bloodLevels;
+
+    @OneToOne(mappedBy = "labTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private BloodGasAnalysis bloodGasAnalysis;
+
+    @OneToOne(mappedBy = "labTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ElectrolyteLevel electrolyteLevel;
+
+    // 연관관계 편의 메서드
+    public void setChemicalExaminationsEnzymes(ChemicalExaminationsEnzymes chemical) {
+        this.chemicalExaminationsEnzymes = chemical;
+        if (chemical != null) {
+            chemical.setLabTest(this);
+        }
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof LabTest)) return false;
-        LabTest other = (LabTest) obj;
-        return Objects.equals(bloodIdx, other.bloodIdx);
+    public void setEnzymesMetabolism(EnzymesMetabolism enzymes) {
+        this.enzymesMetabolism = enzymes;
+        if (enzymes != null) {
+            enzymes.setLabTest(this);
+        }
     }
 
-    // toString() 메서드 간소화하여 순환 참조 방지
-    @Override
-    public String toString() {
-        return "LabTest{bloodIdx=" + bloodIdx + 
-               ", testName='" + testName + '\'' +
-               ", testResult='" + testResult + '\'' +
-               ", testUnit=" + testUnit +
-               ", testTime=" + testTime +
-               ", diagnosis='" + diagnosis + '\'' +
-               ", diagnosisCode='" + diagnosisCode + '\'' +
-               ", regDate=" + regDate + "}";
+    public void setBloodLevels(BloodLevels levels) {
+        this.bloodLevels = levels;
+        if (levels != null) {
+            levels.setLabTest(this);
+        }
     }
 
-	public Long getValue() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setBloodGasAnalysis(BloodGasAnalysis gas) {
+        this.bloodGasAnalysis = gas;
+        if (gas != null) {
+            gas.setLabTest(this);
+        }
+    }
 
-	public int getItemid() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public void setElectrolyteLevel(ElectrolyteLevel level) {
+        this.electrolyteLevel = level;
+        if (level != null) {
+            level.setLabTest(this);
+        }
+    }
+    
+    
 }

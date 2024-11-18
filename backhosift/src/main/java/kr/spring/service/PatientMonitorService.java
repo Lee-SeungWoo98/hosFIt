@@ -138,7 +138,6 @@ public class PatientMonitorService {
         labelChangeHistoryRepository.save(history);
 
         // 라벨 업데이트
-     // 라벨 업데이트
         visit.setLabel(newLabel);
         visit = visitRepository.save(visit);
 

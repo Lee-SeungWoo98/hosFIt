@@ -4,9 +4,12 @@ package kr.spring.repository;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.LockModeType;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,5 +30,10 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 	    Page<Visit> findByLabelIsNotNullWithPaging(Pageable pageable);
 	  
 	    long countByLabelIsNotNull();
+	    
+	    @Lock(LockModeType.PESSIMISTIC_WRITE)
+	    @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
+	    Optional<Visit> findByStayIdWithLock(@Param("stayId") Long stayId);
+	
   
 }

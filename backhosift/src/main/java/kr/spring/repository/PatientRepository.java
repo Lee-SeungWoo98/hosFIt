@@ -37,6 +37,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     List<Object[]> countPatientsByTas();
 
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
+    // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
     @Query("SELECT p FROM Patient p " +
            "JOIN p.visits v " +
            "LEFT JOIN v.vitalSigns vs " +
@@ -66,6 +67,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
 
 
 
+
+       
 
        
     

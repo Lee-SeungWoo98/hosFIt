@@ -1,5 +1,6 @@
 package kr.spring.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -12,16 +13,22 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 @Entity
 @Table(name = "patient")
 @ToString
-@Data
+@Builder
+@Getter
+@Setter
 public class Patient {
     @Id
     @Column(name = "subjectid")
@@ -68,11 +75,33 @@ public class Patient {
         return Objects.hash(subjectId);  // subjectId만 사용
     }
 
-	public void setVisits(List<Visit> visits2) {
-		// TODO Auto-generated method stub
-		
-	}
+   public void setVisits(List<Visit> visits2) {
+      // TODO Auto-generated method stub
+      
+   }
 
 
     // Getters and Setters
-}
+   
+      protected Patient() {
+           // 기본 생성자는 Hibernate에서 사용됨
+       }
+
+       // @Builder로 인해 생성된 생성자
+       @Builder
+       public Patient(Long subjectId, String name, String gender, String birthdate, Long age, String address,
+                      String pregnancystatus, Long phoneNumber, String residentNum, String icd, Set<Visit> visits) {
+           this.subjectId = subjectId;
+           this.name = name;
+           this.gender = gender;
+           this.birthdate = birthdate;
+           this.age = age;
+           this.address = address;
+           this.pregnancystatus = pregnancystatus;
+           this.phoneNumber = phoneNumber;
+           this.residentNum = residentNum;
+           this.icd = icd;
+           this.visits = visits;
+       }
+
+      }

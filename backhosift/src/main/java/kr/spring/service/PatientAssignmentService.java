@@ -121,7 +121,7 @@ public class PatientAssignmentService {
     }
 
     public String determineWardByAiTAS(String chartNum) {
-    	
+       
         return aiTASRepository.findFirstByVitalSigns_ChartNum(chartNum)
             .map(this::determineWardByLevels)
             .orElse(null);
