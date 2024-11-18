@@ -1,5 +1,6 @@
 package kr.spring.controller;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,11 +10,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -33,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 public class PatientMonitorController {
     
     @Autowired
@@ -149,20 +153,25 @@ public class PatientMonitorController {
             return ResponseEntity.internalServerError().build();
         }
     }
-    @PutMapping("/patient/label/latest/{stayId}")
-    public ResponseEntity<Map<String, Object>> updatePatientLabelWithLatestVitalSigns(
-            @PathVariable("stayId") Long stayId, @RequestBody Map<String, Long> requestBody) {
+    @PutMapping("/patient/label/{stayId}")
+    public ResponseEntity<Map<String, Object>> updateVisitLabel(
+            @PathVariable("stayId") Long stayId,
+            @RequestBody Map<String, Long> requestBody) {
         try {
-            // 전달받은 label 값을 추출
             Long newLabel = requestBody.get("label");
-
-            Map<String, Object> result = patientMonitorService.updatePatientLabelWithLatestVitalSigns(stayId, newLabel);
+            Map<String, Object> result = patientMonitorService.updateVisitLabel(stayId, newLabel);
             return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid input for stayId: {}", stayId, e);
+            return ResponseEntity.badRequest()
+                .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (EntityNotFoundException e) {
+            log.warn("Visit not found for stayId: {}", stayId, e);
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            log.error("Error updating label for stayId: " + stayId + " with latest vital signs", e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to update label with latest vital signs");
-            return ResponseEntity.internalServerError().body(errorResponse);
+            log.error("Error updating label for stayId: {}", stayId, e);
+            return ResponseEntity.internalServerError()
+                .body(Collections.singletonMap("error", "라벨 업데이트 중 오류가 발생했습니다."));
         }
     }
 }

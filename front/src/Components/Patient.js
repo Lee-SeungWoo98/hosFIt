@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect  } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, ComposedChart, AreaChart} from 'recharts';
 import { ArrowLeft } from 'lucide-react';
+import { API_ENDPOINTS } from '../constants/api';
+import axios from 'axios';
 import './Patient.css';
 
 // 상수 정의
@@ -613,12 +615,28 @@ const DonutChart = ({ data, title }) => {
   );
 };
 
+const AlertModal = ({ message, isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="alert-modal">
+        <div className="modal-content">
+          <p>{message}</p>
+          <button onClick={onClose} className="alert-confirm-button">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // PatientInfoBanner 컴포넌트
 const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handlePlacementConfirm = (data) => {
-    // 여기서 서버로 데이터를 전송하는 로직 추가 예정
     console.log("배치 결정:", data);
     onPlacementConfirm(data);
     setIsModalOpen(false);
@@ -663,24 +681,26 @@ const PatientInfoBanner = ({ patientInfo, error, onPlacementConfirm }) => {
           <div className="banner-item decision-button-container">
             <button 
               className="placement-decision-button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsModalOpen(true)}  // 여기서만 모달 열기
             >
               배치 결정
             </button>
           </div>
-          <PlacementModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onConfirm={handlePlacementConfirm}
-            aiRecommendation={patientInfo?.aiRecommendation || '예측 데이터가 없어요.'}
-          />
+          {isModalOpen && (  // 조건부 렌더링 추가
+            <PlacementModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onConfirm={handlePlacementConfirm}
+              aiRecommendation={patientInfo?.aiRecommendation || '예측 데이터가 없어요.'}
+            />
+          )}
         </>
       )}
     </div>
   );
 };
 
-// CommentModal 컴포넌트 추가
+  // CommentModal 컴포넌트에서 AlertModal 제거
 const CommentModal = ({ isOpen, onClose, comment }) => {
   if (!isOpen) return null;
 
@@ -942,14 +962,38 @@ const BloodTestResults = ({ labTests, gender }) => {
   const [selectedPlacement, setSelectedPlacement] = useState('');
 
   const handleConfirm = () => {
-    onConfirm({
+    // 선택된 배치에 따라 label 값 설정
+    let label;
+    switch(selectedPlacement) {
+      case '중증':
+        label = 2;
+        break;
+      case '일반':
+        label = 1;
+        break;
+      case '퇴원':
+        label = 0;
+        break;
+      default:
+        label = null;
+    }
+  
+    if (label === null) {
+      console.error("Invalid placement selection");
+      return;
+    }
+  
+    // label 값을 포함하여 onConfirm 호출
+    const data = {
       doctorNote,
-      placement: selectedPlacement
-    });
+      placement: selectedPlacement,
+      label: label
+    };
+  
+    console.log("Confirming placement with data:", data); // 데이터 확인
+    onConfirm(data);
     onClose();
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop">
@@ -979,16 +1023,16 @@ const BloodTestResults = ({ labTests, gender }) => {
           </div>
           
           <div className="modal-section">
-            <h3>배치 결정</h3>
+          <h3>배치 결정</h3>
             <select
               value={selectedPlacement}
               onChange={(e) => setSelectedPlacement(e.target.value)}
               className="placement-select"
             >
-              <option value="">배치를 선택하세요</option>
-              <option value="중증">중증 병동</option>
-              <option value="일반">일반 병동</option>
-              <option value="퇴원">퇴원</option>
+               <option value="">배치를 선택하세요</option>
+            <option value="중증">중증 병동</option>
+            <option value="일반">일반 병동</option>
+            <option value="퇴원">퇴원</option>
             </select>
           </div>
 
@@ -1007,9 +1051,157 @@ const BloodTestResults = ({ labTests, gender }) => {
   );
 };
 
+const Alert = ({ variant, onClose, children }) => {
+  return (
+    <div className={`alert ${variant}`}>
+      <div className="alert-content">
+        {children}
+      </div>
+      <button onClick={onClose} className="alert-close">
+        &times;
+      </button>
+    </div>
+  );
+};
+
+// PlacementForm 컴포넌트
+const PlacementForm = ({ onSubmit, initialLabel, initialNote }) => {
+  const [formData, setFormData] = useState({
+    label: initialLabel || '',
+    doctorNote: initialNote || ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>배치 라벨</label>
+        <select
+          value={formData.label}
+          onChange={(e) => setFormData({...formData, label: Number(e.target.value)})}
+          required
+        >
+          <option value="">배치를 선택하세요</option>
+          <option value="2">중증 병동</option>
+          <option value="1">일반 병동</option>
+          <option value="0">퇴원</option>
+        </select>
+      </div>
+      
+      <div>
+        <label>의사 노트</label>
+        <textarea
+          value={formData.doctorNote}
+          onChange={(e) => setFormData({...formData, doctorNote: e.target.value})}
+          placeholder="의사 소견을 입력하세요"
+        />
+      </div>
+
+      <button type="submit">배치 저장</button>
+    </form>
+  );
+};
+
+// 배치 업데이트 컴포넌트
+const PlacementUpdate = ({ patientData, latestVisit, onPatientDataUpdate }) => {
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+
+  const updatePatientLabel = async (placementData) => {
+    if (!latestVisit?.stayId) {
+      setAlertMessage("환자 방문 정보가 없습니다.");
+      setShowAlert(true);
+      return;
+    }
+
+    if (placementData.label === undefined || placementData.label === null) {
+      setAlertMessage("유효한 라벨 값을 입력해주세요.");
+      setShowAlert(true);
+      return;
+    }
+
+    try {
+      const labelResponse = await axios({
+        method: 'put',
+        url: `/api/patient/label/${latestVisit.stayId}`,
+        data: {
+          label: placementData.label,
+          comment: placementData.doctorNote || ''
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!labelResponse.data) {
+        throw new Error('서버 응답이 올바르지 않습니다.');
+      }
+
+      const updatedVisits = patientData.visits.map(visit => {
+        if (visit.stayId === latestVisit.stayId) {
+          return {
+            ...visit,
+            label: placementData.label,
+            comment: placementData.doctorNote,
+            staystatus: placementData.label
+          };
+        }
+        return visit;
+      });
+
+      const updatedPatientData = {
+        ...patientData,
+        visits: updatedVisits
+      };
+
+      if (onPatientDataUpdate) {
+        onPatientDataUpdate(updatedPatientData);
+      }
+
+      setAlertMessage("배치가 성공적으로 완료되었습니다.");
+      setShowAlert(true);
+
+    } catch (error) {
+      console.error('라벨 업데이트 오류:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          '서버 통신 중 오류가 발생했습니다.';
+      setAlertMessage(errorMessage);
+      setShowAlert(true);
+    }
+  };
+
+  return (
+    <div>
+      {showAlert && (
+        <Alert 
+          variant={alertMessage.includes('성공') ? 'success' : 'error'}
+          onClose={() => setShowAlert(false)}
+        >
+          {alertMessage}
+        </Alert>
+      )}
+      
+      <PlacementForm 
+        onSubmit={updatePatientLabel}
+        initialLabel={latestVisit?.label}
+        initialNote={latestVisit?.comment}
+      />
+    </div>
+  );
+};
 
 // 메인 Patient 컴포넌트
-function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
+function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPatientDataUpdate }) {
   // 기본 상태 관리
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1020,18 +1212,55 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
   const [vitalSignsData, setVitalSignsData] = useState([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [localLabTests, setLocalLabTests] = useState(null);
 
-  // 가장 최근 방문 데이터로 초기화
-  const latestVisit = patientData?.visits?.[patientData.visits.length - 1];
+  // 가장 최근 방문 데이터 가져오기
+  const latestVisit = useMemo(() => {
+    if (patientData?.visits && patientData.visits.length > 0) {
+      return patientData.visits[patientData.visits.length - 1];
+    }
+    return null;
+  }, [patientData]);
 
-  const [patientInfo, setPatientInfo] = useState({
+   // 피검사 데이터 가져오기
+   const fetchPatientLabTests = async (stayId) => {
+    try {
+      const response = await fetchLabTests(stayId);
+      console.log("Lab test response:", response);
+      
+      if (response) {
+        setLocalLabTests(response);
+        setPatientInfo(prev => ({
+          ...prev,
+          bloodTestData: formatLabTests(response)
+        }));
+        return response;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch lab tests:", error);
+      setError("피검사 데이터를 불러오는데 실패했습니다.");
+      return null;
+    }
+  };
+
+   // patientInfo 상태 초기화
+   const [patientInfo, setPatientInfo] = useState({
     name: patientData?.name,
     age: patientData?.age,
     emergencyLevel: `Level ${latestVisit?.tas}`,
     stayDuration: `${latestVisit?.losHours}시간`,
     vitalSigns: latestVisit?.vitalSigns || [],
-    bloodTestData: labTests
+    bloodTestData: null
   });
+
+  // 가장 최근 방문의 stayId를 가져오는 함수
+  const getLatestStayId = () => {
+    return latestVisit?.stayId || null;
+  };
+
 
   // 툴팁 관련 이벤트 핸들러 설정
   useEffect(() => {
@@ -1062,6 +1291,14 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
       };
     }
   }, []);
+
+   // 컴포넌트 마운트 시 피검사 데이터 가져오기
+   useEffect(() => {
+    const stayId = getLatestStayId();
+    if (stayId) {
+      fetchPatientLabTests(stayId);
+    }
+  }, [latestVisit]);
 
   // 초기 데이터 설정
   useEffect(() => {
@@ -1128,6 +1365,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     }
   }, [patientData]);
 
+  // 초기 생체데이터 설정
   useEffect(() => {
     if (latestVisit?.vitalSigns) {
       const formattedVitalSigns = latestVisit.vitalSigns.map(sign => ({
@@ -1177,11 +1415,11 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     });
   };
 
-  // 날짜 클릭 핸들러
-  const handleDateClick = async (date, stay_id) => {
+   // 날짜 클릭 핸들러
+   const handleDateClick = async (date, stay_id) => {
     try {
-      const labTestsResponse = await fetchLabTests(stay_id);
       const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
+      const labTestsResponse = await fetchPatientLabTests(stay_id);
       
       if (selectedVisit?.vitalSigns?.length > 0) {
         // 생체 데이터 포맷팅
@@ -1204,16 +1442,16 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
           const [hoursB, minutesB] = b.chartTime.split(':').map(Number);
           return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
         });
-  
+
         // vitalSignsData 상태 업데이트
         setVitalSignsData(formattedVitalSigns);
-  
+
         // 상태 업데이트
         setPatientInfo(prev => ({
           ...prev,
           emergencyLevel: `Level ${selectedVisit.tas}`,
           stayDuration: `${selectedVisit.losHours}시간`,
-          bloodTestData: formatLabTests(labTestsResponse)
+          bloodTestData: labTestsResponse ? formatLabTests(labTestsResponse) : null
         }));
 
         // 예측 데이터 업데이트
@@ -1250,6 +1488,71 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
   const handleCommentClick = (comment) => {
     setSelectedComment(comment);
     setShowCommentModal(true);
+  };
+
+  // 배치 처리 함수
+  const handlePlacementConfirm = async (placementData) => {
+    try {
+      console.log("Sending data:", placementData); // 디버깅용
+  
+      // 백엔드 요청 형식에 맞게 데이터 구조화
+      const requestData = {
+        label: placementData.label  // 백엔드는 "label" 필드만 사용
+      };
+  
+      const labelResponse = await axios({
+        method: 'put',
+        url: `/api/patient/label/${latestVisit.stayId}`,
+        data: requestData,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      console.log("Server response:", labelResponse); // 디버깅용
+  
+      if (!labelResponse.data) {
+        throw new Error('서버 응답이 올바르지 않습니다.');
+      }
+  
+      // 백엔드 응답을 사용하여 상태 업데이트
+      const updatedVisits = patientData.visits.map(visit => {
+        if (visit.stayId === labelResponse.data.stayId) {
+          return {
+            ...visit,
+            label: labelResponse.data.label,
+            comment: placementData.doctorNote,
+            visitDate: labelResponse.data.visitDate
+          };
+        }
+        return visit;
+      });
+  
+      const updatedPatientData = {
+        ...patientData,
+        visits: updatedVisits
+      };
+  
+      if (onPatientDataUpdate) {
+        onPatientDataUpdate(updatedPatientData);
+      }
+  
+      setAlertMessage("배치가 완료되었습니다.");
+      setShowAlert(true);
+  
+    } catch (error) {
+      console.error('배치 결정 처리 중 에러 발생:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          '서버 통신 중 오류가 발생했습니다.';
+      setAlertMessage(errorMessage);
+      setShowAlert(true);
+    }
   };
 
   // 피검사 데이터 포맷팅 함수
@@ -1304,13 +1607,11 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
     vitalSigns: visit.vitalSigns || []
   })).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) || [];
 
-  
-
-  // 배치 결정 핸들러
-  const handlePlacementConfirm = (placementData) => {
-    console.log("배치 결정:", placementData);
-    onBack();
-  };
+// 알림 모달 닫기 핸들러
+const handleAlertClose = () => {
+  setShowAlert(false);
+  onBack(); // 알림 모달을 닫으면서 리스트 페이지로 돌아감
+};
 
   // 차트 설정 객체
   const chartConfigs = {
@@ -1361,6 +1662,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
         error={error}
         onPlacementConfirm={handlePlacementConfirm}
       />
+      
       <div className="timeseries-container p-6">
         <TimeSeriesChart
           data={currentPredictionData}
@@ -1389,9 +1691,13 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
           })}
         </div>
         <div className="blood-test-container">
-          <BloodTestResults labTests={patientInfo.bloodTestData} gender={patientData?.gender} />
-        </div>
+        <BloodTestResults 
+          labTests={localLabTests} 
+          gender={patientData?.gender} 
+        />
       </div>
+    </div>
+
       <div className="history-table-container">
                   {patientHistory.length === 0 ? (
                     <p>내원 기록 데이터가 없습니다.</p>
@@ -1463,13 +1769,18 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests }) {
                   </table>
                   )}
                   </div>
+                  <AlertModal 
+                    isOpen={showAlert}
+                    message={alertMessage}
+                    onClose={handleAlertClose}
+                  />
                   <CommentModal
                     isOpen={showCommentModal}
                     onClose={() => setShowCommentModal(false)}
                     comment={selectedComment}
                   />
-                  </div>
-  );
+                </div>
+              );
 }
 
 export default Patient;

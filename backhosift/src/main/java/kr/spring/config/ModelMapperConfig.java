@@ -2,12 +2,19 @@ package kr.spring.config;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import kr.spring.entity.VitalSigns;
 import kr.spring.dto.VitalSignsDTO;
 
+import java.util.concurrent.TimeUnit;
+
 @Configuration
+@EnableCaching
 public class ModelMapperConfig {
     
     @Bean
@@ -51,5 +58,15 @@ public class ModelMapperConfig {
             });
         
         return modelMapper;
+    }
+
+    @Bean
+    public CacheManager cacheManager() {
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("patientDetails");
+        cacheManager.setCaffeine(Caffeine.newBuilder()
+                .maximumSize(500)                // 최대 캐시 항목 수
+                .expireAfterWrite(30, TimeUnit.MINUTES)  // 캐시 만료 시간
+                .recordStats());                 // 캐시 통계 기록
+        return cacheManager;
     }
 }

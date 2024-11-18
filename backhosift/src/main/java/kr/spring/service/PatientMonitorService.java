@@ -1,28 +1,45 @@
 package kr.spring.service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.EntityNotFoundException;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import kr.spring.dto.FlaDTO;
+import kr.spring.entity.LabelChangeHistory;
+import kr.spring.entity.Visit;
 import kr.spring.entity.VitalSigns;
+import kr.spring.repository.LabelChangeHistoryRepository;
+import kr.spring.repository.VisitRepository;
 import kr.spring.repository.VitalSignsRepository;
+import lombok.extern.slf4j.Slf4j;
 @Service
+@Slf4j
 public class PatientMonitorService {
 
 	@Autowired
     private VitalSignsRepository vitalSignsRepository;
+	
+	@Autowired
+    private LabelChangeHistoryRepository labelChangeHistoryRepository;
+    
+	
+	@Autowired
+    private VisitRepository visitRepository;
     
     @Autowired
     private FlaskService flaskService; // 검사 결과를 가져오는 서비스
-
+    
+    @Value("${valid.label.values}")
+    private List<Long> validLabelValues;
     @Transactional
     public Map<String, Object> getCombinedPatientData(VitalSigns vitalSign, Long subjectId) {
         // 고정된 검사 결과 데이터 가져오기
@@ -93,27 +110,51 @@ public class PatientMonitorService {
         return combinedData;
     }
     
+    
+    
+  
+    
     @Transactional
-    public Map<String, Object> updatePatientLabelWithLatestVitalSigns(Long stayId, Long newLabel) {
-        // 최신 VitalSigns 데이터 조회
-        VitalSigns latestVitalSigns = vitalSignsRepository.findLatestByStayId(stayId, PageRequest.of(0, 1))
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No vital signs found for stayId: " + stayId));
+    public Map<String, Object> updateVisitLabel(Long stayId, Long newLabel) {
+        // 입력값 검증
+        if (stayId == null || newLabel == null) {
+            throw new IllegalArgumentException("StayId와 Label 값은 필수입니다.");
+        }
 
-        // 전달된 label 값으로 업데이트
-        latestVitalSigns.setLabel(newLabel);
-        latestVitalSigns = vitalSignsRepository.save(latestVitalSigns);
+        if (!validLabelValues.contains(newLabel)) {
+            throw new IllegalArgumentException("유효하지 않은 라벨 값입니다: " + newLabel);
+        }
+
+        // Visit 조회 및 락 획득
+        Visit visit = visitRepository.findByStayIdWithLock(stayId)
+            .orElseThrow(() -> new EntityNotFoundException("해당 방문 기록을 찾을 수 없습니다. StayId: " + stayId));
+
+        // 변경 이력 기록
+        LabelChangeHistory history = new LabelChangeHistory();
+        history.setStayId(stayId);
+        history.setOldLabel(visit.getLabel());
+        history.setNewLabel(newLabel);
+        history.setChangeTime(LocalDateTime.now());
+        labelChangeHistoryRepository.save(history);
+
+        // 라벨 업데이트
+        visit.setLabel(newLabel);
+        visit = visitRepository.save(visit);
 
         Map<String, Object> response = new HashMap<>();
         response.put("stayId", stayId);
         response.put("label", newLabel);
-        response.put("chartTime", latestVitalSigns.getChartTime());
-        response.put("chartNum", latestVitalSigns.getChartNum());
+        response.put("visitDate", visit.getVisitDate());
         response.put("updated", true);
 
+        // 로그 메시지 수정
+        log.info("Visit label updated successfully for stayId: {}, new label: {}", stayId, newLabel);
+
         return response;
+        
+       
     }
+}
+
 
    
-}

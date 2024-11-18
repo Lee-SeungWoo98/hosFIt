@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
       TOTALBED: `${BASE_URL}/count`,
     },
     PREDICTION: `${BASE_URL}/patients/prediction`,
+    LABEL: {
+      UPDATE: (stayId) => `${BASE_URL}/patient/label/latest/${stayId}`,
+    }
   },
   LAB_TESTS: `${BASE_URL}/labtests`,
   DETAILS: `${BASE_URL}/patients`,

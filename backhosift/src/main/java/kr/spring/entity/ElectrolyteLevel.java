@@ -6,35 +6,38 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import lombok.Data;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 @Entity
 @Table(name = "electrolytelevel")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ElectrolyteLevel {
-    
     @Id
-    @Column(name = "bloodidx", insertable = false, updatable = false)
+    @Column(name = "bloodidx")
     private Long bloodIdx;
-
-    @ManyToOne
-    @JoinColumn(name = "bloodidx", insertable = false, updatable = false) // 중복 매핑 방지
-    private LabTest labtest;
-
+    
+    @OneToOne
+    @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
+    private LabTest labTest;
+    
     @Column(name = "sodium")
     private Long sodium;
-
+    
     @Column(name = "potassium")
-    private String potassium;
-
+    private Long potassium;  // String에서 Long으로 변경
+    
     @Column(name = "chloride")
     private Long chloride;
-
+    
     @Column(name = "regdate")
-    private LocalDateTime  regDate;
-
-    // Getters and Setters
+    private LocalDateTime regDate;
 }

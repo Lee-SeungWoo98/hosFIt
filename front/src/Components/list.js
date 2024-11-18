@@ -14,10 +14,10 @@ import {
 
 // =========== 상수 정의 ===========
 const LOCATION_TABS = [
-  { id: "all", label: "전체" },
-  { id: "icu", label: "중증 병동" },
-  { id: "ward", label: "일반 병동" },
-  { id: "discharge", label: "퇴원" },
+  { id: "all", label: "전체", maxLevel: null },
+  { id: "icu", label: "중증 병동", maxLevel: "level3" },
+  { id: "ward", label: "일반 병동", maxLevel: "level2" },
+  { id: "discharge", label: "퇴원", maxLevel: "level1" },
 ];
 
 const FILTER_OPTIONS = {
@@ -100,6 +100,39 @@ const NORMAL_RANGES = {
   pco2: [35, 45],
 };
 
+const MAX_CACHE_SIZE = 100; // 최대 100명 환자 데이터만 캐시
+
+class LRUCache {
+  constructor(maxSize) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+    this.queue = [];
+  }
+
+  get(key) {
+    if (this.cache.has(key)) {
+      this.queue = this.queue.filter(k => k !== key);
+      this.queue.push(key);
+      return this.cache.get(key);
+    }
+    return null;
+  }
+
+  set(key, value) {
+    if (this.cache.size >= this.maxSize) {
+      const oldest = this.queue.shift();
+      this.cache.delete(oldest);
+    }
+    this.cache.set(key, value);
+    this.queue.push(key);
+  }
+
+  clear() {
+    this.cache.clear();
+    this.queue = [];
+  }
+}
+
 function List({
   loading,
   searchTerm,
@@ -127,9 +160,100 @@ function List({
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [tabCounts, setTabCounts] = useState({
+    all: 0,
+    icu: 0,
+    ward: 0,
+    discharge: 0
+  });
+
+  // 컴포넌트 초기 마운트 시 각 탭의 카운트를 가져오는 함수
+const fetchAllTabCounts = useCallback(async () => {
+  try {
+    // 각 탭별로 요청을 보내서 카운트를 가져옴
+    const requests = LOCATION_TABS.map(async (tab) => {
+      if (tab.id === 'all') return;
+      const response = await onFilteredPatientsUpdate(0, {
+        ...selectedFilters,
+        maxLevel: tab.maxLevel
+      });
+      return { tabId: tab.id, count: response?.totalElements || 0 };
+    });
+
+    const results = await Promise.all(requests.filter(Boolean));
+    
+    // 각 탭의 카운트 업데이트
+    setTabCounts(prev => {
+      const newCounts = { ...prev };
+      results.forEach(result => {
+        if (result) {
+          newCounts[result.tabId] = result.count;
+        }
+      });
+      // 전체 탭의 수는 다른 탭들의 합
+      newCounts.all = newCounts.icu + newCounts.ward + newCounts.discharge;
+      return newCounts;
+    });
+  } catch (error) {
+    console.error('탭 카운트 로드 실패:', error);
+  }
+}, [selectedFilters, onFilteredPatientsUpdate]);
+
+// 컴포넌트 마운트 시 초기 데이터 로드
+useEffect(() => {
+  fetchAllTabCounts();
+}, []); // 컴포넌트 마운트 시에만 실행
+
+  // handleTabChange 수정
+  const handleTabChange = useCallback(async (tabId) => {
+    setActiveTab(tabId);
+    const tab = LOCATION_TABS.find(t => t.id === tabId);
+    
+    try {
+      setIsUpdating(true);
+      const newFilters = {
+        ...selectedFilters,
+        maxLevel: tab.maxLevel
+      };
+      
+      // 이전 값들 임시 저장
+      const prevCounts = { ...tabCounts };
+      
+      const response = await onFilteredPatientsUpdate(0, newFilters);
+      
+      if (response) {
+        if (tabId === 'all') {
+          // 전체 탭인 경우 기존 합계 유지
+          setTabCounts(prev => ({
+            ...prev,
+            all: prev.icu + prev.ward + prev.discharge
+          }));
+        } else {
+          // 다른 탭들의 경우 새로운 값으로 업데이트
+          setTabCounts(prev => ({
+            ...prev,
+            [tabId]: response.totalElements,
+            all: (
+              (tabId === 'icu' ? response.totalElements : prev.icu) +
+              (tabId === 'ward' ? response.totalElements : prev.ward) +
+              (tabId === 'discharge' ? response.totalElements : prev.discharge)
+            )
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('탭 변경 중 에러:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [selectedFilters, onFilteredPatientsUpdate, tabCounts]);
+
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
+  const detailsCacheRef = useRef(new Map());
   const previousPatientsRef = useRef([]);
+  const detailsCache = new LRUCache(MAX_CACHE_SIZE);
+  const loadingPatientsRef = useRef(new Set());
 
   // 환자 데이터 메모이제이션
   const memoizedPatients = useMemo(() => patients, [patients]);
@@ -320,26 +444,48 @@ function List({
    * 환자 상세정보 조회 함수
    */
   const showPatientDetails = useCallback(async (patient) => {
+    const patientId = patient.subjectId;
+    
+    // 이미 로딩 중인 환자는 중복 요청 방지
+    if (loadingPatientsRef.current.has(patientId)) {
+      return;
+    }
+  
     setLoadingDetails(true);
+    loadingPatientsRef.current.add(patientId);
+  
     try {
-      const visitInfoResponse = await fetchVisitInfo(patient.subjectId);
+      // 1. 캐시 확인
+      const cachedData = detailsCache.get(patientId);
+      if (cachedData) {
+        onPatientSelect(patient, cachedData.labTests, cachedData.visitInfo);
+        return;
+      }
+  
+      // 2. 데이터 요청
+      const [visitInfoResponse, labTestsResponse] = await Promise.all([
+        fetchVisitInfo(patientId),
+        fetchLabTests(patient.visits?.[patient.visits.length - 1]?.stayId)
+      ]);
+  
       if (!visitInfoResponse?.visits?.length) {
         throw new Error("방문 정보가 없습니다.");
       }
-
-      const latestVisit = visitInfoResponse.visits[visitInfoResponse.visits.length - 1];
-      const stayId = latestVisit.stayId || latestVisit.stay_id;
-
-      if (!stayId) {
-        throw new Error("Stay ID를 찾을 수 없습니다.");
-      }
-
-      const labTestsResponse = await fetchLabTests(stayId);
+  
+      // 3. 원본 데이터 구조 유지하면서 캐시
+      detailsCache.set(patientId, {
+        labTests: labTestsResponse,
+        visitInfo: visitInfoResponse  // 전체 응답 데이터 유지
+      });
+  
+      // 4. 결과 반환
       onPatientSelect(patient, labTestsResponse, visitInfoResponse);
+  
     } catch (error) {
       console.error("상세 정보 조회 실패:", error);
     } finally {
       setLoadingDetails(false);
+      loadingPatientsRef.current.delete(patientId);
     }
   }, [fetchVisitInfo, fetchLabTests, onPatientSelect]);
 
@@ -379,6 +525,12 @@ function List({
     };
   }, [memoizedPatients, fetchLabTestsWithCache, calculateAbnormalCountsOptimized]);
 
+  useEffect(() => {
+    return () => {
+      detailsCache.clear();
+      loadingPatientsRef.current.clear();
+    };
+  }, []);
   /**
    * 드롭다운 외부 클릭 감지
    */
@@ -440,17 +592,14 @@ function List({
   }, []);
 
     // 탭별 환자 필터링 수정 (전체 환자 대상)
-  const filteredPatients = useMemo(() => {
-    if (activeTab === "all") {
-      return memoizedPatients;
-    }
-
-    // AI_TAS 기반으로 환자 필터링
-    return memoizedPatients.filter(patient => {
-      const { tabId } = getWardInfo(patient);
-      return tabId === activeTab;
-    });
-  }, [memoizedPatients, activeTab, getWardInfo]);
+    const filteredPatients = useMemo(() => {
+      if (activeTab === "all") {
+        return patients;
+      }
+      
+      // 이미 API에서 필터링된 데이터를 사용
+      return patients;
+    }, [patients, activeTab]);
 
   // =========== 렌더링 함수 ===========
   /**
@@ -569,30 +718,19 @@ function List({
       <div className="content-area">
         {/* 위치 탭 */}
         <div className="location-tabs">
-          {LOCATION_TABS.map((tab) => {
-            // 각 탭에 해당하는 환자 수 계산
-            const tabCount = memoizedPatients.filter(p => {
-              if (tab.id === "all") return true;
-              const { tabId } = getWardInfo(p);
-              return tabId === tab.id;
-            }).length;
-
-            return (
-              <button
-                key={tab.id}
-                className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-                {tab.id !== "all" && (
-                  <span className="tab-count">
-                    ({tabCount})
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {LOCATION_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
+            onClick={() => handleTabChange(tab.id)}
+          >
+            {tab.label}
+            <span className="tab-count">
+              ({tabCounts[tab.id]})
+            </span>
+          </button>
+        ))}
+      </div>
 
         {/* 테이블 컨테이너 */}
         <div
@@ -673,7 +811,7 @@ function List({
               </button>
             </div>
             <div className="total-count-filter">
-              (총 {(totalElements || 0).toLocaleString()}명)
+              (총 {activeTab === 'all' ? tabCounts.all : totalElements}명)
             </div>
           </div>
 
@@ -713,47 +851,75 @@ function List({
 
           {/* 페이지네이션 */}
           {memoizedPatients.length > 0 && (
-            <div className="pagination">
-              <button
-                onClick={async () => {
-                  if (!isUpdating) {
-                    setIsUpdating(true);
-                    try {
-                      const nextPage = currentPage - 1;
-                      if (nextPage >= 0) {
-                        await onPageChange(nextPage);
+          <div className="pagination">
+            <button
+              onClick={async () => {
+                if (!isUpdating) {
+                  setIsUpdating(true);
+                  try {
+                    await onPageChange(0);
+                  } finally {
+                    setIsUpdating(false);
+                  }
+                }
+              }}
+              disabled={currentPage === 0 || isUpdating}
+              className="pagination-arrow"
+            >
+              <ChevronLeft />
+            </button>
+
+            {Array.from({ length: Math.min(5, totalPages) }).map((_, idx) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = idx;
+              } else if (currentPage < 2) {
+                pageNum = idx;
+              } else if (currentPage > totalPages - 3) {
+                pageNum = totalPages - 5 + idx;
+              } else {
+                pageNum = currentPage - 2 + idx;
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={async () => {
+                    if (!isUpdating) {
+                      setIsUpdating(true);
+                      try {
+                        await onPageChange(pageNum);
+                      } finally {
+                        setIsUpdating(false);
                       }
-                    } finally {
-                      setIsUpdating(false);
                     }
+                  }}
+                  disabled={isUpdating}
+                  className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                >
+                  {pageNum + 1}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={async () => {
+                if (!isUpdating) {
+                  setIsUpdating(true);
+                  try {
+                    await onPageChange(totalPages - 1);
+                  } finally {
+                    setIsUpdating(false);
                   }
-                }}
-                disabled={currentPage === 0 || isUpdating}
-                className="pagination-arrow"
-              >
-                <ChevronLeft />
-              </button>
-              <span className="page-info">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <button
-                onClick={async () => {
-                  if (!isUpdating) {
-                    setIsUpdating(true);
-                    try {
-                      await onPageChange(currentPage + 1);
-                    } finally {
-                      setIsUpdating(false);
-                    }
-                  }
-                }}
-                disabled={currentPage + 1 >= totalPages || isUpdating}
-                className="pagination-arrow"
-              >
-                <ChevronRight />
-              </button>
-            </div>
-          )}
+                }
+              }}
+              disabled={currentPage + 1 >= totalPages || isUpdating}
+              className="pagination-arrow"
+            >
+              <ChevronRight />
+            </button>
+          </div>
+        )}
 
           {/* 로딩 오버레이 */}
           {(isUpdating || loading) && (

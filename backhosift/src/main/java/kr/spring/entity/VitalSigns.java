@@ -3,17 +3,33 @@ package kr.spring.entity;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import javax.persistence.*;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "vitalsigns")
-@Getter
-@Setter
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class VitalSigns {
     @Id
     @Column(name = "chartnum")
@@ -24,7 +40,8 @@ public class VitalSigns {
     @JsonBackReference
     private Visit visit;
     
-    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @Builder.Default
+    @OneToMany(mappedBy = "vitalSigns", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private Set<AiTAS> aiTAS = new HashSet<>();
     
@@ -49,8 +66,7 @@ public class VitalSigns {
     @Column(name = "temperature")
     private String temperature;
     
-    public VitalSigns() {}
-    @Transient  // DB에 저장되지 않는 임시 필드
+    @Transient
     private Float level1;
     
     @Transient
@@ -61,64 +77,37 @@ public class VitalSigns {
     
     @Transient
     private String wardCode;
-    // getAiTAS 메소드 수정
-    public Set<AiTAS> getAiTAS() {
-        return this.aiTAS;
-    }
-
+    
     public Float getLevel1() {
         if (level1 == null && !aiTAS.isEmpty()) {
             return aiTAS.iterator().next().getLevel1();
         }
         return level1;
     }
-
+    
     public Float getLevel2() {
         if (level2 == null && !aiTAS.isEmpty()) {
             return aiTAS.iterator().next().getLevel2();
         }
         return level2;
     }
-
+    
     public Float getLevel3() {
         if (level3 == null && !aiTAS.isEmpty()) {
             return aiTAS.iterator().next().getLevel3();
         }
         return level3;
     }
-
-    public void setLevel1(Float level1) {
-        this.level1 = level1;
+    
+    public Object getStayId() {
+        return visit != null ? visit.getStayId() : null;
     }
 
-    public void setLevel2(Float level2) {
-        this.level2 = level2;
+    public Object getLabel() {
+        return null;
     }
-
-    public void setLevel3(Float level3) {
-        this.level3 = level3;
+    
+    public void setLabel(Long label) {
+        // Implementation if needed
     }
-
-    public void setWardCode(String wardCode) {
-        this.wardCode = wardCode;
-    }
-
-    public String getWardCode() {
-        return this.wardCode;
-    }
-
-	public void setLabel(Long label) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public Object getStayId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Object getLabel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

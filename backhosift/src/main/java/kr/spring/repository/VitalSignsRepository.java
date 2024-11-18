@@ -5,7 +5,11 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+
+import javax.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -99,6 +103,9 @@ public interface VitalSignsRepository extends JpaRepository<VitalSigns, String> 
        Pageable pageable
    );
    
+   @Lock(LockModeType.PESSIMISTIC_WRITE)
+   @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
+   Optional<Visit> findByStayIdWithLock(@Param("stayId") Long stayId);
   
 }
 

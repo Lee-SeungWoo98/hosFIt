@@ -1,63 +1,68 @@
 package kr.spring.entity;
-import javax.persistence.*;
-
-import lombok.Data;
-
 import java.time.LocalDateTime;
-import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "EnzymesMetabolism")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class EnzymesMetabolism {
-
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
-
-    @Column(name = "CK")
-    private Long ck;
-
-    @Column(name = "CKMB")
-    private Long ckmb;
-
-    @Column(name = "Creatinine")
-    private Long creatinine;
-
-    @Column(name = "DDimer")
-    private Long dDimer;
-
-    @Column(name = "GGT")
-    private Long ggt;
-
-    @Column(name = "Glucose")
-    private Long glucose;
-
-    @Column(name = "INRPT")
-    private Long inrpt;
-
-    @Column(name = "Lactate")
-    private Long lactate;
-
-    @Column(name = "LD")
-    private Long ld;
-
-    @Column(name = "Lipase")
-    private Long lipase;
-
-    @Column(name = "Magnesium")
-    private Long magnesium;
-
-    @Column(name = "NTproBNP")
-    private Long ntproBNP;
-
-    @Column(name = "regdate")
-    private LocalDateTime  regdate;
-
-    // 외래키 관계 설정
-    @ManyToOne
+    
+    @OneToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private LabTest labtest;
-
-    // getter, setter 생략
+    private LabTest labTest;
+    
+    @Column(name = "ck")
+    private Long ck;
+    
+    @Column(name = "ckmb")
+    private Long ckmb;
+    
+    @Column(name = "creatinine")
+    private Long creatinine;
+    
+    @Column(name = "ddimer")
+    private Long dDimer;
+    
+    @Column(name = "ggt")
+    private Long ggt;
+    
+    @Column(name = "glucose")
+    private Long glucose;
+    
+    @Column(name = "inrpt")
+    private Long inrpt;
+    
+    @Column(name = "lactate")
+    private Long lactate;
+    
+    @Column(name = "ld")
+    private Long ld;
+    
+    @Column(name = "lipase")
+    private Long lipase;
+    
+    @Column(name = "magnesium")
+    private Long magnesium;
+    
+    @Column(name = "ntprobnp")
+    private Long ntproBNP;
+    
+    @Column(name = "regdate")
+    private LocalDateTime regdate;
 }

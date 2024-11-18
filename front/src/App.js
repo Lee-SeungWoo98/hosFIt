@@ -112,7 +112,9 @@ function App() {
       
       const url = new URL(API_ENDPOINTS.PATIENTS.LIST);
       url.searchParams.append('page', pageNumber);
-
+      url.searchParams.append('size', '10');
+  
+      // 필터 파라미터 추가
       if (currentFilters.searchTerm) {
         url.searchParams.append('name', currentFilters.searchTerm);
       }
@@ -125,38 +127,40 @@ function App() {
       if (currentFilters?.painScore && currentFilters.painScore !== '') {
         url.searchParams.append('pain', currentFilters.painScore);
       }
-
+      // maxLevel 파라미터 추가
+      if (currentFilters?.maxLevel) {
+        url.searchParams.append('maxLevel', currentFilters.maxLevel);
+      }
+   
       const options = signal ? { signal } : {};
       const response = await axios.get(url.toString(), options);
-
-      if (!signal?.aborted) {
-        if (response.data) {
-          const formattedData = response.data.patients?.map(formatPatientData).filter(Boolean) || [];
-          setFilters(currentFilters);
-          setPatients(formattedData);
-          setFilteredPatients(formattedData);
-          setTotalPages(response.data.totalPages || 1);
-          setTotalElements(response.data.totalElements || formattedData.length);
-          
-          // 현재 페이지가 총 페이지 수보다 크면 첫 페이지로 설정
-          const newPageNumber = pageNumber >= response.data.totalPages ? 0 : pageNumber;
-          setCurrentPage(newPageNumber);
-          
-          setError(null);
-        } else {
-          setPatients([]);
-          setFilteredPatients([]);
-          setTotalPages(1);
-          setTotalElements(0);
-          setCurrentPage(0);  // 데이터 없으면 첫 페이지로
-        }
+   
+      if (!signal?.aborted && response.data) {
+        const formattedData = response.data.patients?.map(formatPatientData).filter(Boolean) || [];
+        
+        setFilters(currentFilters);
+        setPatients(formattedData);
+        setFilteredPatients(formattedData);
+        setTotalPages(response.data.totalPages || 1);
+        setTotalElements(response.data.totalElements || 0);
+        
+        const newPageNumber = pageNumber >= response.data.totalPages ? 0 : pageNumber;
+        setCurrentPage(newPageNumber);
+        setError(null);
+        
+        return response.data; // totalElements를 List 컴포넌트에서 사용하기 위해 반환
+      } else {
+        setPatients([]);
+        setFilteredPatients([]);
+        setTotalPages(1);
+        setTotalElements(0);
+        setCurrentPage(0);
       }
     } catch (error) {
       if (axios.isCancel(error)) {
         console.log('Request canceled:', error.message);
       } else {
-        const errorMessage = getErrorMessage(error);
-        setError(errorMessage);
+        setError(getErrorMessage(error));
         setPatients([]);
         setFilteredPatients([]);
       }
@@ -165,7 +169,7 @@ function App() {
         setLoading(false);
       }
     }
-  }, [searchTerm, filters]);
+   }, [filters]);
 
   const fetchKtasData = useCallback(async () => {
     try {
@@ -380,6 +384,26 @@ function App() {
     }
   }, []);
 
+  // 배치 후 데이터 업데이트 함수
+  const handlePatientDataUpdate = useCallback(async (updatedPatientData) => {
+    try {
+      // 환자 목록 데이터 갱신
+      const updatedPatients = patients.map(patient => 
+        patient.subjectId === updatedPatientData.subjectId ? updatedPatientData : patient
+      );
+      setPatients(updatedPatients);
+      setFilteredPatients(updatedPatients);
+  
+      // KTAS 데이터와 예측 데이터도 새로고침
+      await Promise.all([
+        fetchKtasData(),
+        fetchPredictionData()
+      ]);
+    } catch (error) {
+      console.error("환자 데이터 업데이트 실패:", error);
+    }
+  }, [patients, fetchKtasData, fetchPredictionData]);
+
   // =========== Effect Hooks ===========
   useEffect(() => {
     checkSession();
@@ -472,6 +496,7 @@ function App() {
                       totalElements={totalElements}
                       onPageChange={handlePageChange}
                       userName={userName}
+                      onPatientDataUpdate={handlePatientDataUpdate}
                     />
                   </React.Suspense>
                 ) : (

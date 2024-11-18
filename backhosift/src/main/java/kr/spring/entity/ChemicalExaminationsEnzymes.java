@@ -1,76 +1,76 @@
 package kr.spring.entity;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "chemicalexaminationsenzymes")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChemicalExaminationsEnzymes {
-	
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
-
-    @Column(name = "Acetone")
+    
+    @OneToOne
+    @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
+    private LabTest labTest;
+    
+    @Column(name = "acetone")
     private Long acetone;
-
-    @Column(name = "ALT")
+    
+    @Column(name = "alt")
     private Long alt;
-
-    @Column(name = "Albumin")
+    
+    @Column(name = "albumin")
     private Long albumin;
-
+    
     @Column(name = "alkalinephosphatase")
     private Long alkalinePhosphatase;
-
-    @Column(name = "Ammonia")
+    
+    @Column(name = "ammonia")
     private Long ammonia;
-
-    @Column(name = "Amylase")
+    
+    @Column(name = "amylase")
     private Long amylase;
-
-    @Column(name = "AST")
+    
+    @Column(name = "ast")
     private Long ast;
-
+    
     @Column(name = "betahydroxybutyrate")
     private Long betaHydroxybutyrate;
-
-    @Column(name = "Bicarbonate")
+    
+    @Column(name = "bicarbonate")
     private Long bicarbonate;
-
-    @Column(name = "Bilirubin")
+    
+    @Column(name = "bilirubin")
     private Long bilirubin;
-
-    @Column(name = "CRP")
+    
+    @Column(name = "crp")
     private Long crp;
-
-    @Column(name = "Calcium")
+    
+    @Column(name = "calcium")
     private Long calcium;
-
-    @Column(name = "CO2")
+    
+    @Column(name = "co2")
     private Long co2;
-
-    @Column(name = "Chloride")
+    
+    @Column(name = "chloride")
     private Long chloride;
-
+    
     @Column(name = "regdate")
-    private LocalDateTime  regdate;
-
-    // 외래키 관계 설정
-    @ManyToOne
-    @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
-    private LabTest labtest;
-
-    // getter, setter 생략
+    private LocalDateTime regdate;
 }
+
