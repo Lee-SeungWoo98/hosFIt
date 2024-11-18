@@ -6,7 +6,7 @@ import java.util.Map; // 불일치 분석 및 대시보드 데이터를 저장�
 import org.springframework.beans.factory.annotation.Autowired; // AdminService 의존성 주입을 위해 필요
 import org.springframework.http.HttpStatus; // HTTP 상태 코드 반환을 위해 필요
 import org.springframework.http.MediaType; // JSON 응답의 Content-Type 설정을 위해 필요
-import org.springframework.http.ResponseEntity; 기존: HTTP 응답 객체 생성에 사용
+import org.springframework.http.ResponseEntity; // HTTP 응답 객체 생성에 사용
 import org.springframework.web.bind.annotation.GetMapping; // GET 요청 매핑을 위해 필요
 import org.springframework.web.bind.annotation.RequestMapping; // 기본 URL 경로 설정에 사용
 import org.springframework.web.bind.annotation.RestController; // RESTful 컨트롤러로 설정하기 위해 필요
