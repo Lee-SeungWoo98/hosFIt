@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { Save, Info, Bell, Check, Hospital } from 'lucide-react';
-import { useScores } from '../../../context/ScoreContext';
+import { Save, Info, Bell, Hospital, Building, Phone, Mail, MapPin } from 'lucide-react';
+import axios from 'axios';
 
-// SettingsCard 컴포넌트
+// 유지보수 담당자 정보 하드코딩
+const MAINTENANCE_CONTACT = {
+  company: 'hosFit Solutions Co., Ltd.',
+  department: '의료정보시스템팀',
+  name: '김유지',
+  position: '수석 엔지니어',
+  email: 'maintenance@hosfit.co.kr',
+  phone: '02-1234-5678',
+  address: '서울특별시 강남구 테헤란로 123 호스핏빌딩 15층'
+};
+
 const SettingsCard = ({ title, icon: Icon, children }) => (
   <div className="bg-white rounded-lg shadow-sm overflow-hidden">
     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -15,49 +25,27 @@ const SettingsCard = ({ title, icon: Icon, children }) => (
   </div>
 );
 
-// Checkbox 컴포넌트
-const Checkbox = ({ label, checked, onChange }) => (
-  <label className="flex items-center space-x-3 cursor-pointer group">
-    <div className="relative">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only peer"
-      />
-      <div className="h-5 w-5 border-2 rounded border-gray-300 peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all group-hover:border-blue-500">
-        {checked && (
-          <Check className="h-4 w-4 text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-        )}
-      </div>
-    </div>
-    <span className="text-gray-700">{label}</span>
-  </label>
-);
-
 const Settings = ({ showNotification }) => {
-  const { scores, updateScores } = useScores();
-  
-  // 점수 설정 상태
-  const [scoreSettings, setScoreSettings] = useState({
-    icu: scores.icu,
-    ward: scores.ward,
-    discharge: scores.discharge
+   // 가중치 설정 상태 - 테스트용 초기값
+  const [weights, setWeights] = useState({
+    discharge: 0.5,  // 퇴원 가중치 테스트값
+    ward: 0.6,  // 일반병동 가중치 테스트값
+    icu: 0.7  // 중환자실 가중치 테스트값
   });
-
-  // 추가 상태들
+  
+  // 병상 설정 상태
   const [bedCapacity, setBedCapacity] = useState({
     totalBeds: 48,
     criticalBeds: 10,
     regularBeds: 38
   });
 
-  const [maintenanceEmail, setMaintenanceEmail] = useState('maintenance@hospital.com');
-
-  // 점수 설정 핸들러
-  const handleScoreChange = (type, value) => {
-    const numValue = parseInt(value) || 0;
-    setScoreSettings(prev => ({
+  // 알림 설정 상태
+ 
+  // 가중치 변경 핸들러 
+ const handleWeightChange = (type, value) => {
+    const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 0.9);
+    setWeights(prev => ({
       ...prev,
       [type]: numValue
     }));
@@ -68,158 +56,140 @@ const Settings = ({ showNotification }) => {
     const numValue = parseInt(value) || 0;
     setBedCapacity(prev => {
       const newState = { ...prev, [field]: numValue };
-      
-      if (field === 'criticalBeds' || field === 'regularBeds') {
-        newState.totalBeds = newState.criticalBeds + newState.regularBeds;
-      }
-      else if (field === 'totalBeds') {
+      if (field === 'totalBeds') {
         const ratio = prev.criticalBeds / (prev.criticalBeds + prev.regularBeds);
         newState.criticalBeds = Math.round(numValue * ratio);
         newState.regularBeds = numValue - newState.criticalBeds;
       }
-      
       return newState;
     });
   };
 
+  // 설정 유효성 검사
   const validateSettings = () => {
-    if (scoreSettings.icu <= scoreSettings.ward || 
-        scoreSettings.ward <= scoreSettings.discharge) {
-      showNotification('점수는 ICU > 일반병동 > 퇴원 순서로 설정되어야 합니다.', 'error');
+    // 가중치 검증
+    if (weights.icu < weights.ward || weights.ward < weights.discharge) {
+      showNotification('가중치는 중환자실 > 일반병동 > 퇴원 순서로 설정되어야 합니다.', 'error');
       return false;
     }
 
-    if (scoreSettings.icu > 100 || scoreSettings.ward > 100 || 
-        scoreSettings.discharge > 100) {
-      showNotification('점수는 100을 초과할 수 없습니다.', 'error');
+    if (weights.icu > 0.9 || weights.ward > 0.9 || weights.discharge > 0.9) {
+      showNotification('가중치는 0.9를 초과할 수 없습니다.', 'error');
+      return false;
+    }
+
+
+    // 병상 수 검증
+    if (bedCapacity.totalBeds <= 0) {
+      showNotification('전체 병상 수는 0보다 커야 합니다.', 'error');
       return false;
     }
 
     return true;
   };
 
-  const handleSaveSettings = () => {
+  const handleWeightsSave = async () => {
     if (!validateSettings()) return;
     
     try {
-      updateScores(scoreSettings);
-      showNotification('설정이 저장되었습니다.', 'success');
+      const requests = [
+        { key: '0', value: weights.discharge }, // 퇴원
+        { key: '1', value: weights.ward },      // 일반병동
+        { key: '2', value: weights.icu }        // 중환자실
+      ];
+  
+      for (const { key, value } of requests) {
+        await axios.put(`http://localhost:8082/boot/thresholds/${key}`, null, {
+          params: { value: value }
+        });
+      }
+        
+      showNotification('가중치 설정이 저장되었습니다.', 'success');
     } catch (error) {
-      showNotification('설정 저장 중 오류가 발생했습니다.', 'error');
+      console.error('가중치 저장 오류:', error);
+      showNotification('가중치 저장 중 오류가 발생했습니다.', 'error');
     }
   };
 
   return (
     <div className="p-6 space-y-6">
-      {/* 점수 설정 섹션 */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            입실/퇴원 기준 점수 설정
-          </h2>
-
+      {/* 가중치 설정 섹션 */}
+      <SettingsCard title="가중치 설정" icon={Save}>
+        <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* ICU 점수 설정 */}
+            {/* 퇴원 가중치 */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                ICU 입실
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  value={scoreSettings.icu}
-                  onChange={(e) => handleScoreChange('icu', e.target.value)}
-                  min="0"
-                  max="100"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                <span className="ml-2 text-gray-500">점</span>
-              </div>
-              <div className="flex items-center text-sm text-blue-600">
-                <Info className="h-4 w-4 mr-1" />
-                <span>≥ {scoreSettings.icu}점</span>
-              </div>
+              <label className="block text-sm font-medium text-gray-700">퇴원 가중치</label>
+              <input
+                type="number"
+                value={weights.discharge}
+                onChange={(e) => handleWeightChange('discharge', e.target.value)}
+                step="0.1"
+                min="0.0"
+                max="0.9"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
 
-            {/* 일반병동 점수 설정 */}
+            {/* 일반병동 가중치 */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                일반병동
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  value={scoreSettings.ward}
-                  onChange={(e) => handleScoreChange('ward', e.target.value)}
-                  min="0"
-                  max="100"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                <span className="ml-2 text-gray-500">점</span>
-              </div>
-              <div className="flex items-center text-sm text-blue-600">
-                <Info className="h-4 w-4 mr-1" />
-                <span>{scoreSettings.ward}~{scoreSettings.icu - 1}점</span>
-              </div>
+              <label className="block text-sm font-medium text-gray-700">일반병동 가중치</label>
+              <input
+                type="number"
+                value={weights.ward}
+                onChange={(e) => handleWeightChange('ward', e.target.value)}
+                step="0.1"
+                min="0.0"
+                max="0.9"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
 
-            {/* 퇴원 점수 설정 */}
+            {/* 중환자실 가중치 */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                퇴원
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  value={scoreSettings.discharge}
-                  onChange={(e) => handleScoreChange('discharge', e.target.value)}
-                  min="0"
-                  max="100"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                <span className="ml-2 text-gray-500">점</span>
-              </div>
-              <div className="flex items-center text-sm text-blue-600">
-                <Info className="h-4 w-4 mr-1" />
-                <span>≤ {scoreSettings.discharge}점</span>
-              </div>
+              <label className="block text-sm font-medium text-gray-700">중환자실 가중치</label>
+              <input
+                type="number"
+                value={weights.icu}
+                onChange={(e) => handleWeightChange('icu', e.target.value)}
+                step="0.1"
+                min="0.0"
+                max="0.9"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
           </div>
 
-          <div className="mt-6 text-sm text-gray-500 bg-yellow-50  p-4 rounded-md flex items-start gap-2">
-            <Info className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
+          {/* 가중치 설정 안내 */}
+          <div className="mt-4 text-sm text-gray-500 bg-blue-50 p-4 rounded-md flex items-start gap-2">
+            <Info className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
             <p>
-              입실/퇴원 기준 점수는 환자의 자동 배치에 직접적인 영향을 미칩니다. 
-              <br/>
-              각 점수는 다음 조건을 만족해야 합니다.
+              각 영역별 가중치 값은 현재 DB에 저장된 값입니다.
+              <br /><br />
+              <span className="font-medium">- 가중치 범위: 0.0 ~ 0.9</span>
               <br />
-              <br /><span className="font-bold">- ICU 입실 점수 {'>'} 일반병동 점수 {'>'} 퇴원 점수</span>
-              <br /><span className="font-bold">- 모든 점수는 0-100 사이의 값이어야 합니다</span>
+              <span className="font-medium">- 저장 버튼을 클릭해야 변경사항이 적용됩니다.</span>
             </p>
           </div>
-        </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-lg">
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-6">
             <button
+              onClick={handleWeightsSave}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              onClick={handleSaveSettings}
             >
               <Save className="h-4 w-4 mr-2" />
-              설정 저장
+              가중치 설정 저장
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* 병상 설정 */}
       <SettingsCard title="병상 설정" icon={Hospital}>
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                전체 병상 수
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">전체 병상 수</label>
               <input
                 type="number"
                 value={bedCapacity.totalBeds}
@@ -231,40 +201,56 @@ const Settings = ({ showNotification }) => {
         </div>
       </SettingsCard>
 
-      {/* 알림 설정 */}
-      <SettingsCard title="알림 설정" icon={Bell}>
-        <div className="space-y-6">
+      {/* 유지보수 담당자 정보 */}
+      <SettingsCard title="유지보수 담당자 정보" icon={Bell}>
+        <div className="bg-gray-50 rounded-lg p-6">
           <div className="space-y-4">
-            <label className="block">
-              <span className="text-gray-700 text-sm font-medium">유지보수 담당자 이메일</span>
-              <input
-                type="email"
-                value={maintenanceEmail}
-                onChange={(e) => setMaintenanceEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder="이메일 주소 입력"
-              />
-            </label>
+            {/* 회사 정보 */}
+            <div className="flex items-center gap-2">
+              <Building className="h-5 w-5 text-gray-400" />
+              <div>
+                <p className="font-medium text-gray-900">{MAINTENANCE_CONTACT.company}</p>
+                <p className="text-sm text-gray-500">{MAINTENANCE_CONTACT.department}</p>
+              </div>
+            </div>
+
+            {/* 담당자 정보 */}
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 flex justify-center text-gray-400">👤</div>
+              <div>
+                <p className="font-medium text-gray-900">{MAINTENANCE_CONTACT.name}</p>
+                <p className="text-sm text-gray-500">{MAINTENANCE_CONTACT.position}</p>
+              </div>
+            </div>
+
+            {/* 연락처 정보 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-gray-400" />
+                <p className="text-gray-600">{MAINTENANCE_CONTACT.phone}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-gray-400" />
+                <p className="text-gray-600">{MAINTENANCE_CONTACT.email}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-gray-400" />
+                <p className="text-gray-600">{MAINTENANCE_CONTACT.address}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 알림 메시지 */}
+          <div className="mt-6 text-sm text-gray-500 bg-yellow-50 p-4 rounded-md flex items-start gap-2">
+            <Info className="h-5 w-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+            <p>
+              유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다.
+              <br />
+              정보 수정이 필요한 경우 시스템 관리자에게 문의해 주세요.
+            </p>
           </div>
         </div>
       </SettingsCard>
-
-      {/* 저장 버튼 */}
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          취소
-        </button>
-        <button
-          onClick={handleSaveSettings}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          설정 저장
-        </button>
-      </div>
     </div>
   );
 };

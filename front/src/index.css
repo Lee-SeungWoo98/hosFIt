@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 조선로고체 import */
+@font-face {
+  font-family: 'ChosunLo';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunLo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+/* 로고 폰트 클래스 추가 */
+.logo-font {
+  font-family: 'ChosunLo' !important;
+}
 /* Pretendard 폰트 적용 */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -86,7 +97,4 @@ body {
 .nav-link.active {
   background-color: #2563eb;
   color: white;
-}
-th{
-  text-align: center;
 }
