@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Settings as SettingsIcon } from 'lucide-react';
 import { useScores } from '../../../context/ScoreContext';
-import axios from 'axios';
+import axios from 'axios'; // 서버와 통신하기 위해 Axios 사용
 
-// 배치 유형에 따른 스타일과 라벨 정의
+// 배치 유형에 따른 스타일 정의
 const SEVERITY_STYLES = {
   ICU: {
-    bg: 'bg-[#FEE2E2]/50',
-    text: 'text-[#DC2626]',
-    border: 'border-[#FECACA]',
-    label: '중증병동',
-    description: '중증병동 입실이 필요한 환자'
+    bg: 'bg-[#FEE2E2]/50', // 중증병동 배경색
+    text: 'text-[#DC2626]', // 텍스트 색상
+    border: 'border-[#FECACA]', // 테두리 색상
+    label: '중증병동', // 병동 이름
+    description: '중증병동 입실이 필요한 환자' // 추가 설명
   },
   WARD: {
-    bg: 'bg-[#FEF3C7]/50',
+    bg: 'bg-[#FEF3C7]/50', // 일반병동 배경색
     text: 'text-[#D97706]',
     border: 'border-[#FDE68A]',
     label: '일반병동',
     description: '일반병동 입원이 필요한 환자'
   },
   DISCHARGE: {
-    bg: 'bg-[#DCFCE7]/50',
+    bg: 'bg-[#DCFCE7]/50', // 퇴원 배경색
     text: 'text-[#059669]',
     border: 'border-[#A7F3D0]',
     label: '퇴원',
@@ -28,7 +28,7 @@ const SEVERITY_STYLES = {
   }
 };
 
-// 대시보드 카드 컴포넌트
+// 대시보드의 통계 카드 컴포넌트
 const DashboardCard = ({ title, value, trend, trendValue, target }) => (
   <div className="bg-white/90 rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all h-full group">
     <div className="flex justify-between items-center mb-6">
@@ -51,7 +51,7 @@ const DashboardCard = ({ title, value, trend, trendValue, target }) => (
   </div>
 );
 
-// 가중치 표시 박스 컴포넌트
+// 가중치 박스 컴포넌트 (병동 별 가중치 표시)
 const WeightBox = ({ type, value }) => {
   const styles = SEVERITY_STYLES[type];
 
@@ -67,7 +67,7 @@ const WeightBox = ({ type, value }) => {
   );
 };
 
-// 불일치 케이스 컴포넌트
+// 불일치 케이스 카드 컴포넌트
 const MismatchCase = ({ doctor, ai, percentage }) => {
   const getBorderStyle = (type) => {
     if (type.includes('중증')) return 'border-l-4 border-l-[#DC2626] bg-[#FEE2E2]/50';
@@ -111,13 +111,15 @@ const MismatchCase = ({ doctor, ai, percentage }) => {
 // 대시보드 컴포넌트
 const Dashboard = ({ loading, onTabChange }) => {
   const { weights } = useScores();
+
   const [stats, setStats] = useState({
-    dailyPatients: '로딩 중...',
+    dailyPatients: '로딩 중...', // 초기 상태
     changeRate: 0,
     trend: 'up',
     aiMatchRate: 0
   });
 
+  // 통계 데이터를 주기적으로 로드
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -140,12 +142,12 @@ const Dashboard = ({ loading, onTabChange }) => {
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 300000);
+    const interval = setInterval(fetchStats, 300000); // 5분 간격으로 데이터 갱신
     return () => clearInterval(interval);
   }, []);
 
   const handleSettingsClick = () => {
-    onTabChange('settings');
+    onTabChange('settings'); // 설정 탭으로 이동
   };
 
   const mismatchCases = [
@@ -178,31 +180,27 @@ const Dashboard = ({ loading, onTabChange }) => {
               <WeightBox type="DISCHARGE" value={weights.discharge} />
             </div>
           </div>
+
           <DashboardCard
             title="AI 퇴실배치 일치도"
             value={`${stats.aiMatchRate}%`}
-            trend={stats.trend}
+            trend="up"
             trendValue="1.2%"
             target="목표: 90%"
           />
           <DashboardCard
             title="일일 응급실 내원 환자"
-            value={`${stats.dailyPatients}`}
+            value={`${stats.dailyPatients}명`}
             trend={stats.trend}
-            trendValue={`${stats.changeRate}%`}
+            trendValue={`${Math.abs(stats.changeRate)}%`}
             target={new Date().toLocaleString()}
           />
         </section>
-        <section className="bg-white/90 rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-base text-gray-600">환자 배치 불일치</h3>
-            <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider bg-gray-50 px-3 py-1.5 rounded-full">
-              최근 30일 기준
-            </div>
-          </div>
+
+        <section className="bg-white/90 rounded-xl p-6 xl:p-8 shadow-sm border border-gray-200">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 xl:gap-6">
-            {mismatchCases.map((c, i) => (
-              <MismatchCase key={i} {...c} />
+            {mismatchCases.map((caseData, index) => (
+              <MismatchCase key={index} {...caseData} />
             ))}
           </div>
         </section>
