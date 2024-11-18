@@ -1,6 +1,7 @@
 package kr.spring.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,26 @@ public class ThresholdService {
         initializeCache();
     }
     
+    
+    public List<Map<String, Object>> getThresholdsForDisplay() {
+        List<ThresholdEntity> thresholds = thresholdRepository.findAll();
+        // 디버깅을 위한 로그 추가
+        System.out.println("Found thresholds: " + thresholds.size());
+        
+        List<Map<String, Object>> result = new ArrayList<>();
+           
+        for (ThresholdEntity threshold : thresholds) {
+            Map<String, Object> thresholdMap = new HashMap<>();
+            thresholdMap.put("key", threshold.getThresholdKey());
+            thresholdMap.put("value", threshold.getThresholdValue());
+            result.add(thresholdMap);
+            // 디버깅을 위한 로그 추가
+            System.out.println("Added threshold: " + threshold.getThresholdKey() + " = " + threshold.getThresholdValue());
+        }
+        
+        return result;
+    }
+    
     @PostConstruct
     private void initializeCache() {
         List<ThresholdEntity> thresholds = thresholdRepository.findAll();
@@ -49,10 +70,12 @@ public class ThresholdService {
             
         threshold.setThresholdValue(value);
         threshold.setLastModifiedDate(LocalDateTime.now());
+        threshold.setLastModifiedBy(modifiedBy);  // modifiedBy 설정 추가
         
         thresholdRepository.save(threshold);
         thresholdCache.put(key, value);
         
-        log.info("Threshold updated - key: {}, value: {}", key, value);
+        log.info("Threshold updated - key: {}, value: {}, modifiedBy: {}, modifiedDate: {}", 
+            key, value, modifiedBy, threshold.getLastModifiedDate());
     }
 }
