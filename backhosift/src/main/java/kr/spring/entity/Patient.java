@@ -47,11 +47,11 @@ public class Patient {
     
     
     @Column(name = "phonenumber")
-    private Long PhoneNumber;
+    private Long phoneNumber;
     
     
     @Column(name = "residentnum")
-    private String ResidentNum;
+    private String residentNum;
     
     @Column(name = "ICD")
     private String icd;
