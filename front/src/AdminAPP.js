@@ -93,11 +93,6 @@ const AdminApp = ({logout, userName}) => {
   return (
     <ScoreProvider>
       <Layout activeTab={activeTab} onTabChange={setActiveTab} logout={logout} userName={userName}>
-        <AdminHeader 
-          title={getPageTitle()} 
-          lastUpdated="2024-10-25 10:30:00"
-          onRefresh={handleRefresh}
-        />
         {renderContent()}
       </Layout>
       <NotificationContainer />

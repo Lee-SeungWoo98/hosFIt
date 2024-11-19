@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// 클래스 이름을 다르게 지정
-class EmailService {
+class ErrorEmailService {
   constructor() {
     this.baseURL = 'http://localhost:8082/boot/errors';
-    this.adminEmail = '2024skyfordive2024@gmail.com';
   }
 
   async sendErrorLog(log) {
@@ -13,35 +11,30 @@ class EmailService {
         throw new Error('유효하지 않은 로그 데이터입니다.');
       }
 
-      const emailData = {
-        logId: log.id,
-        errorName: log.errorname,
-        errorType: log.errortype,
-        severity: log.severitylevel,
-        message: log.errormessage,
-        stackTrace: log.errorstack,
+      // 서버에 맞는 형식으로 데이터 변환
+      const emailRequest = {
+        id: log.id,
+        errorname: log.errorname,
+        errormessage: log.errormessage,
+        errorstack: log.errorstack,
+        errortype: log.errortype,
+        severitylevel: log.severitylevel,
         url: log.url,
-        userId: log.userid || '미로그인',
+        userid: log.userid || '미로그인',
         browser: log.browser,
-        createdAt: Array.isArray(log.createdat) ? 
-          log.createdat.join('-') : 
-          new Date().toISOString(),
-        recipientEmail: this.adminEmail
+        createdat: new Date(),
+        isresolved: log.isresolved
       };
-
-      console.log('Sending email data:', emailData);
 
       const response = await axios.post(
         `${this.baseURL}/send-email`,
-        emailData,
+        emailRequest,
         {
           headers: {
             'Content-Type': 'application/json'
           }
         }
       );
-
-      console.log('Server response:', response.data);
 
       if (response.data.success) {
         return {
@@ -56,7 +49,6 @@ class EmailService {
       console.error('Email sending error:', error);
       
       if (error.response) {
-        console.error('Response error data:', error.response.data);
         throw new Error(
           `서버 에러 (${error.response.status}): ${error.response.data.message || '알 수 없는 에러'}`
         );
@@ -71,5 +63,4 @@ class EmailService {
   }
 }
 
-const errorEmailService = new EmailService();
-export default errorEmailService;
+export default new ErrorEmailService();
