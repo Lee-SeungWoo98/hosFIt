@@ -217,7 +217,7 @@ function App() {
       return null;
     }
   }, []);
-
+  // AI 배치 예측 가져오는 함수
   const fetchVisitInfo = useCallback(async (subject_id) => {
     try {
       const result = await axios.get(
