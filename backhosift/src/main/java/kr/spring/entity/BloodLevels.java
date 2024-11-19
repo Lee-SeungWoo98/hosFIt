@@ -9,6 +9,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +26,7 @@ public class BloodLevels {
     @Id
     @Column(name = "bloodidx")
     private Long bloodIdx;
-    
+    @JsonIgnore
     @OneToOne  // ManyToOne에서 OneToOne으로 변경
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
     private LabTest labTest;
