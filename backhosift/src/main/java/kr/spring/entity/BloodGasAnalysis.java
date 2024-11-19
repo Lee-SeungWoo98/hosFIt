@@ -9,6 +9,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,7 +40,7 @@ public class BloodGasAnalysis {
     
     @Column(name = "regdate")
     private LocalDateTime regDate;
-    
+    @JsonIgnore
     @OneToOne
     @JoinColumn(name = "bloodidx", insertable = false, updatable = false)
     private LabTest labTest;
