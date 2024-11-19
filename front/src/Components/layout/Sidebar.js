@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Users, AlertCircle, Sliders } from 'lucide-react'; // 필요한 아이콘을 lucide-react 라이브러리에서 불러옵니다.
+import { Grid, Users, AlertCircle, Sliders, Settings } from 'lucide-react'; // 필요한 아이콘을 lucide-react 라이브러리에서 불러옵니다.
 import "../layout/Sidbar.css"; // 사이드바에 대한 추가 스타일을 적용하기 위해 CSS 파일을 import
 
 /**
@@ -92,7 +92,7 @@ const Sidebar = ({ activeTab, onTabChange, logout, userName }) => (
         />
         <NavLink
           active={activeTab === 'settings'}
-          icon={Sliders} // 설정 아이콘
+          icon={Settings} // 설정 아이콘
           label="설정"
           onClick={() => onTabChange('settings')}
         />
