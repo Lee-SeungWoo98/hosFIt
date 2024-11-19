@@ -27,7 +27,7 @@ public class RandomDataGeneratorService {
        private final LabTestRepository labTestRepository;  // FlaskRepository 대신 LabTestRepository 사용
        private final Random random = new Random();
        
-       @Scheduled(fixedRate = 120000) // 2분마다 실행
+       
        @Transactional
        public void scheduleDataGeneration() {
            try {
