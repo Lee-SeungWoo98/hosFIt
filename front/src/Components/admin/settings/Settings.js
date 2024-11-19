@@ -15,9 +15,9 @@ const MAINTENANCE_CONTACT = {
 const SettingsCard = ({ title, icon: Icon, children }) => (
   <div className="bg-white rounded-lg shadow-sm overflow-hidden">
     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-      <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-gray-500" />
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+      <div className="flex">
+        <Icon className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
+        <h3 className="ml-3 text-lg font-medium text-gray-900">{title}</h3>
       </div>
     </div>
     <div className="px-4 py-3">{children}</div>
@@ -86,64 +86,66 @@ const WeightSettings = ({ showNotification }) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">퇴원</label>
-          <input
-            type="number"
-            value={weights.discharge}
-            onChange={(e) => handleWeightChange('discharge', e.target.value)}
-            step="0.1"
-            min="0.0"
-            max="0.9"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          />
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">퇴원 가중치</label>
+            <input
+              type="number"
+              value={weights.discharge}
+              onChange={(e) => handleWeightChange('discharge', e.target.value)}
+              step="0.1"
+              min="0.0"
+              max="0.9"
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">일반병동 가중치</label>
+            <input
+              type="number"
+              value={weights.ward}
+              onChange={(e) => handleWeightChange('ward', e.target.value)}
+              step="0.1"
+              min="0.0"
+              max="0.9"
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">중환자실 가중치</label>
+            <input
+              type="number"
+              value={weights.icu}
+              onChange={(e) => handleWeightChange('icu', e.target.value)}
+              step="0.1"
+              min="0.0"
+              max="0.9"
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">일반병동</label>
-          <input
-            type="number"
-            value={weights.ward}
-            onChange={(e) => handleWeightChange('ward', e.target.value)}
-            step="0.1"
-            min="0.0"
-            max="0.9"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">중증병동</label>
-          <input
-            type="number"
-            value={weights.icu}
-            onChange={(e) => handleWeightChange('icu', e.target.value)}
-            step="0.1"
-            min="0.0"
-            max="0.9"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          />
+
+        <div className="flex items-end">
+          <button
+            onClick={handleWeightsSave}
+            className="h-10 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            가중치 설정 저장
+          </button>
         </div>
       </div>
 
-      <div className="mt-2 text-sm text-gray-500 bg-blue-50 p-3 rounded-md flex items-start gap-2">
+      <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-md flex items-start gap-2">
         <Info className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
         <p>
           각 영역별 가중치 값은 현재 DB에 저장된 값입니다.
-          <br /><br />
+          <br />
           <span className="font-medium">- 가중치 범위: 0.0 ~ 0.9</span>
           <br />
           <span className="font-medium">- 저장 버튼을 클릭해야 변경사항이 적용됩니다.</span>
         </p>
-      </div>
-
-      <div className="flex justify-end mt-3">
-        <button
-          onClick={handleWeightsSave}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          가중치 설정 저장
-        </button>
       </div>
     </div>
   );
@@ -161,7 +163,6 @@ const BedSettings = ({ showNotification }) => {
 
   const handleBedCapacitySave = async () => {
     try {
-      // API 엔드포인트는 실제 환경에 맞게 수정하세요
       await axios.put('http://localhost:8082/boot/beds/capacity', bedCapacity);
       showNotification('병상 수 설정이 저장되었습니다.', 'success');
     } catch (error) {
