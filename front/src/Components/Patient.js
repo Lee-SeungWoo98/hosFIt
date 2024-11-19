@@ -733,6 +733,12 @@ const BloodTestResults = ({ labTests, gender }) => {
     blood_gas_analysis: useRef(null)
   };
 
+  // 디버깅용 이펙트
+  useEffect(() => {
+    console.log("Received lab tests:", labTests);
+    console.log("Received gender:", gender);
+  }, [labTests, gender]);
+
   const handleRawDataToggle = () => {
     setShowRawData(!showRawData);
     if (showRawData) {
@@ -816,31 +822,36 @@ const BloodTestResults = ({ labTests, gender }) => {
 
   let abnormalItems = [];
   
-  categories.forEach(category => {
-    if (labTests[0][category.name] && labTests[0][category.name].length > 0) {
-      const data = labTests[0][category.name][0];
-      Object.entries(data).forEach(([key, value]) => {
-        // 피 검사 데이터를 뽑아올 때 수치보기 표에 reg_date가 표시돼서 안 보이게 해둠
-        if (key !== 'blood_idx' && 
-          key !== 'bloodIdx' && 
-          key !== 'reg_date' && 
-          key !== 'regDate' && 
-          key !== 'regdate' && 
-          key !== 'labtest' && 
-          value !== null) {
-          const isNormal = checkNormalRange(key, value, gender);
-          if (isNormal === false) {
-            abnormalItems.push({ 
-              key: key,
-              value: value,
-              normalRange: getRangeDisplay(key, gender, ranges),
-              unit: units[key] || ''
-            });
+  if (labTests && labTests[0]) {  // null 체크 추가
+    categories.forEach(category => {
+      if (labTests[0][category.name]?.[0]) {  // optional chaining 추가
+        const data = labTests[0][category.name][0];
+        console.log(`Processing category ${category.name}:`, data); // 디버깅용
+
+        Object.entries(data).forEach(([key, value]) => {
+          if (key !== 'blood_idx' && 
+              key !== 'bloodIdx' && 
+              key !== 'reg_date' && 
+              key !== 'regDate' && 
+              key !== 'regdate' && 
+              key !== 'labtest' && 
+              value !== null) {
+            const isNormal = checkNormalRange(key, value, gender);
+            console.log(`Checking ${key}: value=${value}, isNormal=${isNormal}`); // 디버깅용
+            
+            if (isNormal === false) {
+              abnormalItems.push({ 
+                key: key,
+                value: value,
+                normalRange: getRangeDisplay(key, gender, ranges),
+                unit: units[key] || ''
+              });
+            }
           }
-        }
-      });
-    }
-  });
+        });
+      }
+    });
+  }
 
   return (
     <div className="blood-test-results">
@@ -1248,12 +1259,12 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
 
    // patientInfo 상태 초기화
    const [patientInfo, setPatientInfo] = useState({
-    name: patientData?.name,
-    age: patientData?.age,
-    emergencyLevel: `Level ${latestVisit?.tas}`,
-    stayDuration: `${latestVisit?.losHours}시간`,
+    name: patientData?.name || '',
+    age: patientData?.age || '',
+    emergencyLevel: latestVisit ? `Level ${latestVisit.tas}` : '',
+    stayDuration: latestVisit ? `${latestVisit.losHours}시간` : '',
     vitalSigns: latestVisit?.vitalSigns || [],
-    bloodTestData: null
+    bloodTestData: labTests || null
   });
 
   // 가장 최근 방문의 stayId를 가져오는 함수
@@ -1303,7 +1314,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
   // 초기 데이터 설정
   useEffect(() => {
     if (patientData?.visits?.[0]?.vitalSigns) {
-      const latestVisit = patientData.visits[patientData.visits.length - 1];
+      const latestVisit = patientData?.visits?.[patientData.visits.length - 1] || null;
       
       const predictionData = latestVisit.vitalSigns.map(vitalSign => {
         console.log("Raw vitalSign data:", {
@@ -1418,8 +1429,8 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
    // 날짜 클릭 핸들러
    const handleDateClick = async (date, stay_id) => {
     try {
+      const labTestsResponse = await fetchLabTests(stay_id);
       const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
-      const labTestsResponse = await fetchPatientLabTests(stay_id);
       
       if (selectedVisit?.vitalSigns?.length > 0) {
         // 생체 데이터 포맷팅
@@ -1447,11 +1458,12 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
         setVitalSignsData(formattedVitalSigns);
 
         // 상태 업데이트
+        const formattedLabTests = formatLabTests(labTestsResponse);
         setPatientInfo(prev => ({
           ...prev,
           emergencyLevel: `Level ${selectedVisit.tas}`,
           stayDuration: `${selectedVisit.losHours}시간`,
-          bloodTestData: labTestsResponse ? formatLabTests(labTestsResponse) : null
+          bloodTestData: formattedLabTests
         }));
 
         // 예측 데이터 업데이트
@@ -1567,6 +1579,71 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
       blood_gas_analysis: response[0].bloodGasAnalysis || []
     }];
   };
+  
+  // Patient 컴포넌트 내 useEffect 추가
+  useEffect(() => {
+    const fetchInitialLabTests = async () => {
+      if (latestVisit?.stayId) {
+        try {
+          const labTestsResponse = await fetchLabTests(latestVisit.stayId);
+          console.log("Lab tests response:", labTestsResponse); // 디버깅용
+          
+          if (labTestsResponse) {
+            const formattedTests = formatLabTests(labTestsResponse);
+            console.log("Formatted lab tests:", formattedTests); // 디버깅용
+            
+            setPatientInfo(prev => ({
+              ...prev,
+              bloodTestData: formattedTests
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch initial lab tests:", error);
+          setError("피검사 데이터를 불러오는데 실패했습니다.");
+        }
+      }
+    };
+  
+    // patientData가 있을 때만 실행
+    if (patientData && latestVisit) {
+      fetchInitialLabTests();
+      
+      // vitalSigns 데이터 설정 (기존 코드 유지)
+      if (latestVisit.vitalSigns) {
+        const formattedVitalSigns = latestVisit.vitalSigns.map(sign => ({
+          chartTime: Array.isArray(sign.chartTime) 
+            ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
+            : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }),
+          heartRate: sign.heartrate,
+          bloodPressure: sign.sbp,
+          bloodPressureDiastolic: sign.dbp,
+          oxygenSaturation: parseFloat(sign.o2sat),
+          respirationRate: sign.resprate,
+          temperature: parseFloat(sign.temperature)
+        })).sort((a, b) => {
+          const [hoursA, minutesA] = a.chartTime.split(':').map(Number);
+          const [hoursB, minutesB] = b.chartTime.split(':').map(Number);
+          return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
+        });
+  
+        setVitalSignsData(formattedVitalSigns);
+      }
+  
+      // patientInfo 업데이트 (기존 코드 유지)
+      setPatientInfo(prev => ({
+        ...prev,
+        name: patientData.name || '',
+        age: patientData.age || '',
+        emergencyLevel: `Level ${latestVisit.tas}`,
+        stayDuration: `${latestVisit.losHours}시간`,
+        vitalSigns: latestVisit.vitalSigns || []
+      }));
+    }
+  }, [patientData, latestVisit, fetchLabTests]);
 
   // AI TAS 추천 텍스트 생성
   const getAIRecommendationText = (wardAssignment) => {
@@ -1657,7 +1734,9 @@ const handleAlertClose = () => {
       <PatientInfoBanner
         patientInfo={{
           ...patientInfo,
-          aiRecommendation: getAIRecommendationText(latestVisit?.wardAssignment)
+          aiRecommendation: latestVisit 
+            ? getAIRecommendationText(latestVisit.wardAssignment)
+            : '데이터가 없습니다'
         }}
         error={error}
         onPlacementConfirm={handlePlacementConfirm}
@@ -1691,11 +1770,11 @@ const handleAlertClose = () => {
           })}
         </div>
         <div className="blood-test-container">
-        <BloodTestResults 
-          labTests={localLabTests} 
-          gender={patientData?.gender} 
-        />
-      </div>
+          <BloodTestResults 
+            labTests={patientInfo.bloodTestData} 
+            gender={patientData?.gender} 
+          />
+        </div>
     </div>
 
       <div className="history-table-container">
