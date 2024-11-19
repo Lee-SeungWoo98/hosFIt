@@ -67,9 +67,10 @@ body {
 /* 예측 레이블 컨테이너 */
 .prediction-label-container {
   display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 10px;
+  flex-direction: row;          /* 가로 방향으로 변경 */
+  justify-content: center;      /* 중앙 정렬 */
+  gap: 10px;                    /* 레이블 간 간격 증가 */
+  padding: 0.5rem;
   margin-top: 10px;
 }
 
@@ -89,7 +90,9 @@ body {
   align-items: center;
   cursor: pointer;
   transition: transform 0.2s ease;
-  margin-top: -27px;
+  padding: 0.5rem;
+  margin-top: -29px;
+  gap: -10px;
 }
 
 /* Dot indicators */
@@ -318,15 +321,6 @@ body {
 .ktas-selected .ktas-label-text {
   font-weight: 700;
   color: #111827;
-}
-
-.prediction-label-text {
-  font-size: 12.2px;
-  font-weight: 500;
-}
-
-.prediction-label-tooltip {
-  font-size: 0.875rem;
 }
 
 @keyframes selectedPulse {
