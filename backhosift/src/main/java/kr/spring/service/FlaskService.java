@@ -3,7 +3,6 @@ package kr.spring.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -22,10 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import kr.spring.dto.AiDTO;
 import kr.spring.dto.FlaDTO;
-import kr.spring.dto.FlaDTOImpl;
 import kr.spring.entity.AiTAS;
-import kr.spring.entity.LabTest;
-import kr.spring.entity.Visit;
 import kr.spring.entity.VitalSigns;
 import kr.spring.repository.AiTASProjection;
 import kr.spring.repository.AiTASRepository;
