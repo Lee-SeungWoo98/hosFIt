@@ -3,6 +3,7 @@ package kr.spring.repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,6 @@ public interface WardAssignmentRepository extends JpaRepository<WardAssignment, 
 	           "WHERE w.visit.stayId IN :stayIds AND w.chartNum IN " +
 	           "(SELECT MAX(w2.chartNum) FROM WardAssignment w2 WHERE w2.visit.stayId = w.visit.stayId)")
 	    List<WardAssignment> findLatestByStayIds(@Param("stayIds") List<Long> stayIds);
+	 
+	 Optional<WardAssignment> findByChartNum(String chartNum);
 }
