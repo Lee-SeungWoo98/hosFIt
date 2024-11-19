@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminController {
 	
 	
-
+// 브랜치 테스트
     @Autowired
     private AdminService adminService;
     //일치도 라벨과 ward 
