@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
-import com.sun.corba.se.spi.activation.Repository;
 
 @Service
 public class MemberService {
