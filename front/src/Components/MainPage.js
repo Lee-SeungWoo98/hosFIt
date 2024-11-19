@@ -46,6 +46,29 @@ function MainPage({
     visitInfo: null,
   });
 
+  // tabCounts 상태 추가
+  const [tabCounts, setTabCounts] = useState({
+    all: 0,
+    icu: 0,
+    ward: 0,
+    discharge: 0
+  });
+
+  // tabCounts를 predictionData 형식으로 변환
+  const calculatedPredictionData = useMemo(() => {
+    const total = tabCounts.icu + tabCounts.ward + tabCounts.discharge;
+    return {
+      ICU: tabCounts.icu,
+      WARD: tabCounts.ward,
+      DISCHARGE: tabCounts.discharge
+    };
+  }, [tabCounts]);
+
+  // 탭 카운트 변경 핸들러
+  const handleTabCountsChange = useCallback((newCounts) => {
+    setTabCounts(newCounts);
+  }, []);
+
   // =========== 데이터 포맷팅 함수 ===========
   /**
    * 활력징후 데이터 포맷팅
@@ -182,6 +205,8 @@ function MainPage({
         onPageChange={onPageChange}
         loading={loading}
         onPatientDataUpdate={onPatientDataUpdate}
+        onTabCountsChange={handleTabCountsChange}
+        onTASClick={onTASClick}
       />
     );
   };
@@ -196,7 +221,7 @@ function MainPage({
         onTASClick={onTASClick}
         logout={logout}
         ktasFilter={ktasFilter}
-        predictionData={predictionData}
+        predictionData={calculatedPredictionData}
       />
       <div className="main-content">
         {error ? (

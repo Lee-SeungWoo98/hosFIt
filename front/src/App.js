@@ -192,18 +192,41 @@ function App() {
     }
   }, [totalBed]);
 
+  // tabCounts 상태 추가
+  const [tabCounts, setTabCounts] = useState({
+    all: 0,
+    icu: 0,
+    ward: 0,
+    discharge: 0
+  });
+
+  // AI_TAS 배치 비율 차트
   const fetchPredictionData = useCallback(async () => {
     try {
-      const result = await axios.get(API_ENDPOINTS.PATIENTS.PREDICTION);
-      setPredictionData(result.data);
-    } catch (error) {
+      // tabCounts를 기반으로 predictionData 설정
       setPredictionData({
-        DISCHARGE: 35,
-        WARD: 45,
-        ICU: 20
+        ICU: tabCounts.icu,
+        WARD: tabCounts.ward,
+        DISCHARGE: tabCounts.discharge
       });
-      console.error("예측 데이터 로드 실패:", error);
+    } catch (error) {
+      console.error("예측 데이터 설정 실패:", error);
+      setPredictionData({
+        ICU: 0,
+        WARD: 0,
+        DISCHARGE: 0
+      });
     }
+  }, [tabCounts]);
+
+  const handleTabCountsChange = useCallback((newCounts) => {
+    setTabCounts(newCounts);
+    // tabCounts가 업데이트되면 자동으로 predictionData도 업데이트
+    setPredictionData({
+      ICU: newCounts.icu,
+      WARD: newCounts.ward,
+      DISCHARGE: newCounts.discharge
+    });
   }, []);
 
   const fetchLabTests = useCallback(async (stay_id) => {
@@ -499,6 +522,7 @@ function App() {
                       onPageChange={handlePageChange}
                       userName={userName}
                       onPatientDataUpdate={handlePatientDataUpdate}
+                      onTabCountsChange={handleTabCountsChange}
                     />
                   </React.Suspense>
                 ) : (

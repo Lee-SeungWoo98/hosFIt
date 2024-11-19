@@ -147,6 +147,7 @@ function List({
   totalPages,
   totalElements,
   onPageChange,
+  onTabCountsChange
 }) {
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
@@ -215,29 +216,38 @@ useEffect(() => {
         ...selectedFilters,
         maxLevel: tab.maxLevel
       };
-      
-      // 이전 값들 임시 저장
-      const prevCounts = { ...tabCounts };
-      
-      const response = await onFilteredPatientsUpdate(0, newFilters);
-      
-      if (response) {
-        if (tabId === 'all') {
-          // 전체 탭인 경우 기존 합계 유지
+  
+      if (tabId === 'all') {
+        // 전체 탭 선택 시 각 탭의 카운트를 개별적으로 가져오기
+        const requests = LOCATION_TABS.filter(t => t.id !== 'all').map(async (t) => {
+          const response = await onFilteredPatientsUpdate(0, {
+            ...selectedFilters,
+            maxLevel: t.maxLevel
+          });
+          return { tabId: t.id, count: response?.totalElements || 0 };
+        });
+  
+        const results = await Promise.all(requests);
+        setTabCounts(prev => {
+          const newCounts = { ...prev };
+          results.forEach(result => {
+            newCounts[result.tabId] = result.count;
+          });
+          newCounts.all = newCounts.icu + newCounts.ward + newCounts.discharge;
+          return newCounts;
+        });
+  
+        // 전체 탭에 대한 필터링된 데이터 가져오기
+        await onFilteredPatientsUpdate(0, newFilters);
+  
+      } else {
+        // 특정 탭 선택 시
+        const response = await onFilteredPatientsUpdate(0, newFilters);
+        
+        if (response) {
           setTabCounts(prev => ({
             ...prev,
-            all: prev.icu + prev.ward + prev.discharge
-          }));
-        } else {
-          // 다른 탭들의 경우 새로운 값으로 업데이트
-          setTabCounts(prev => ({
-            ...prev,
-            [tabId]: response.totalElements,
-            all: (
-              (tabId === 'icu' ? response.totalElements : prev.icu) +
-              (tabId === 'ward' ? response.totalElements : prev.ward) +
-              (tabId === 'discharge' ? response.totalElements : prev.discharge)
-            )
+            [tabId]: response.totalElements
           }));
         }
       }
@@ -246,7 +256,7 @@ useEffect(() => {
     } finally {
       setIsUpdating(false);
     }
-  }, [selectedFilters, onFilteredPatientsUpdate, tabCounts]);
+  }, [selectedFilters, onFilteredPatientsUpdate]);
 
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());

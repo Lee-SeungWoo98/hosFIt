@@ -17,10 +17,11 @@ const KTAS_COLORS = [
   "#bbbbbb"     // 기타 - 더 회색
 ];
 
+// PREDICTION_COLORS 상수 수정
 const PREDICTION_COLORS = {
-  DISCHARGE: "#ef4444",
-  WARD: "#3b82f6",
-  ICU: "#22c55e"
+  DISCHARGE: "#22c55e",    // 퇴원
+  WARD: "#3b82f6",        // 일반 병동
+  ICU: "#ef4444"          // 중증 병동
 };
 
 const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
@@ -29,10 +30,10 @@ const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
   const [hoveredPredictionIndex, setHoveredPredictionIndex] = useState(null);
   const [selectedDotIndex, setSelectedDotIndex] = useState(null); // 선택된 dot 인덱스 추가
   
-// =========== 고급 그라데이션 및 효과 정의 ===========
+// =========== 그라데이션 및 효과 정의 ===========
 const renderGradients = () => (
   <defs>
-    {/* KTAS 색상에 대한 고급 그라데이션 */}
+    {/* KTAS 색상에 대한 그라데이션 */}
     <linearGradient id="ktas1" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stopColor="#60a5fa" />
       <stop offset="50%" stopColor="#3b82f6" />
@@ -64,7 +65,7 @@ const renderGradients = () => (
       <stop offset="100%" stopColor="#a3a3a3" />
     </linearGradient>
 
-    {/* 예측 차트 색상에 대한 고급 그라데이션 */}
+    {/* 예측 차트 색상에 대한 그라데이션 */}
     <linearGradient id="predDISCHARGE" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stopColor="#f87171" />
       <stop offset="50%" stopColor="#ef4444" />
@@ -81,7 +82,7 @@ const renderGradients = () => (
       <stop offset="100%" stopColor="#16a34a" />
     </linearGradient>
 
-    {/* 고급 그림자 및 글로우 효과 */}
+    {/* 그림자 및 글로우 효과 */}
     <filter id="shadow" height="150%" width="150%">
       <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.2" />
       <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
@@ -129,13 +130,49 @@ const ktasChartData = useMemo(() => {
 }, [ktasData]);
 
 const predictionChartData = useMemo(() => {
-  if (!predictionData) return [];
+  console.log('Received predictionData:', predictionData); // 디버깅 로그
 
-  return [
-    { name: "ICU", value: predictionData.ICU, color: PREDICTION_COLORS.ICU },
-    { name: "WARD", value: predictionData.WARD, color: PREDICTION_COLORS.WARD },
-    { name: "DISCHARGE", value: predictionData.DISCHARGE, color: PREDICTION_COLORS.DISCHARGE }
+  if (!predictionData) {
+    console.log('No prediction data available');
+    return [];
+  }
+
+  // 각 값이 존재하는지 확인하고 숫자가 아니면 0으로 설정
+  const icu = (!isNaN(predictionData.ICU) && predictionData.ICU) || 0;
+  const ward = (!isNaN(predictionData.WARD) && predictionData.WARD) || 0;
+  const discharge = (!isNaN(predictionData.DISCHARGE) && predictionData.DISCHARGE) || 0;
+  const total = icu + ward + discharge;
+
+  console.log('Calculated values:', { icu, ward, discharge, total }); // 디버깅 로그
+
+  if (!total) {
+    console.log('Total is 0, returning empty array');
+    return [];
+  }
+
+  const data = [
+    { 
+      name: "중증 병동", 
+      value: (icu / total) * 100,
+      rawCount: Math.round(icu),  // 반올림하여 정수로 저장
+      tabId: "icu"
+    },
+    { 
+      name: "일반 병동", 
+      value: (ward / total) * 100,
+      rawCount: Math.round(ward),  // 반올림하여 정수로 저장
+      tabId: "ward"
+    },
+    { 
+      name: "퇴원", 
+      value: (discharge / total) * 100,
+      rawCount: Math.round(discharge),  // 반올림하여 정수로 저장
+      tabId: "discharge"
+    }
   ];
+
+  console.log('Generated chart data:', data); // 디버깅 로그
+  return data;
 }, [predictionData]);
 
 // =========== 이벤트 핸들러 ===========
@@ -161,6 +198,38 @@ const shouldShowTooltip = useCallback((index, hoveredIdx, isActive) => {
   if (typeof index !== 'number' || typeof hoveredIdx !== 'number') return false;
   return hoveredIdx === index || (ktasFilter?.includes(index + 1) && isActive);
 }, [ktasFilter]);
+
+const handlePredictionLabelClick = useCallback((entry) => {
+  if (!entry || !onTASClick || typeof onTASClick !== 'function') {
+    return;
+  }
+
+  try {
+    // 현재 선택된 필터가 있고, 클릭한 것과 같다면 전체 탭으로 이동
+    if (ktasFilter?.length > 0 && ktasFilter[0] === entry.tabId) {
+      onTASClick({ name: "미사용" }); // 전체 탭으로 이동
+      return;
+    }
+
+    // maxLevel 매핑
+    const maxLevelMap = {
+      icu: 'level3',
+      ward: 'level2',
+      discharge: 'level1'
+    };
+
+    const maxLevel = maxLevelMap[entry.tabId] || null;
+
+    // 해당 탭으로 이동
+    onTASClick({ 
+      name: entry.name,
+      tabId: entry.tabId,
+      maxLevel
+    });
+  } catch (error) {
+    console.error('Error in handlePredictionLabelClick:', error);
+  }
+}, [onTASClick, ktasFilter]);
 
 // =========== 레이블 렌더링 ===========
 const renderLabels = useCallback((data, setHoverIndex, isKtas = true) => (
@@ -272,59 +341,113 @@ const renderKtasChart = useCallback(() => (
     </div>
   </section>
 ), [ktasChartData, hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
-const renderPredictionChart = useCallback(() => (
-  <section className="prediction-section">
-    <h3 className="prediction-title">AI_TAS 배치 비율</h3>
-    <div className="prediction-wrapper">
-      <ResponsiveContainer width="100%" height={163}>
-        <PieChart>
-          {renderGradients()}
-          <Pie
-            data={predictionChartData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            innerRadius={48.5}
-            outerRadius={75}
-            paddingAngle={2}
-            startAngle={90}
-            endAngle={-270}
-            isAnimationActive={true}
-            animationBegin={44}
-            animationDuration={800}
-            filter="url(#shadow)"
-          >
-            {predictionChartData.map((entry, index) => (
-              <Cell
-                key={`prediction-cell-${index}`}
-                fill={`url(#pred${entry.name})`}
-                stroke={hoveredPredictionIndex === index ? "#000" : "rgba(255,255,255,0.1)"}
-                strokeWidth={hoveredPredictionIndex === index ? 2 : 1}
-                filter={hoveredPredictionIndex === index ? "url(#glow)" : undefined}
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(value) => `${(value).toFixed(1)}%`}
-            contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(229, 231, 235, 0.5)',
-              borderRadius: '0.75rem',
-              padding: '0.75rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}
-            animationDuration={300}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-    {renderLabels(predictionChartData, setHoveredPredictionIndex, false)}
-  </section>
-), [predictionChartData, hoveredPredictionIndex, renderLabels]);
+
+const renderPredictionChart = useCallback(() => {
+  console.log('Rendering prediction chart with data:', predictionChartData);
+
+  if (!predictionChartData || predictionChartData.length === 0) {
+    console.log('No data to render prediction chart');
+    return null;
+  }
+
+  return (
+    <section className="prediction-section">
+      <h3 className="prediction-title">AI_TAS 배치 비율</h3>
+      <div className="prediction-wrapper">
+        <ResponsiveContainer width="100%" height={163}>
+          <PieChart>
+            {renderGradients()}
+            <Pie
+              data={predictionChartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={48.5}
+              outerRadius={75}
+              paddingAngle={2}
+              startAngle={90}
+              endAngle={-270}
+              isAnimationActive={true}
+              animationBegin={44}
+              animationDuration={800}
+              filter="url(#shadow)"
+              onMouseEnter={(data, index) => {
+                setHoveredPredictionIndex(index);
+              }}
+              onMouseLeave={() => {
+                setHoveredPredictionIndex(null);
+              }}
+            >
+              {predictionChartData.map((entry, index) => (
+                <Cell
+                  key={`prediction-cell-${index}`}
+                  fill={`url(#pred${Object.keys(PREDICTION_COLORS)[index]})`}
+                  stroke={hoveredPredictionIndex === index ? "#000" : "rgba(255,255,255,0.1)"}
+                  strokeWidth={hoveredPredictionIndex === index ? 2 : 1}
+                  filter={hoveredPredictionIndex === index ? "url(#glow)" : undefined}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value, name, props) => {
+                if (!props || !props.payload || typeof props.payload.index !== 'number') {
+                  return [''];
+                }
+                try {
+                  const entry = predictionChartData[props.payload.index];
+                  if (!entry) {
+                    return [''];
+                  }
+                  const rawCount = entry.rawCount || 0;
+                  const percentage = value ? parseFloat(value).toFixed(1) : '0.0';
+                  return [`${rawCount}명 (${percentage}%)`];
+                } catch (error) {
+                  console.error('Tooltip formatter error:', error);
+                  return [''];
+                }
+              }}
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(229, 231, 235, 0.5)',
+                borderRadius: '0.75rem',
+                padding: '0.75rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                fontSize: '0.875rem',
+                fontWeight: '500'
+              }}
+              animationDuration={300}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="prediction-label-container">
+        {predictionChartData.map((entry, index) => {
+          const isActive = ktasFilter?.length > 0 && entry.tabId === ktasFilter[0];
+          return (
+            <div
+              key={`prediction-dot-${index}`}
+              className={`prediction-label-dot ${isActive ? 'active' : ''}`}
+              onMouseEnter={() => setHoveredPredictionIndex(index)}
+              onMouseLeave={() => setHoveredPredictionIndex(null)}
+              onClick={() => handlePredictionLabelClick(entry)}
+            >
+              <span className="prediction-label-text">{entry.name}</span>
+              <div 
+                className={`prediction-label-tooltip ${
+                  hoveredPredictionIndex === index ? 'visible' : ''
+                }`}
+              >
+                {`${entry.rawCount}명 (${entry.value.toFixed(1)}%)`}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}, [predictionChartData, hoveredPredictionIndex, ktasFilter, handlePredictionLabelClick]);
 
 return (
   <div className="charts-container">
