@@ -208,9 +208,11 @@ function App() {
 
   const fetchLabTests = useCallback(async (stay_id) => {
     try {
-      const result = await axios.get(`${API_ENDPOINTS.LAB_TESTS}/${stay_id}`);
-      setLabTests(result.data);
-      return result.data;
+      const response = await axios.get(`${API_ENDPOINTS.LAB_TESTS}/${stay_id}`);
+      const labTestsData = response.data;
+      console.log("Lab tests response:", labTestsData); // 디버깅용
+      setLabTests(labTestsData);
+      return labTestsData;
     } catch (error) {
       console.error("Lab tests 데이터 로드 실패:", error);
       setLabTests(null);
