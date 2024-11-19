@@ -74,24 +74,21 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     
     
     @Query(value = 
-            "WITH LatestVitals AS ( " +
-            "    SELECT vs.stayid, vs.chartnum, vs.charttime, " +
-            "           ROW_NUMBER() OVER (PARTITION BY vs.stayid ORDER BY vs.charttime DESC) as rn " +
-            "    FROM vitalsigns vs " +
-            ") " +
-            "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate, p.age, " +
-            "       p.icd, p.address, p.pregnancystatus, p.phonenumber, p.residentnum, " +
-            "       v.stayid, v.pain, v.loshours, v.tas, v.arrivaltransport, " +
-            "       v.comment, v.label, v.visitdate, " +
+            "SELECT v.stayid, v.pain, v.loshours, v.tas, v.arrivaltransport, " +
+            "       v.label, v.comment, v.visitdate, " +
             "       vs.chartnum, vs.charttime, vs.heartrate, vs.resprate, " +
             "       vs.o2sat, vs.sbp, vs.dbp, vs.temperature, vs.regdate, " +
             "       a.level1, a.level2, a.level3 " +
-            "FROM patient p " +
-            "JOIN visit v ON p.subjectid = v.subjectid " +
-            "JOIN LatestVitals lv ON v.stayid = lv.stayid AND lv.rn = 1 " +
-            "JOIN vitalsigns vs ON lv.chartnum = vs.chartnum " +
-            "LEFT JOIN aiTAS a ON vs.chartnum = a.chartnum " +
-            "WHERE p.subjectid = :subjectId " +
+            "FROM visit v " +
+            "LEFT JOIN LATERAL ( " +
+            "    SELECT vs.* " +
+            "    FROM vitalsigns vs " +
+            "    WHERE vs.stayid = v.stayid " +
+            "    ORDER BY vs.charttime DESC " +
+            "    LIMIT 1 " +
+            ") vs ON true " +
+            "LEFT JOIN aitas a ON vs.chartnum = a.chartnum " +
+            "WHERE v.subjectid = :subjectId " +
             "ORDER BY v.visitdate DESC", 
             nativeQuery = true)
         List<PatientProjection> findPatientDataBySubjectId(@Param("subjectId") Long subjectId);
