@@ -8,6 +8,6 @@ import kr.spring.entity.BedInfo;
 
 @Repository
 public interface BedInfoRepository extends JpaRepository<BedInfo, Long> {
-    @Query("SELECT COALESCE(SUM(b.totalBeds), 0) FROM BedInfo b")
-    long count();
+//    @Query("SELECT COALESCE(SUM(b.totalBeds), 0) FROM BedInfo b")
+//    long count();
 }
