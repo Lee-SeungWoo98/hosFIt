@@ -7,8 +7,46 @@ import Errors from './Components/admin/errors/Errors';
 import Settings from './Components/admin/settings/Settings';  // 경로 수정
 import AdminHeader from './Components/admin/AdminHeader';
 import NotificationContainer from './Components/admin/NotificationContainer';
-import { ScoreProvider } from './context/ScoreContext';
+import { ScoreProvider, useScores } from './context/ScoreContext';
 import './Components/admin/styles/AdminApp.css';
+
+// AdminContent 컴포넌트를 새로 만들어 context 사용을 관리
+const AdminContent = ({ activeTab, setActiveTab, loading, showNotification }) => {
+  const { weights, updateWeights } = useScores();
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
+      case 'staff':
+        return <Staff showNotification={showNotification} />;
+      case 'errors':
+        return <Errors />;
+      case 'settings':
+        return <Settings showNotification={showNotification} />;
+      default:
+        return <Dashboard loading={loading} onTabChange={setActiveTab} />;
+    }
+  };
+
+  return (
+    <>
+      <AdminHeader
+        title={getPageTitle(activeTab)}
+        lastUpdated="2024-10-25 10:30:00"
+        onRefresh={() => {
+          setLoading(true);
+          setTimeout(() => {
+            showNotification('데이터가 업데이트되었습니다.', 'success');
+            setLoading(false);
+          }, 1000);
+        }}
+      />
+      {renderContent()}
+    </>
+  );
+};
+
 
 const AdminApp = ({logout, userName}) => {
   const [activeTab, setActiveTab] = useState('dashboard');
