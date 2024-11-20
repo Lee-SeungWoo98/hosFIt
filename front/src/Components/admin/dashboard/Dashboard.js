@@ -60,15 +60,38 @@ const DashboardCard = ({ title, value, trend, trendValue, target }) => (
 
 // WeightBox 컴포넌트
 const WeightBox = ({ type }) => {
-  const { weights } = useScores();
+  const [weight, setWeight] = useState(null);
   const styles = SEVERITY_STYLES[type];
 
-  // 타입에 따른 가중치 값 반환
-  const getWeight = () => {
-    switch (type) {
-      case 'ICU': return weights?.icu;
-      case 'WARD': return weights?.ward;
-      case 'DISCHARGE': return weights?.discharge;
+  useEffect(() => {
+    const fetchWeight = async () => {
+      try {
+        const response = await axios.get('http://localhost:8082/boot/api/thresholds');
+        if (response.data) {
+          // 타입에 따른 키 매핑
+          const keyMapping = {
+            ICU: '0',
+            WARD: '1',
+            DISCHARGE: '2',
+          };
+          const value = response.data[keyMapping[type]] || getDefaultWeight(type);
+          setWeight(value);
+        }
+      } catch (error) {
+        console.error('Error fetching weight:', error);
+        setWeight(getDefaultWeight(type));
+      }
+    };
+
+    fetchWeight();
+  }, [type]);
+
+  // 타입별 기본 가중치 값 반환
+  const getDefaultWeight = (weightType) => {
+    switch (weightType) {
+      case 'ICU': return 0.7;
+      case 'WARD': return 0.4;
+      case 'DISCHARGE': return 0.2;
       default: return 0;
     }
   };
@@ -79,11 +102,12 @@ const WeightBox = ({ type }) => {
         {styles.label}
       </span>
       <div className={`text-3xl font-extrabold ${styles.text} bg-white/90 rounded-lg px-3 py-1.5 shadow-sm group-hover:scale-105 transition-transform`}>
-        {getWeight()?.toFixed(2) || '0.00'}
+        {weight !== null ? weight.toFixed(2) : '로딩 중...'}
       </div>
     </div>
   );
 };
+
 // MismatchCase 컴포넌트
 const MismatchCase = ({ doctor, ai, percentage }) => {
   const getBorderStyle = (type) => {
@@ -131,7 +155,6 @@ const MismatchCase = ({ doctor, ai, percentage }) => {
 
 // Dashboard 메인 컴포넌트
 const Dashboard = ({ loading, onTabChange }) => {
-  const { weights } = useScores();
   const [stats, setStats] = useState({
     dailyPatients: '로딩 중...',
     changeRate: 0,
@@ -143,8 +166,8 @@ const Dashboard = ({ loading, onTabChange }) => {
       'label1:level0': 0,
       'label1:level2': 0,
       'label2:level0': 0,
-      'label2:level1': 0
-    }
+      'label2:level1': 0,
+    },
   });
 
   useEffect(() => {
@@ -153,32 +176,32 @@ const Dashboard = ({ loading, onTabChange }) => {
         // 불일치 데이터 가져오기
         const mismatchResponse = await axios.get('/boot/admin/mismatch');
         if (mismatchResponse.data && mismatchResponse.data.percentages) {
-          setStats(prev => ({
+          setStats((prev) => ({
             ...prev,
             mismatchPercentages: {
               ...prev.mismatchPercentages,
-              ...mismatchResponse.data.percentages
-            }
+              ...mismatchResponse.data.percentages,
+            },
           }));
         }
 
         // 통계 데이터 가져오기
         const statsResponse = await axios.get('/boot/admin/dashboard/stats');
         if (statsResponse.data) {
-          setStats(prev => ({
+          setStats((prev) => ({
             ...prev,
             dailyPatients: statsResponse.data.dailyPatients,
             changeRate: statsResponse.data.changeRate,
             trend: statsResponse.data.trend,
-            aiMatchRate: statsResponse.data.aiMatchRate || 0
+            aiMatchRate: statsResponse.data.aiMatchRate || 0,
           }));
         }
       } catch (error) {
         console.error('데이터 로드 오류:', error);
-        setStats(prev => ({
+        setStats((prev) => ({
           ...prev,
           dailyPatients: '오류',
-          aiMatchRate: 0
+          aiMatchRate: 0,
         }));
       }
     };
@@ -194,12 +217,8 @@ const Dashboard = ({ loading, onTabChange }) => {
     { doctor: '일반병동', ai: '중증병동', percentage: stats.mismatchPercentages['label1:level0'] },
     { doctor: '일반병동', ai: '퇴원', percentage: stats.mismatchPercentages['label1:level2'] },
     { doctor: '퇴원', ai: '중증병동', percentage: stats.mismatchPercentages['label2:level0'] },
-    { doctor: '퇴원', ai: '일반병동', percentage: stats.mismatchPercentages['label2:level1'] }
+    { doctor: '퇴원', ai: '일반병동', percentage: stats.mismatchPercentages['label2:level1'] },
   ];
-
-  const handleSettingsClick = () => {
-    onTabChange('settings');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50/80 overflow-hidden py-6">
@@ -209,7 +228,7 @@ const Dashboard = ({ loading, onTabChange }) => {
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-xl lg:text-2xl font-bold text-gray-800">가중치</h3>
               <button
-                onClick={handleSettingsClick}
+                onClick={() => onTabChange('settings')}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 hover:scale-105"
               >
                 <SettingsIcon size={14} />
@@ -248,7 +267,7 @@ const Dashboard = ({ loading, onTabChange }) => {
           <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-6 lg:mb-8">환자배치 불일치</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
             {getMismatchCases().map((caseData, index) => (
-              <MismatchCase 
+              <MismatchCase
                 key={`${caseData.doctor}-${caseData.ai}`}
                 doctor={caseData.doctor}
                 ai={caseData.ai}

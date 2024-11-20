@@ -198,14 +198,20 @@ const BedSettings = ({ showNotification }) => {
 
     setIsSaving(true);
     try {
-      await axios.post('http://localhost:8082/boot/update', {
+      await axios.put('http://localhost:8082/boot/beds/update', {
         totalBeds: bedCount,
-        updatedBy: 'admin'
+        lastUpdatedBy: 'admin'  // BedInfo 엔티티의 필드명과 일치하도록 수정
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      
       showNotification('병상 수가 업데이트되었습니다.', 'success');
     } catch (error) {
       console.error('Error saving bed count:', error);
-      showNotification('병상 수 저장 중 오류가 발생했습니다.', 'error');
+      const errorMessage = error.response?.data?.message || '병상 수 저장 중 오류가 발생했습니다.';
+      showNotification(errorMessage, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -233,7 +239,7 @@ const BedSettings = ({ showNotification }) => {
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
         >
-          <Save className="h-4 w-4 mr-2" />
+           <Save className="h-4 w-4 mr-2" />
           {isSaving ? '저장 중...' : '저장'}
         </button>
       </div>
@@ -245,7 +251,6 @@ const BedSettings = ({ showNotification }) => {
     </div>
   );
 };
-
 // 유지보수 정보 컴포넌트
 const MaintenanceInfo = () => (
   <div className="mx-6">
