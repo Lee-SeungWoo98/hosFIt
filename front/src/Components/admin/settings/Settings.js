@@ -165,19 +165,19 @@ const WeightSettings = ({ showNotification }) => {
 
 // 병상 설정 컴포넌트
 const BedSettings = ({ showNotification }) => {
-  const [bedCount, setBedCount] = useState(0);
+  const [bedCount, setBedCount] = useState(42); // 초기값은 백엔드에서 가져올 값으로 대체
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchBedCount = async () => {
       try {
-        const response = await axios.get('http://localhost:8082/boot/count');
-        setBedCount(response.data);
+        const response = await axios.get("http://localhost:8082/beds/count");
+        setBedCount(response.data); // 백엔드에서 병상 수를 가져옴
         setIsLoading(false);
       } catch (error) {
-        console.error('Error loading bed count:', error);
-        showNotification('병상 수 로드 중 오류가 발생했습니다.', 'error');
+        console.error("병상 수 로드 오류:", error);
+        showNotification("병상 수 로드 중 오류가 발생했습니다.", "error");
         setIsLoading(false);
       }
     };
@@ -185,72 +185,49 @@ const BedSettings = ({ showNotification }) => {
     fetchBedCount();
   }, [showNotification]);
 
-  const handleBedCountChange = (e) => {
-    const value = parseInt(e.target.value) || 0;
-    setBedCount(Math.max(0, value));
-  };
-
   const handleSave = async () => {
-    if (bedCount < 1) {
-      showNotification('병상 수는 1개 이상이어야 합니다.', 'error');
-      return;
-    }
-
     setIsSaving(true);
     try {
-      await axios.put('http://localhost:8082/boot/beds/update', {
-        totalBeds: bedCount,
-        lastUpdatedBy: 'admin'  // BedInfo 엔티티의 필드명과 일치하도록 수정
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      await axios.put("http://localhost:8082/beds/update", null, {
+        params: { totalBeds: bedCount },
       });
-      
-      showNotification('병상 수가 업데이트되었습니다.', 'success');
+      showNotification("병상 수가 저장되었습니다.", "success");
     } catch (error) {
-      console.error('Error saving bed count:', error);
-      const errorMessage = error.response?.data?.message || '병상 수 저장 중 오류가 발생했습니다.';
-      showNotification(errorMessage, 'error');
+      console.error("병상 수 저장 오류:", error);
+      showNotification("병상 수 저장 중 오류가 발생했습니다.", "error");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="flex-grow">
-          <input
-            type="number"
-            value={bedCount}
-            onChange={handleBedCountChange}
-            min="1"
-            disabled={isLoading || isSaving}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder={isLoading ? "로딩 중..." : "병상 수 입력"}
-          />
-        </div>
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        병상 수 설정
+      </label>
+      <div className="flex gap-3">
+        <input
+          type="number"
+          value={isLoading ? "" : bedCount}
+          onChange={(e) => setBedCount(parseInt(e.target.value) || 42)}
+          disabled={isLoading}
+          min="1"
+          className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        />
         <button
           onClick={handleSave}
-          disabled={isLoading || isSaving || bedCount < 1}
-          className={`flex items-center px-4 py-2 rounded-md transition-colors duration-200
-            ${(isLoading || isSaving || bedCount < 1)
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+          disabled={isSaving || isLoading}
+          className={`h-10 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+            isSaving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-           <Save className="h-4 w-4 mr-2" />
-          {isSaving ? '저장 중...' : '저장'}
+          저장
         </button>
       </div>
-      {bedCount < 1 && (
-        <p className="text-sm text-red-500">
-          병상 수는 1개 이상이어야 합니다.
-        </p>
-      )}
     </div>
   );
 };
+
 // 유지보수 정보 컴포넌트
 const MaintenanceInfo = () => (
   <div className="mx-6">
