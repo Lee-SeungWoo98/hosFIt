@@ -1,11 +1,13 @@
 package kr.spring.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-
+import kr.spring.entity.BedInfo;
 import kr.spring.repository.BedInfoRepository;
 
 @Service

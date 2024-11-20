@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -13,32 +14,69 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import kr.spring.service.ThresholdService;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/thresholds")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ThresholdController {
    
     @Autowired
     private ThresholdService thresholdService;
+
     @GetMapping
     public ResponseEntity<Map<String, Float>> getAllThresholds() {
-        return ResponseEntity.ok(thresholdService.getAllThresholds());
-    }
-    //key값 출력하는 기능
-    @GetMapping("/display")
-    public ResponseEntity<List<Map<String, Object>>> displayThresholds() {
-        List<Map<String, Object>> result = thresholdService.getThresholdsForDisplay();
-        // 디버깅을 위한 로그 추가
-        System.out.println("Returned data: " + result);
-        return ResponseEntity.ok(result);
+        try {
+            Map<String, Float> thresholds = thresholdService.getAllThresholds();
+            log.info("Retrieved all thresholds: {}", thresholds);
+            return ResponseEntity.ok(thresholds);
+        } catch (Exception e) {
+            log.error("Error retrieving thresholds", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
+    @GetMapping("/display")
+    public ResponseEntity<List<Map<String, Object>>> displayThresholds() {
+        try {
+            List<Map<String, Object>> result = thresholdService.getThresholdsForDisplay();
+            log.info("Returned thresholds data: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error displaying thresholds", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
     
     @PutMapping("/{key}")
-    public ResponseEntity<Void> updateThreshold(
+    public ResponseEntity<?> updateThreshold(
         @PathVariable String key,
         @RequestParam Float value) {
-        thresholdService.updateThreshold(key, value, "system");
-        return ResponseEntity.ok().build();
+        try {
+            log.info("Updating threshold - key: {}, value: {}", key, value);
+            
+            // 유효성 검사
+            if (value == null) {
+                return ResponseEntity.badRequest().body("가중치 값이 필요합니다.");
+            }
+            
+            if (value < 0.0 || value > 1.0) {
+                return ResponseEntity.badRequest().body("가중치 값은 0.0과 1.0 사이여야 합니다.");
+            }
+
+            // 키 유효성 검사
+            if (!key.matches("[0-2]")) {
+                return ResponseEntity.badRequest().body("유효하지 않은 가중치 키입니다.");
+            }
+
+            thresholdService.updateThreshold(key, value, "system");
+            return ResponseEntity.ok().build();
+            
+        } catch (Exception e) {
+            log.error("Error updating threshold - key: {}, value: {}", key, value, e);
+            return ResponseEntity.badRequest()
+                .body("가중치 업데이트 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 }
