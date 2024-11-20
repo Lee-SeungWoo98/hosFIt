@@ -41,7 +41,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     @Query("SELECT p FROM Patient p " +
     	       "JOIN p.visits v " +
     	       "LEFT JOIN v.vitalSigns vs " +
-    	       "LEFT JOIN WardAssignment w ON vs.chartNum = w.chartNum " +  // AITAS 대신 WardAssignment 조인
+    	       "LEFT JOIN WardAssignment w ON vs.chartNum = w.chartNum " +
     	       "WHERE v.staystatus = 1 AND v.label IS NULL " +
     	       "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
     	       "AND (:gender IS NULL OR p.gender = :gender) " +
@@ -51,9 +51,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	       "    (:maxLevel = 'level1' AND w.level1 >= w.level2 AND w.level1 >= w.level3) OR " +
     	       "    (:maxLevel = 'level2' AND w.level2 >= w.level1 AND w.level2 >= w.level3) OR " +
     	       "    (:maxLevel = 'level3' AND w.level3 >= w.level1 AND w.level3 >= w.level2))) " +
-    	       "AND vs.chartTime = (SELECT MAX(vs2.chartTime) " +
-    	       "                    FROM VitalSigns vs2 " +
-    	       "                    WHERE vs2.visit.stayId = v.stayId) " +
     	       "GROUP BY p.subjectId, p.name, p.gender, p.birthdate, p.age, p.icd, " +
     	       "p.address, p.pregnancystatus, p.phoneNumber, p.residentNum " +
     	       "ORDER BY p.subjectId")
@@ -64,8 +61,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	    @Param("pain") Long pain,
     	    @Param("maxLevel") String maxLevel,
     	    Pageable pageable);
-
-
        
 
        
