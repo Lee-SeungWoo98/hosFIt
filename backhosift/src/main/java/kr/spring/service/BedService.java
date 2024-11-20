@@ -11,10 +11,26 @@ import kr.spring.repository.BedInfoRepository;
 @Service
 public class BedService {
 
-	 	@Autowired
-	    private BedInfoRepository bedInfoRepository;
+    @Autowired
+    private BedInfoRepository bedInfoRepository;
 
-	 	  public long countAllBeds() {
-	 	        return bedInfoRepository.count();//여기카운터는그냥이름정한게아니라jpa에서 제공하는 조회기능 
-	 	    }
+    public long countAllBeds() {
+        return bedInfoRepository.count();
+    }
+
+    @Transactional
+    public void updateTotalBeds(int totalBeds, String updatedBy) {
+        // 기존 bedInfo가 없다면 새로 생성
+        BedInfo bedInfo = bedInfoRepository.findById(1L)
+            .orElse(BedInfo.builder()
+                .bedNum(1L)
+                .roomNum(1L)
+                .build());
+        
+        bedInfo.setTotalBeds(totalBeds);
+        bedInfo.setLastUpdated(LocalDateTime.now());
+        bedInfo.setLastUpdatedBy(updatedBy);
+        
+        bedInfoRepository.save(bedInfo);
+    }
 }

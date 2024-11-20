@@ -46,7 +46,7 @@ const AdminApp = ({logout, userName}) => {
     notification.appendChild(icon);
     notification.appendChild(content);
     container.appendChild(notification);
-
+  
     setTimeout(() => {
       notification.style.opacity = '0';
       setTimeout(() => {
@@ -54,6 +54,7 @@ const AdminApp = ({logout, userName}) => {
       }, 300);
     }, 3000);
   };
+  
 
   const getNotificationIcon = (type) => {
     const icons = {
