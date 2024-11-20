@@ -1,10 +1,11 @@
 import React from 'react';
-import './styles/AdminApp.css';
 
 const NotificationContainer = () => {
   return (
-    <div id="adminNotificationContainer" className="admin-notification-container">
-    </div>
+    <div 
+      id="adminNotificationContainer" 
+      className="fixed bottom-4 right-4 space-y-2 z-50"
+    />
   );
 };
 
