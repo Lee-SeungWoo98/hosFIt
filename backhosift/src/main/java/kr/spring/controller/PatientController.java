@@ -43,36 +43,52 @@ public class PatientController {
 	   }
 
     // 1. 환자 목록 조회 (페이징 + 필터링)
-    @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getPatientsList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String gender,
-            @RequestParam(required = false) Long tas,
-            @RequestParam(required = false) Long pain,
-            @RequestParam(required = false) String maxLevel) {
-        
-        log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, maxLevel={}, page={}", 
-                name, gender, tas, pain, maxLevel, page);
-        
-        Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain, maxLevel);
-        
-        // 중복 제거: patients 리스트에서 subjectId 기준으로 중복 제거
-        List<PatientDTO> patients = ((List<PatientDTO>) result.get("patients"))
-            .stream()
-            .filter(Objects::nonNull)
-            .collect(Collectors.collectingAndThen(
-                Collectors.toMap(
-                    PatientDTO::getSubjectId,  // 키로 사용할 필드
-                    Function.identity(),        // 값으로 사용할 객체
-                    (existing, replacement) -> existing  // 중복 시 기존 것 유지
-                ),
-                map -> new ArrayList<>(map.values())
-            ));
-        
-        result.put("patients", patients);
-        return ResponseEntity.ok(result);}
-
+	   @GetMapping("/list")
+	   public ResponseEntity<Map<String, Object>> getPatientsList(
+	           @RequestParam(defaultValue = "0") int page,
+	           @RequestParam(required = false) String name,
+	           @RequestParam(required = false) String gender,
+	           @RequestParam(required = false) Long tas,
+	           @RequestParam(required = false) Long pain,
+	           @RequestParam(required = false) String maxLevel) {
+	       
+	       log.info("Fetching patients list with filters: name={}, gender={}, TAS={}, pain={}, maxLevel={}, page={}", 
+	               name, gender, tas, pain, maxLevel, page);
+	       
+	       Map<String, Object> result = patientService.getPatientsByStaystatus(page, name, gender, tas, pain, maxLevel);
+	       
+	       // 환자 목록에서 subjectId 기준으로 중복 제거하되, 모든 vitalsigns 유지
+	       List<PatientDTO> patients = ((List<PatientDTO>) result.get("patients"))
+	           .stream()
+	           .filter(Objects::nonNull)
+	           .collect(Collectors.collectingAndThen(
+	               Collectors.toMap(
+	                   PatientDTO::getSubjectId,
+	                   Function.identity(),
+	                   (existing, replacement) -> {
+	                       // 기존 환자의 방문 기록들을 순회하면서 모든 vitalsigns 유지
+	                       for (VisitDTO visit : replacement.getVisits()) {
+	                           Optional<VisitDTO> existingVisit = existing.getVisits().stream()
+	                               .filter(v -> v.getStayId().equals(visit.getStayId()))
+	                               .findFirst();
+	                           
+	                           if (existingVisit.isPresent()) {
+	                               // 기존 방문 기록에 새로운 vitalsigns 추가
+	                               existingVisit.get().getVitalSigns().addAll(visit.getVitalSigns());
+	                           } else {
+	                               // 새로운 방문 기록 추가
+	                               existing.getVisits().add(visit);
+	                           }
+	                       }
+	                       return existing;
+	                   }
+	               ),
+	               map -> new ArrayList<>(map.values())
+	           ));
+	       
+	       result.put("patients", patients);
+	       return ResponseEntity.ok(result);
+	   }
 
     // 2. 환자 검색 (이름으로)
     @GetMapping("/search")
