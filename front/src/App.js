@@ -71,6 +71,13 @@ const formatPatientData = (patient) => {
     visits: patient.visits?.map(visit => ({
       ...visit,
       visitDate: formatVisitDate(visit.visitDate),
+      vitalSigns: visit.vitalSigns?.map(sign => ({
+        ...sign,
+        level1: sign.level1,
+        level2: sign.level2,
+        level3: sign.level3,
+        wardCode: sign.wardCode
+      })) || [],
       icd: visit.icd || determineICD(patient)
     }))
   };
@@ -111,10 +118,17 @@ function App() {
       const pageNumber = typeof page === 'object' ? 0 : page;
       
       const url = new URL(API_ENDPOINTS.PATIENTS.LIST);
+      
+      // 기본 파라미터 설정
       url.searchParams.append('page', pageNumber);
-      url.searchParams.append('size', '10');
+      
+      // 전체 탭이 아닐 때만 size와 maxLevel 추가
+      if (currentFilters?.maxLevel) {
+        url.searchParams.append('size', '10');
+        url.searchParams.append('maxLevel', currentFilters.maxLevel);
+      }
   
-      // 필터 파라미터 추가
+      // 다른 필터들은 항상 적용
       if (currentFilters.searchTerm) {
         url.searchParams.append('name', currentFilters.searchTerm);
       }
@@ -127,14 +141,10 @@ function App() {
       if (currentFilters?.painScore && currentFilters.painScore !== '') {
         url.searchParams.append('pain', currentFilters.painScore);
       }
-      // maxLevel 파라미터 추가
-      if (currentFilters?.maxLevel) {
-        url.searchParams.append('maxLevel', currentFilters.maxLevel);
-      }
-   
+  
       const options = signal ? { signal } : {};
       const response = await axios.get(url.toString(), options);
-   
+  
       if (!signal?.aborted && response.data) {
         const formattedData = response.data.patients?.map(formatPatientData).filter(Boolean) || [];
         
@@ -148,8 +158,8 @@ function App() {
         setCurrentPage(newPageNumber);
         setError(null);
         
-        return response.data; // totalElements를 List 컴포넌트에서 사용하기 위해 반환
-      } else {
+        return response.data;
+      }else {
         setPatients([]);
         setFilteredPatients([]);
         setTotalPages(1);
@@ -160,6 +170,7 @@ function App() {
       if (axios.isCancel(error)) {
         console.log('Request canceled:', error.message);
       } else {
+        console.error('API Error:', error);
         setError(getErrorMessage(error));
         setPatients([]);
         setFilteredPatients([]);
@@ -169,7 +180,7 @@ function App() {
         setLoading(false);
       }
     }
-   }, [filters]);
+  }, [filters]);
 
   const fetchKtasData = useCallback(async () => {
     try {
@@ -209,14 +220,21 @@ function App() {
   const fetchLabTests = useCallback(async (stay_id) => {
     try {
       const result = await axios.get(`${API_ENDPOINTS.LAB_TESTS}/${stay_id}`);
-      setLabTests(result.data);
+      if (result.status === 404) {
+        console.log(`No lab tests found for stay_id: ${stay_id}`);
+        return null;
+      }
       return result.data;
     } catch (error) {
+      if (error.response?.status === 404) {
+        console.log(`No lab tests found for stay_id: ${stay_id}`);
+        return null;
+      }
       console.error("Lab tests 데이터 로드 실패:", error);
-      setLabTests(null);
       return null;
     }
   }, []);
+  
   // AI 배치 예측 가져오는 함수
   const fetchVisitInfo = useCallback(async (subject_id) => {
     try {
@@ -224,10 +242,6 @@ function App() {
         `${API_ENDPOINTS.DETAILS}/${subject_id}/details`
       );
       
-      // 데이터 구조 확인
-      console.log("Raw visit info:", result.data);
-      
-      // vitalSigns 데이터에 level 값들이 있는지 확인
       if (result.data?.visits?.length > 0) {
         const formattedData = {
           ...result.data,
@@ -235,15 +249,13 @@ function App() {
             ...visit,
             vitalSigns: (visit.vitalSigns || []).map(sign => ({
               ...sign,
-              // 명시적으로 level 값들을 포함
-              level1: sign.level1 || 0,
-              level2: sign.level2 || 0,
-              level3: sign.level3 || 0,
+              level1: sign.level1,
+              level2: sign.level2,
+              level3: sign.level3,
               wardCode: sign.wardCode
             }))
           }))
         };
-        console.log("Formatted visit info:", formattedData);
         setVisitInfo(formattedData);
         return formattedData;
       }

@@ -387,3 +387,47 @@ table td:nth-child(6) br {
   font-size: 14px;
   background-color: #f9f9f9;
 }
+
+/* 로딩창 빙글빙글빙글빙글빙글빙글 */ 
+.loading-overlay {
+  position: fixed;
+  top: 50%;          /* 수직 중앙에서 시작 */
+  right: 42.8%;        /* 오른쪽에서 25% 위치로 이동 */
+  transform: translate(50%, -50%); /* 중앙 정렬 조정 */
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3b82f6;  /* 파란색 스피너 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+}
+
+.small-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

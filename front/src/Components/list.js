@@ -4,6 +4,7 @@
  * 데이터 로딩 최적화 및 성능 개선 버전
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef} from "react";
+import axios from 'axios';
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
+import { API_ENDPOINTS } from '../constants/api';
 
 // =========== 상수 정의 ===========
 const LOCATION_TABS = [
@@ -150,8 +152,8 @@ function List({
 }) {
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     gender: "",
     tas: "",
@@ -168,36 +170,45 @@ function List({
   });
 
   // 컴포넌트 초기 마운트 시 각 탭의 카운트를 가져오는 함수
-const fetchAllTabCounts = useCallback(async () => {
-  try {
-    // 각 탭별로 요청을 보내서 카운트를 가져옴
-    const requests = LOCATION_TABS.map(async (tab) => {
-      if (tab.id === 'all') return;
-      const response = await onFilteredPatientsUpdate(0, {
-        ...selectedFilters,
-        maxLevel: tab.maxLevel
-      });
-      return { tabId: tab.id, count: response?.totalElements || 0 };
-    });
-
-    const results = await Promise.all(requests.filter(Boolean));
-    
-    // 각 탭의 카운트 업데이트
-    setTabCounts(prev => {
-      const newCounts = { ...prev };
-      results.forEach(result => {
-        if (result) {
-          newCounts[result.tabId] = result.count;
-        }
-      });
-      // 전체 탭의 수는 다른 탭들의 합
-      newCounts.all = newCounts.icu + newCounts.ward + newCounts.discharge;
-      return newCounts;
-    });
-  } catch (error) {
-    console.error('탭 카운트 로드 실패:', error);
-  }
-}, [selectedFilters, onFilteredPatientsUpdate]);
+  const fetchAllTabCounts = useCallback(async () => {
+    try {
+      setIsUpdating(true);
+      
+      // 각 탭별 요청
+      const requests = [
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level3`),  // 중증 병동
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level2`),  // 일반 병동
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level1`),  // 퇴원
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}`)  // 전체
+      ];
+  
+      try {
+        const [icuRes, wardRes, dischargeRes, allRes] = await Promise.all(requests);
+  
+        setTabCounts({
+          icu: icuRes.data.totalElements || 0,
+          ward: wardRes.data.totalElements || 0,
+          discharge: dischargeRes.data.totalElements || 0,
+          all: allRes.data.totalElements || 0
+        });
+      } catch (error) {
+        console.error('특정 탭 카운트 로드 실패:', error);
+        // 에러 발생 시에도 기본값 설정
+        setTabCounts(prev => ({
+          ...prev,
+          icu: 0,
+          ward: 0,
+          discharge: 0,
+          all: 0
+        }));
+      }
+  
+    } catch (error) {
+      console.error('탭 카운트 로드 실패:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, []);
 
 // 컴포넌트 마운트 시 초기 데이터 로드
 useEffect(() => {
@@ -206,47 +217,34 @@ useEffect(() => {
 
   // handleTabChange 수정
   const handleTabChange = useCallback(async (tabId) => {
-    setActiveTab(tabId);
-    const tab = LOCATION_TABS.find(t => t.id === tabId);
-    
     try {
       setIsUpdating(true);
-      const newFilters = {
-        ...selectedFilters,
-        maxLevel: tab.maxLevel
-      };
-      
-      // 이전 값들 임시 저장
-      const prevCounts = { ...tabCounts };
-      
-      const response = await onFilteredPatientsUpdate(0, newFilters);
-      
-      if (response) {
-        if (tabId === 'all') {
-          // 전체 탭인 경우 기존 합계 유지
-          setTabCounts(prev => ({
-            ...prev,
-            all: prev.icu + prev.ward + prev.discharge
-          }));
-        } else {
-          // 다른 탭들의 경우 새로운 값으로 업데이트
-          setTabCounts(prev => ({
-            ...prev,
-            [tabId]: response.totalElements,
-            all: (
-              (tabId === 'icu' ? response.totalElements : prev.icu) +
-              (tabId === 'ward' ? response.totalElements : prev.ward) +
-              (tabId === 'discharge' ? response.totalElements : prev.discharge)
-            )
-          }));
-        }
+      setActiveTab(tabId);
+  
+      let url;
+      if (tabId === 'all') {
+        url = `${API_ENDPOINTS.PATIENTS.LIST}?page=0`;
+      } else {
+        const tab = LOCATION_TABS.find(t => t.id === tabId);
+        url = `${API_ENDPOINTS.PATIENTS.LIST}?page=0&maxLevel=${tab.maxLevel}`;
       }
+  
+      const response = await axios.get(url);
+      if (response?.data) {
+        await onFilteredPatientsUpdate(0, {
+          ...selectedFilters,
+          maxLevel: tabId === 'all' ? undefined : LOCATION_TABS.find(t => t.id === tabId)?.maxLevel
+        });
+      }
+  
+      // 모든 탭의 카운트 업데이트
+      await fetchAllTabCounts();
     } catch (error) {
       console.error('탭 변경 중 에러:', error);
     } finally {
       setIsUpdating(false);
     }
-  }, [selectedFilters, onFilteredPatientsUpdate, tabCounts]);
+  }, [selectedFilters, onFilteredPatientsUpdate, fetchAllTabCounts]);
 
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
@@ -413,12 +411,17 @@ useEffect(() => {
         searchTerm: searchInputValue,
       };
       setSelectedFilters(newFilters);
-      await onFilteredPatientsUpdate(0, newFilters);
+  
+      // maxLevel 유지하면서 필터 적용
+      await onFilteredPatientsUpdate(0, {
+        ...newFilters,
+        maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
+      });
     } finally {
       setIsUpdating(false);
       setOpenDropdown(null);
     }
-  }, [selectedFilters, searchInputValue, onFilteredPatientsUpdate]);
+  }, [selectedFilters, searchInputValue, onFilteredPatientsUpdate, activeTab]);
 
   /**
    * 필터 초기화 함수
@@ -434,11 +437,16 @@ useEffect(() => {
       };
       setSelectedFilters(resetFilters);
       setSearchInputValue("");
-      await onFilteredPatientsUpdate(0, resetFilters);
+      
+      // maxLevel 유지하면서 필터 초기화
+      await onFilteredPatientsUpdate(0, {
+        ...resetFilters,
+        maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
+      });
     } finally {
       setIsUpdating(false);
     }
-  }, [onFilteredPatientsUpdate]);
+  }, [onFilteredPatientsUpdate, activeTab]);
 
   /**
    * 환자 상세정보 조회 함수
@@ -718,27 +726,26 @@ useEffect(() => {
       <div className="content-area">
         {/* 위치 탭 */}
         <div className="location-tabs">
-        {LOCATION_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => handleTabChange(tab.id)}
-          >
-            {tab.label}
-            <span className="tab-count">
-              ({tabCounts[tab.id]})
-            </span>
-          </button>
-        ))}
-      </div>
+          {LOCATION_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => handleTabChange(tab.id)}
+              disabled={isUpdating}
+            >
+              {tab.label}
+              <span className="tab-count">
+                ({tabCounts[tab.id] || 0})
+              </span>
+            </button>
+          ))}
+        </div>
 
         {/* 테이블 컨테이너 */}
         <div
           className="table-container"
           style={{
-            position: "relative",
             opacity: isUpdating || loading ? 0.6 : 1,
-            transition: "opacity 0.3s ease",
           }}
         >
           {/* 필터 영역 */}
@@ -758,7 +765,8 @@ useEffect(() => {
                         e.preventDefault();
                         const newFilters = {
                           ...selectedFilters,
-                          searchTerm: e.target.value
+                          searchTerm: e.target.value,
+                          maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
                         };
                         onFilteredPatientsUpdate(0, newFilters);
                       }
