@@ -49,7 +49,6 @@ const WeightSettings = ({ showNotification }) => {
     const fetchWeights = async () => {
       try {
         const response = await axios.get('http://localhost:8082/boot/thresholds');
-        console.log('Received thresholds:', response.data);
         const thresholds = response.data;
         const newWeights = {
           level0: thresholds['0'] || 0.7,
@@ -89,36 +88,39 @@ const WeightSettings = ({ showNotification }) => {
     if (!validateWeights()) return;
 
     try {
-        console.log('Saving weights:', localWeights); // 로깅 추가
+        console.log('Attempting to save weights:', localWeights);
 
-        // 각 요청을 개별적으로 실행하고 에러 처리
-        const saveWeight = async (key, value) => {
+        const updateThreshold = async (key, value) => {
             try {
-                await axios.put(
-                    `http://localhost:8082/boot/thresholds/${key}`, 
-                    null, 
-                    { params: { value: value } }
+                const response = await axios.put(
+                    `http://localhost:8082/boot/thresholds/${key}`,
+                    {},
+                    {
+                        params: { value },
+                        headers: { 'Content-Type': 'application/json' }
+                    }
                 );
+                console.log(`Successfully updated threshold ${key}:`, response);
+                return response;
             } catch (error) {
-                throw new Error(`가중치 ${key} 저장 실패: ${error.response?.data || error.message}`);
+                console.error(`Error updating threshold ${key}:`, error);
+                throw error;
             }
         };
 
-        await Promise.all([
-            saveWeight('0', localWeights.level0),
-            saveWeight('1', localWeights.level1),
-            saveWeight('2', localWeights.level2)
-        ]);
+        // 순차적으로 실행
+        await updateThreshold('0', localWeights.level0);
+        await updateThreshold('1', localWeights.level1);
+        await updateThreshold('2', localWeights.level2);
 
+        console.log('All thresholds updated successfully');
         updateWeights(localWeights);
         showNotification('가중치 설정이 저장되었습니다.', 'success');
         
     } catch (error) {
-        console.error('가중치 저장 오류:', error);
-        showNotification(
-            error.message || '가중치 저장 중 오류가 발생했습니다.',
-            'error'
-        );
+        console.error('Weight save error:', error);
+        const errorMessage = error.response?.data || '가중치 저장 중 오류가 발생했습니다.';
+        showNotification(errorMessage, 'error');
     }
 };
 
@@ -234,12 +236,12 @@ const BedSettings = ({ showNotification }) => {
         showNotification('병상 수는 1개 이상이어야 합니다.', 'error');
         return;
       }
-
+  
       const response = await axios.put(
         'http://localhost:8082/boot/capacity', 
         { totalBeds: bedCapacity.totalBeds }
       );
-
+  
       if (response.status === 200) {
         showNotification('병상 수 설정이 저장되었습니다.', 'success');
       }
@@ -274,7 +276,7 @@ const BedSettings = ({ showNotification }) => {
             <button
               onClick={handleBedCapacitySave}
               disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
-              className={`h-10 w-[180px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+              className={`h-10 w-[170px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
                 ${bedCapacity.isLoading || bedCapacity.totalBeds < 1
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
