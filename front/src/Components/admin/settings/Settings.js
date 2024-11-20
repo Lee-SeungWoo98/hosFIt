@@ -49,6 +49,7 @@ const WeightSettings = ({ showNotification }) => {
     const fetchWeights = async () => {
       try {
         const response = await axios.get('http://localhost:8082/boot/thresholds');
+        console.log('Received thresholds:', response.data);
         const thresholds = response.data;
         const newWeights = {
           level0: thresholds['0'] || 0.7,
@@ -88,18 +89,38 @@ const WeightSettings = ({ showNotification }) => {
     if (!validateWeights()) return;
 
     try {
-      await Promise.all([
-        axios.put(`http://localhost:8082/boot/thresholds/0?value=${localWeights.level0}`),
-        axios.put(`http://localhost:8082/boot/thresholds/1?value=${localWeights.level1}`),
-        axios.put(`http://localhost:8082/boot/thresholds/2?value=${localWeights.level2}`),
-      ]);
-      updateWeights(localWeights);
-      showNotification('가중치 설정이 저장되었습니다.', 'success');
+        console.log('Saving weights:', localWeights); // 로깅 추가
+
+        // 각 요청을 개별적으로 실행하고 에러 처리
+        const saveWeight = async (key, value) => {
+            try {
+                await axios.put(
+                    `http://localhost:8082/boot/thresholds/${key}`, 
+                    null, 
+                    { params: { value: value } }
+                );
+            } catch (error) {
+                throw new Error(`가중치 ${key} 저장 실패: ${error.response?.data || error.message}`);
+            }
+        };
+
+        await Promise.all([
+            saveWeight('0', localWeights.level0),
+            saveWeight('1', localWeights.level1),
+            saveWeight('2', localWeights.level2)
+        ]);
+
+        updateWeights(localWeights);
+        showNotification('가중치 설정이 저장되었습니다.', 'success');
+        
     } catch (error) {
-      console.error('가중치 저장 오류:', error);
-      showNotification('가중치 저장 중 오류가 발생했습니다.', 'error');
+        console.error('가중치 저장 오류:', error);
+        showNotification(
+            error.message || '가중치 저장 중 오류가 발생했습니다.',
+            'error'
+        );
     }
-  };
+};
 
   return (
     <div className="space-y-3">
