@@ -48,15 +48,21 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	       "AND (:tas IS NULL OR v.tas = :tas) " +
     	       "AND (:pain IS NULL OR v.pain = :pain) " +
     	       "AND (" +
-    	       "    :maxLevel IS NULL OR (" +
-    	       "        vs.chartTime = (" +  // 최신 vital signs 조건
-    	       "            SELECT MAX(vs2.chartTime) " +
-    	       "            FROM VitalSigns vs2 " +
-    	       "            WHERE vs2.visit = v" +
-    	       "        ) AND (" +
-    	       "            (:maxLevel = 'level1' AND w.level1 >= w.level2 AND w.level1 >= w.level3) OR " +
-    	       "            (:maxLevel = 'level2' AND w.level2 >= w.level1 AND w.level2 >= w.level3) OR " +
-    	       "            (:maxLevel = 'level3' AND w.level3 >= w.level1 AND w.level3 >= w.level2)" +
+    	       "    :maxLevel IS NULL OR " +
+    	       "    EXISTS (" +
+    	       "        SELECT 1 " +
+    	       "        FROM VitalSigns vs2 " +
+    	       "        JOIN WardAssignment w2 ON vs2.chartNum = w2.chartNum " +
+    	       "        WHERE vs2.visit = v " +
+    	       "        AND vs2.chartTime = (" +
+    	       "            SELECT MAX(vs3.chartTime) " +
+    	       "            FROM VitalSigns vs3 " +
+    	       "            WHERE vs3.visit = v" +
+    	       "        ) " +
+    	       "        AND (" +
+    	       "            (:maxLevel = 'level1' AND w2.level1 >= w2.level2 AND w2.level1 >= w2.level3) OR " +
+    	       "            (:maxLevel = 'level2' AND w2.level2 >= w2.level1 AND w2.level2 >= w2.level3) OR " +
+    	       "            (:maxLevel = 'level3' AND w2.level3 >= w2.level1 AND w2.level3 >= w2.level2)" +
     	       "        )" +
     	       "    )" +
     	       ") " +
@@ -68,8 +74,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	    @Param("pain") Long pain,
     	    @Param("maxLevel") String maxLevel,
     	    Pageable pageable);
-       
-    
     
     @Query(value = 
             "SELECT v.stayid, v.pain, v.loshours, v.tas, v.arrivaltransport, " +
