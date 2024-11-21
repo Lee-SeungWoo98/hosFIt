@@ -38,7 +38,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
 
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
-    @Query("SELECT p FROM Patient p " +
+    @Query("SELECT DISTINCT p FROM Patient p " +
     	       "JOIN p.visits v " +
     	       "LEFT JOIN v.vitalSigns vs " +
     	       "LEFT JOIN WardAssignment w ON vs.chartNum = w.chartNum " +
@@ -47,12 +47,19 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	       "AND (:gender IS NULL OR p.gender = :gender) " +
     	       "AND (:tas IS NULL OR v.tas = :tas) " +
     	       "AND (:pain IS NULL OR v.pain = :pain) " +
-    	       "AND (:maxLevel IS NULL OR w IS NOT NULL AND (" +
-    	       "    (:maxLevel = 'level1' AND w.level1 >= w.level2 AND w.level1 >= w.level3) OR " +
-    	       "    (:maxLevel = 'level2' AND w.level2 >= w.level1 AND w.level2 >= w.level3) OR " +
-    	       "    (:maxLevel = 'level3' AND w.level3 >= w.level1 AND w.level3 >= w.level2))) " +
-    	       "GROUP BY p.subjectId, p.name, p.gender, p.birthdate, p.age, p.icd, " +
-    	       "p.address, p.pregnancystatus, p.phoneNumber, p.residentNum " +
+    	       "AND (" +
+    	       "    :maxLevel IS NULL OR (" +
+    	       "        vs.chartTime = (" +  // 최신 vital signs 조건
+    	       "            SELECT MAX(vs2.chartTime) " +
+    	       "            FROM VitalSigns vs2 " +
+    	       "            WHERE vs2.visit = v" +
+    	       "        ) AND (" +
+    	       "            (:maxLevel = 'level1' AND w.level1 >= w.level2 AND w.level1 >= w.level3) OR " +
+    	       "            (:maxLevel = 'level2' AND w.level2 >= w.level1 AND w.level2 >= w.level3) OR " +
+    	       "            (:maxLevel = 'level3' AND w.level3 >= w.level1 AND w.level3 >= w.level2)" +
+    	       "        )" +
+    	       "    )" +
+    	       ") " +
     	       "ORDER BY p.subjectId")
     	Page<Patient> findPatientsWithFilters(
     	    @Param("name") String name,
@@ -61,8 +68,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	    @Param("pain") Long pain,
     	    @Param("maxLevel") String maxLevel,
     	    Pageable pageable);
-       
-
        
     
     
