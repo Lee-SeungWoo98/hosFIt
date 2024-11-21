@@ -4,6 +4,7 @@
  * 데이터 로딩 최적화 및 성능 개선 버전
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef} from "react";
+import axios from 'axios';
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
+import { API_ENDPOINTS } from '../constants/api';
 
 // =========== 상수 정의 ===========
 const LOCATION_TABS = [
@@ -25,8 +27,8 @@ const FILTER_OPTIONS = {
     label: "성별",
     options: [
       { value: "", label: "All" },
-      { value: 1, label: "남자" },
-      { value: 0, label: "여자" },
+      { value: "1", label: "남자" },
+      { value: "0", label: "여자" },
     ],
   },
   tas: {
@@ -147,11 +149,15 @@ function List({
   totalPages,
   totalElements,
   onPageChange,
+  activeTab,
+  tabCounts,
+  onTabChange,
+  onTASClick  
 }) {
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     gender: "",
     tas: "",
@@ -159,94 +165,43 @@ function List({
     searchTerm: "",
   });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
-  const [tabCounts, setTabCounts] = useState({
-    all: 0,
-    icu: 0,
-    ward: 0,
-    discharge: 0
-  });
-
-  // 컴포넌트 초기 마운트 시 각 탭의 카운트를 가져오는 함수
-const fetchAllTabCounts = useCallback(async () => {
-  try {
-    // 각 탭별로 요청을 보내서 카운트를 가져옴
-    const requests = LOCATION_TABS.map(async (tab) => {
-      if (tab.id === 'all') return;
-      const response = await onFilteredPatientsUpdate(0, {
-        ...selectedFilters,
-        maxLevel: tab.maxLevel
-      });
-      return { tabId: tab.id, count: response?.totalElements || 0 };
-    });
-
-    const results = await Promise.all(requests.filter(Boolean));
-    
-    // 각 탭의 카운트 업데이트
-    setTabCounts(prev => {
-      const newCounts = { ...prev };
-      results.forEach(result => {
-        if (result) {
-          newCounts[result.tabId] = result.count;
-        }
-      });
-      // 전체 탭의 수는 다른 탭들의 합
-      newCounts.all = newCounts.icu + newCounts.ward + newCounts.discharge;
-      return newCounts;
-    });
-  } catch (error) {
-    console.error('탭 카운트 로드 실패:', error);
-  }
-}, [selectedFilters, onFilteredPatientsUpdate]);
-
-// 컴포넌트 마운트 시 초기 데이터 로드
-useEffect(() => {
-  fetchAllTabCounts();
-}, []); // 컴포넌트 마운트 시에만 실행
 
   // handleTabChange 수정
-  const handleTabChange = useCallback(async (tabId) => {
-    setActiveTab(tabId);
-    const tab = LOCATION_TABS.find(t => t.id === tabId);
+  const handleTabChange = useCallback(async (tabId, fromKtas = false) => {
+    localStorage.setItem('activeTab', tabId);
     
     try {
       setIsUpdating(true);
-      const newFilters = {
-        ...selectedFilters,
-        maxLevel: tab.maxLevel
-      };
+      let newFilters;
+
+      if (tabId === 'all') {
+        newFilters = {
+          ...selectedFilters,
+          maxLevel: undefined
+        };
+      } else {
+        const tab = LOCATION_TABS.find(t => t.id === tabId);
+        newFilters = {
+          ...selectedFilters,
+          maxLevel: tab.maxLevel
+        };
+      }
       
-      // 이전 값들 임시 저장
-      const prevCounts = { ...tabCounts };
-      
-      const response = await onFilteredPatientsUpdate(0, newFilters);
-      
-      if (response) {
-        if (tabId === 'all') {
-          // 전체 탭인 경우 기존 합계 유지
-          setTabCounts(prev => ({
-            ...prev,
-            all: prev.icu + prev.ward + prev.discharge
-          }));
-        } else {
-          // 다른 탭들의 경우 새로운 값으로 업데이트
-          setTabCounts(prev => ({
-            ...prev,
-            [tabId]: response.totalElements,
-            all: (
-              (tabId === 'icu' ? response.totalElements : prev.icu) +
-              (tabId === 'ward' ? response.totalElements : prev.ward) +
-              (tabId === 'discharge' ? response.totalElements : prev.discharge)
-            )
-          }));
-        }
+      await onFilteredPatientsUpdate(0, newFilters);
+      if (!fromKtas) {
+        onTASClick({ id: tabId });
       }
     } catch (error) {
       console.error('탭 변경 중 에러:', error);
     } finally {
       setIsUpdating(false);
     }
-  }, [selectedFilters, onFilteredPatientsUpdate, tabCounts]);
+  }, [selectedFilters, onFilteredPatientsUpdate, onTASClick]); 
+  
+  // 탭 클릭 핸들러
+  const handleTabClick = useCallback((tabId) => {
+    handleTabChange(tabId, false);
+  }, [handleTabChange]);
 
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
@@ -406,19 +361,25 @@ useEffect(() => {
   const handleFilterSelect = useCallback(async (type, value) => {
     setIsUpdating(true);
     try {
-      const processedValue = value === "" ? "" : Number(value);
+      // gender의 경우 문자열로 처리, 나머지는 숫자로 변환
+      const processedValue = type === 'gender' ? value : (value === "" ? "" : Number(value));
       const newFilters = {
         ...selectedFilters,
         [type]: processedValue,
         searchTerm: searchInputValue,
       };
       setSelectedFilters(newFilters);
-      await onFilteredPatientsUpdate(0, newFilters);
+  
+      // maxLevel 유지하면서 필터 적용
+      await onFilteredPatientsUpdate(0, {
+        ...newFilters,
+        maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
+      });
     } finally {
       setIsUpdating(false);
       setOpenDropdown(null);
     }
-  }, [selectedFilters, searchInputValue, onFilteredPatientsUpdate]);
+  }, [selectedFilters, searchInputValue, onFilteredPatientsUpdate, activeTab]);
 
   /**
    * 필터 초기화 함수
@@ -434,11 +395,16 @@ useEffect(() => {
       };
       setSelectedFilters(resetFilters);
       setSearchInputValue("");
-      await onFilteredPatientsUpdate(0, resetFilters);
+      
+      // maxLevel 유지하면서 필터 초기화
+      await onFilteredPatientsUpdate(0, {
+        ...resetFilters,
+        maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
+      });
     } finally {
       setIsUpdating(false);
     }
-  }, [onFilteredPatientsUpdate]);
+  }, [onFilteredPatientsUpdate, activeTab]);
 
   /**
    * 환자 상세정보 조회 함수
@@ -553,9 +519,12 @@ useEffect(() => {
     }
   
     // chartNum 문자열 비교로 정렬
-    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
-      b.chartNum.localeCompare(a.chartNum)
-    );
+    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => {
+      if (!a.chartNum && !b.chartNum) return 0;
+      if (!a.chartNum) return 1;
+      if (!b.chartNum) return -1;
+      return b.chartNum.localeCompare(a.chartNum);
+    });
   
     // 가장 큰 chartNum을 가진 기록 사용
     const lastVitalSign = sortedVitalSigns[0];
@@ -601,50 +570,48 @@ useEffect(() => {
       return patients;
     }, [patients, activeTab]);
 
+    // 성별 변환 함수 추가
+  const getGenderText = useCallback((gender) => {
+    if (gender === 1 || gender === "1") return "남자";
+    if (gender === 0 || gender === "0") return "여자";
+    return "-";
+  }, []);
+
   // =========== 렌더링 함수 ===========
   /**
    * 환자 행 렌더링
    */
   const renderPatientRow = useCallback((patient) => {
+    // 최신 방문 기록 및 기본 정보 추출
     const latestVisit = patient.visits?.[patient.visits.length - 1];
+    const genderText = getGenderText(patient.gender);
     
+    // AI TAS 라벨 초기값 설정
     let aiTasLabel = "-";
     
+    // vitalSigns 배열이 존재하면 가장 마지막 기록의 level 값들을 사용
     if (latestVisit?.vitalSigns?.length > 0) {
-      // chartNum 기준으로 정렬
-      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
-        b.chartNum.localeCompare(a.chartNum)
-      );
-  
-      const lastVitalSign = sortedVitalSigns[0];
+      // 단순히 배열의 마지막 항목 사용
+      const lastVitalSign = latestVisit.vitalSigns[latestVisit.vitalSigns.length - 1];
       
-      if (typeof lastVitalSign.level1 === 'number' && 
-          typeof lastVitalSign.level2 === 'number' && 
-          typeof lastVitalSign.level3 === 'number') {
+      // level 값들이 모두 숫자인지 확인
+      if (typeof lastVitalSign?.level1 === 'number' && 
+          typeof lastVitalSign?.level2 === 'number' && 
+          typeof lastVitalSign?.level3 === 'number') {
         
-        // console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
-        //   chartNum: lastVitalSign.chartNum,
-        //   level1: lastVitalSign.level1,
-        //   level2: lastVitalSign.level2,
-        //   level3: lastVitalSign.level3
-        // });
-  
+        // 각 level별 배치 옵션 정의
         const levels = [
           { value: lastVitalSign.level1, label: "퇴원" },
           { value: lastVitalSign.level2, label: "일반 병동" },
           { value: lastVitalSign.level3, label: "중증 병동" }
         ];
   
+        // 가장 높은 확률값을 가진 배치 옵션 선택
         const highest = levels.reduce((prev, current) => 
           current.value > prev.value ? current : prev
         );
-        
+  
         aiTasLabel = highest.label;
-        
-        // console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
-        //   label: highest.label,
-        //   value: highest.value
-        // });
       }
     }
   
@@ -660,7 +627,7 @@ useEffect(() => {
         <td>{patient.subjectId}</td>
         <td>{patient.icd || '-'}</td>
         <td>{patient.name}</td>
-        <td>{patient.gender}</td>
+        <td>{genderText}</td>
         <td>{patient.age}</td>
         <td>
           {latestVisit?.visitDate ? (
@@ -677,7 +644,12 @@ useEffect(() => {
         <td>{latestVisit?.tas || "-"}</td>
         <td>{aiTasLabel}</td>
         <td className="abnormal-count-cell">
-          {abnormalCounts[patient.subjectId] ? `${abnormalCounts[patient.subjectId]}건` : "-"}
+          {abnormalCounts[patient.subjectId] ? (
+            <span className="abnormal-count">
+              <span className="abnormal-number">{abnormalCounts[patient.subjectId]}</span>
+              <span className="abnormal-text">건</span>
+            </span>
+          ) : "-"}
         </td>
         <td>
           <button
@@ -690,7 +662,7 @@ useEffect(() => {
         </td>
       </tr>
     );
-  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
+  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts, getGenderText]);
 
   /**
    * 필터 드롭다운 렌더링
@@ -718,27 +690,26 @@ useEffect(() => {
       <div className="content-area">
         {/* 위치 탭 */}
         <div className="location-tabs">
-        {LOCATION_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => handleTabChange(tab.id)}
-          >
-            {tab.label}
-            <span className="tab-count">
-              ({tabCounts[tab.id]})
-            </span>
-          </button>
-        ))}
-      </div>
+          {LOCATION_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => handleTabClick(tab.id)}
+              disabled={isUpdating}
+            >
+              {tab.label}
+              <span className="tab-count">
+                ({tabCounts?.[tab.id] || 0})
+              </span>
+            </button>
+          ))}
+        </div>
 
         {/* 테이블 컨테이너 */}
         <div
           className="table-container"
           style={{
-            position: "relative",
             opacity: isUpdating || loading ? 0.6 : 1,
-            transition: "opacity 0.3s ease",
           }}
         >
           {/* 필터 영역 */}
@@ -758,7 +729,8 @@ useEffect(() => {
                         e.preventDefault();
                         const newFilters = {
                           ...selectedFilters,
-                          searchTerm: e.target.value
+                          searchTerm: e.target.value,
+                          maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
                         };
                         onFilteredPatientsUpdate(0, newFilters);
                       }
@@ -770,36 +742,36 @@ useEffect(() => {
 
               {/* 필터 드롭다운 */}
               {Object.entries(FILTER_OPTIONS).map(([filterType, { label, options }]) => (
-                <div key={filterType} className="dropdown-container">
-                  <button
-                    className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
-                    onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
-                  >
-                    {selectedFilters[filterType]
-                      ? options.find(opt => opt.value === selectedFilters[filterType])?.label
-                      : label}
-                    <ChevronDown
-                      size={16}
-                      className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
-                    />
-                  </button>
-                  {openDropdown === filterType && (
-                    <div className="dropdown-content">
-                      {options.map((option) => (
-                        <div
-                          key={option.value}
-                          className={`dropdown-item ${
-                            selectedFilters[filterType] === option.value ? "selected" : ""
-                          }`}
-                          onClick={() => handleFilterSelect(filterType, option.value)}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
+            <div key={filterType} className="dropdown-container">
+              <button
+                className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
+                onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
+              >
+                {selectedFilters[filterType] !== "" && selectedFilters[filterType] !== undefined
+                  ? options.find(opt => String(opt.value) === String(selectedFilters[filterType]))?.label || label
+                  : label}
+                <ChevronDown
+                  size={16}
+                  className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
+                />
+              </button>
+              {openDropdown === filterType && (
+                <div className="dropdown-content">
+                  {options.map((option) => (
+                    <div
+                      key={option.value}
+                      className={`dropdown-item ${
+                        String(selectedFilters[filterType]) === String(option.value) ? "selected" : ""
+                      }`}
+                      onClick={() => handleFilterSelect(filterType, option.value)}
+                    >
+                      {option.label}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
+            </div>
+          ))}
 
               {/* 필터 초기화 버튼 */}
               <button
@@ -811,7 +783,7 @@ useEffect(() => {
               </button>
             </div>
             <div className="total-count-filter">
-              (총 {activeTab === 'all' ? tabCounts.all : totalElements}명)
+              (총 {activeTab === 'all' ? tabCounts?.all || 0 : totalElements}명)
             </div>
           </div>
 

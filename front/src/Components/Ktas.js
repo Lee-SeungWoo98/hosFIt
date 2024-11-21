@@ -18,12 +18,18 @@ const KTAS_COLORS = [
 ];
 
 const PREDICTION_COLORS = {
-  DISCHARGE: "#ef4444",
-  WARD: "#3b82f6",
-  ICU: "#22c55e"
+  ICU: "#22c55e",       // 중증 병동
+  WARD: "#3b82f6",      // 일반 병동
+  DISCHARGE: "#ef4444"  // 퇴원
 };
 
-const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter }) => {
+const WARD_NAMES = {
+  ICU: "중증 병동",
+  WARD: "일반 병동",
+  DISCHARGE: "퇴원"
+};
+
+const Ktas = ({ ktasData, predictionData, onTASClick, ktasFilter, tabCounts }) => {
   // =========== 상태 관리 ===========
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [hoveredPredictionIndex, setHoveredPredictionIndex] = useState(null);
@@ -64,7 +70,7 @@ const renderGradients = () => (
       <stop offset="100%" stopColor="#a3a3a3" />
     </linearGradient>
 
-    {/* 예측 차트 색상에 대한 고급 그라데이션 */}
+    {/* 예측 차트 색상에 대한 그라데이션 */}
     <linearGradient id="predDISCHARGE" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stopColor="#f87171" />
       <stop offset="50%" stopColor="#ef4444" />
@@ -128,15 +134,72 @@ const ktasChartData = useMemo(() => {
   return tasData;
 }, [ktasData]);
 
+const defaultChartData = [
+  { 
+    id: "icu",
+    name: "중증 병동", 
+    value: 33.33, 
+    color: PREDICTION_COLORS.ICU 
+  },
+  { 
+    id: "ward",
+    name: "일반 병동", 
+    value: 33.33, 
+    color: PREDICTION_COLORS.WARD 
+  },
+  { 
+    id: "discharge",
+    name: "퇴원", 
+    value: 33.34, 
+    color: PREDICTION_COLORS.DISCHARGE 
+  }
+];
+
 const predictionChartData = useMemo(() => {
-  if (!predictionData) return [];
+  if (!tabCounts) {
+    return defaultChartData;
+  }
+
+  const total = (tabCounts.icu || 0) + (tabCounts.ward || 0) + (tabCounts.discharge || 0);
+  if (total === 0) return defaultChartData;
 
   return [
-    { name: "ICU", value: predictionData.ICU, color: PREDICTION_COLORS.ICU },
-    { name: "WARD", value: predictionData.WARD, color: PREDICTION_COLORS.WARD },
-    { name: "DISCHARGE", value: predictionData.DISCHARGE, color: PREDICTION_COLORS.DISCHARGE }
+    { 
+      id: "icu",
+      name: "중증 병동", 
+      value: (tabCounts.icu / total) * 100, 
+      color: PREDICTION_COLORS.ICU 
+    },
+    { 
+      id: "ward",
+      name: "일반 병동", 
+      value: (tabCounts.ward / total) * 100, 
+      color: PREDICTION_COLORS.WARD 
+    },
+    { 
+      id: "discharge",
+      name: "퇴원", 
+      value: (tabCounts.discharge / total) * 100, 
+      color: PREDICTION_COLORS.DISCHARGE 
+    }
   ];
-}, [predictionData]);
+}, [tabCounts]);
+
+// AI_TAS dot 클릭 핸들러
+const handlePredictionClick = useCallback((entry) => {
+  const tabMapping = {
+    "중증 병동": "icu",
+    "일반 병동": "ward",
+    "퇴원": "discharge"
+  };
+  
+  if (onTASClick) {
+    const tabId = tabMapping[entry.name];
+    if (tabId) {
+      onTASClick({ id: tabId });
+    }
+  }
+}, [onTASClick]);
 
 // =========== 이벤트 핸들러 ===========
 const handleLabelClick = useCallback((entry, event) => {
@@ -183,13 +246,37 @@ const renderLabels = useCallback((data, setHoverIndex, isKtas = true) => (
               shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''
             }`}
           >
-            {`${entry.name} (${(entry.value).toFixed(1)}%)`}
+            {`${entry.name} (${(entry.value).toFixed(1)}명)`}
           </div>
         </div>
       );
     })}
   </div>
 ), [hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
+
+const renderPredictionLabels = useCallback((data, setHoverIndex) => (
+  <div className="prediction-label-container">
+    {data.map((entry, index) => (
+      <div
+        key={`dot-${index}`}
+        className="prediction-label-dot"
+        onMouseEnter={() => setHoverIndex(index)}
+        onMouseLeave={() => setHoverIndex(null)}
+        onClick={() => handlePredictionClick(entry)}
+      >
+        <span className="ktas-label-text">{entry.name}</span>
+        <div 
+          className={`prediction-label-tooltip ${
+            hoveredPredictionIndex === index ? 'visible' : ''
+          }`}
+        >
+          {`${entry.name} (${entry.value.toFixed(1)}%)`}
+        </div>
+      </div>
+    ))}
+  </div>
+), [hoveredPredictionIndex, handlePredictionClick]);
+
 // =========== 차트 렌더링 ===========
 const renderKtasChart = useCallback(() => (
   <section className="ktas-section">
@@ -229,7 +316,7 @@ const renderKtasChart = useCallback(() => (
             ))}
           </Pie>
           <Tooltip
-            formatter={(value) => `${(value)}%`}
+            formatter={(value) => `${(value)}명`}
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(8px)',
@@ -264,7 +351,7 @@ const renderKtasChart = useCallback(() => (
             <div 
               className={`label-tooltip ${shouldShowTooltip(index, hoveredIndex, isActive) ? 'visible' : ''}`}
             >
-              {`${entry.name} (${(entry.value).toFixed(1)}%)`}
+              {`${entry.name} (${(entry.value)}명)`}
             </div>
           </div>
         );
@@ -272,6 +359,7 @@ const renderKtasChart = useCallback(() => (
     </div>
   </section>
 ), [ktasChartData, hoveredIndex, ktasFilter, handleLabelClick, shouldShowTooltip]);
+
 const renderPredictionChart = useCallback(() => (
   <section className="prediction-section">
     <h3 className="prediction-title">AI_TAS 배치 비율</h3>
@@ -298,7 +386,7 @@ const renderPredictionChart = useCallback(() => (
             {predictionChartData.map((entry, index) => (
               <Cell
                 key={`prediction-cell-${index}`}
-                fill={`url(#pred${entry.name})`}
+                fill={`url(#pred${entry.id.toUpperCase()})`}  // id로 변경
                 stroke={hoveredPredictionIndex === index ? "#000" : "rgba(255,255,255,0.1)"}
                 strokeWidth={hoveredPredictionIndex === index ? 2 : 1}
                 filter={hoveredPredictionIndex === index ? "url(#glow)" : undefined}
@@ -322,9 +410,9 @@ const renderPredictionChart = useCallback(() => (
         </PieChart>
       </ResponsiveContainer>
     </div>
-    {renderLabels(predictionChartData, setHoveredPredictionIndex, false)}
+    {renderPredictionLabels(predictionChartData, setHoveredPredictionIndex)}
   </section>
-), [predictionChartData, hoveredPredictionIndex, renderLabels]);
+), [predictionChartData, hoveredPredictionIndex, renderPredictionLabels, renderGradients]);
 
 return (
   <div className="charts-container">
