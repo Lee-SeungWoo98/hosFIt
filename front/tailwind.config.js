@@ -1,21 +1,26 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
+      fontFamily: {
+        pretendard: ['Pretendard', 'sans-serif'],
+        chosunlo: ['ChosunLo', 'serif'],
+      },
       colors: {
-        primary: '#2563eb',
-        background: '#f4f5f7',
+        border: '#e5e7eb', // 기본 테두리 색상
+        foreground: '#111827', // 텍스트 전경색
+        primary: '#2563eb', // 주요 색상
+        background: '#f4f5f7', // 배경색
       },
       spacing: {
-        'sidebar': '280px',
-      }
+        sidebar: '280px', // 사이드바 너비
+      },
     },
   },
   plugins: [],
   corePlugins: {
-    preflight: false, // 기존 스타일을 유지하기 위해 Tailwind의 reset 스타일을 비활성화
-  }
-}
+    preflight: false, // Tailwind의 기본 CSS 리셋 비활성화
+  },
+};

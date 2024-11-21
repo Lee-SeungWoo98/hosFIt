@@ -19,10 +19,15 @@ public class BedService {
 
     // 병상 수 조회
     public int getBedCount() {
-        // 병상 정보가 없으면 초기값 42로 설정
-        return bedInfoRepository.findById(1L)
-                .map(BedInfo::getTotalBeds)
-                .orElse(42);
+        try {
+            // 병상 정보가 없으면 초기값 42로 설정
+            return bedInfoRepository.findById(1L)
+                    .map(BedInfo::getTotalBeds)
+                    .orElse(42);
+        } catch (Exception e) {
+            log.error("Error while getting bed count", e);
+            return 42;  // 예외 발생 시에도 초기값 42 반환
+        }
     }
 
     // 병상 수 업데이트
@@ -32,14 +37,18 @@ public class BedService {
             throw new IllegalArgumentException("병상 수는 1 이상이어야 합니다.");
         }
 
-        // 병상 정보를 업데이트하거나 없으면 새로 생성
-        BedInfo bedInfo = bedInfoRepository.findById(1L)
-                .orElse(new BedInfo(1L, 1L, 42, LocalDateTime.now(), "default"));
+        try {
+            BedInfo bedInfo = bedInfoRepository.findById(1L)
+                    .orElse(new BedInfo(1L, 1L, 42, LocalDateTime.now(), "default"));
 
-        bedInfo.setTotalBeds(totalBeds);
-        bedInfo.setLastUpdated(LocalDateTime.now());
-        bedInfo.setLastUpdatedBy("admin"); // 필요 시 변경
+            bedInfo.setTotalBeds(totalBeds);
+            bedInfo.setLastUpdated(LocalDateTime.now());
+            bedInfo.setLastUpdatedBy("admin");
 
-        bedInfoRepository.save(bedInfo);
+            bedInfoRepository.save(bedInfo);
+        } catch (Exception e) {
+            log.error("Error while updating bed count", e);
+            throw e;
+        }
     }
 }
