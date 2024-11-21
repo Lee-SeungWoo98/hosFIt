@@ -1,6 +1,6 @@
-// VisitRepository.java
 package kr.spring.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,21 +19,27 @@ import kr.spring.entity.Visit;
 
 @Repository
 public interface VisitRepository extends JpaRepository<Visit, Long> {
-    // 환자 기록들
-    List<Visit> findByPatient(Patient patient);
+    
+    @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
+    Visit findByStayId(@Param("stayId") Long stayId);
+    
+    @Query("SELECT v FROM Visit v WHERE v.label IS NOT NULL")
+    List<Visit> findAllWithLabel();
+    
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.visitDate BETWEEN :startDate AND :endDate")
+    long countByVisitDateBetween(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+    
+    @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
+    Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
+    
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
+    Optional<Visit> findByStayIdWithLock(@Param("stayId") Long stayId);
 
-	Visit findByStayId(Long stayId);
-	  @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
-	    Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
-	  
-	  @Query("SELECT v FROM Visit v WHERE v.label IS NOT NULL")
-	    Page<Visit> findByLabelIsNotNullWithPaging(Pageable pageable);
-	  
-	    long countByLabelIsNotNull();
-	    
-	    @Lock(LockModeType.PESSIMISTIC_WRITE)
-	    @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
-	    Optional<Visit> findByStayIdWithLock(@Param("stayId") Long stayId);
-	
-  
+    List<Visit> findByLabelIsNotNull();
+    
+    long countByLabelIsNotNull();
 }

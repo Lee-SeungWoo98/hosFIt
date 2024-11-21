@@ -74,7 +74,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
     	    @Param("pain") Long pain,
     	    @Param("maxLevel") String maxLevel,
     	    Pageable pageable);
-    
+
     @Query(value = 
             "SELECT v.stayid, v.pain, v.loshours, v.tas, v.arrivaltransport, " +
             "       v.label, v.comment, v.visitdate, " +

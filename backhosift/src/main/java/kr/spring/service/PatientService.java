@@ -115,6 +115,7 @@ public class PatientService {
 
     private PatientDTO convertToPatientDTO(Patient patient) {
         PatientDTO dto = new PatientDTO();
+
         setBasicPatientInfo(dto, patient);
 
         List<VisitDTO> visitDTOs = new ArrayList<>();
@@ -123,14 +124,17 @@ public class PatientService {
             VisitDTO visitDTO = new VisitDTO();
             setBasicVisitInfo(visitDTO, visit);
 
+
             // Sort vital signs by chart time
             List<VitalSigns> sortedVitalSigns = new ArrayList<>(visit.getVitalSigns());
             sortedVitalSigns.sort((v1, v2) -> v1.getChartTime().compareTo(v2.getChartTime()));
+
 
             Set<VitalSignsDTO> vitalSignsDTOs = new LinkedHashSet<>();
             for (VitalSigns vital : sortedVitalSigns) {
                 if (vital.getChartTime() != null) {
                     VitalSignsDTO vitalDTO = convertToVitalSignsDTO(vital);
+
                     
                     // Get ward assignment for individual vital sign
                     Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
@@ -145,11 +149,13 @@ public class PatientService {
                             assignment.getLevel3()
                         ));
                     }
+
                     vitalSignsDTOs.add(vitalDTO);
                 }
             }
 
             visitDTO.setVitalSigns(vitalSignsDTOs);
+
             
             // Set ward assignment for visit based on the latest vital sign
             Optional<VitalSigns> latestVital = sortedVitalSigns.stream()
@@ -174,6 +180,7 @@ public class PatientService {
                 }
             }
             
+
             visitDTOs.add(visitDTO);
         }
 
@@ -183,6 +190,7 @@ public class PatientService {
 
         return dto;
     }
+
     @Getter
     @AllArgsConstructor
     private static class MaxLevelResult {
@@ -232,6 +240,7 @@ public class PatientService {
         dto.setPregnancystatus(patient.getPregnancystatus());
         dto.setPhoneNumber(patient.getPhoneNumber());
         dto.setResidentNum(patient.getResidentNum());
+
     }
 
     private void setBasicVisitInfo(VisitDTO visitDTO, Visit visit) {
@@ -358,6 +367,7 @@ public class PatientService {
         if (maxLevel == null) {
             return true;
         }
+
 
         // 환자의 가장 최근 방문 찾기
         Optional<Visit> lastVisit = patient.getVisits().stream()

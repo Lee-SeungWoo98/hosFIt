@@ -1,91 +1,66 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 
-// 기본 점수 설정
-const DEFAULT_WEIGHTS = {
-  icu: 0.7,
-  ward: 0.6,
-  discharge: 0.5
-};
+const BASE_URL = 'http://localhost:8082/boot';
 
-const ScoreContext = createContext();
+export const ScoreContext = createContext();
 
 export const ScoreProvider = ({ children }) => {
-  const [weights, setWeights] = useState(() => {
-    const savedWeights = localStorage.getItem('placementWeights');
-    return savedWeights ? JSON.parse(savedWeights) : DEFAULT_WEIGHTS;
+  const [weights, setWeights] = useState({
+    level0: 0.7,
+    level1: 0.4,
+    level2: 0.2
   });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 초기 가중치 데이터 로드
-  useEffect(() => {
-    const fetchInitialWeights = async () => {
-      try {
-        const responses = await Promise.all([
-          axios.get('http://localhost:8082/boot/thresholds/0'), // 퇴원
-          axios.get('http://localhost:8082/boot/thresholds/1'), // 일반병동
-          axios.get('http://localhost:8082/boot/thresholds/2')  // 중환자실
-        ]);
-
-        const newWeights = {
-          discharge: responses[0].data,
-          ward: responses[1].data,
-          icu: responses[2].data
-        };
-
-        setWeights(newWeights);
-        localStorage.setItem('placementWeights', JSON.stringify(newWeights));
-      } catch (error) {
-        console.error('가중치 데이터 로드 실패:', error);
-        // 에러 발생 시 기본값 사용
-        setWeights(DEFAULT_WEIGHTS);
-      }
-    };
-
-    fetchInitialWeights();
-  }, []);
-
-  // 가중치 업데이트 함수
-  const updateWeights = async (newWeights) => {
+  const fetchWeights = async () => {
     try {
-      // 가중치 유효성 검사
-      if (newWeights.icu <= newWeights.ward || newWeights.ward <= newWeights.discharge) {
-        throw new Error('가중치는 ICU > 일반병동 > 퇴원 순서로 설정되어야 합니다.');
-      }
-
-      if (Object.values(newWeights).some(weight => weight > 0.9)) {
-        throw new Error('가중치는 0.9를 초과할 수 없습니다.');
-      }
-
-      // DB 업데이트
-      await Promise.all([
-        axios.put(`http://localhost:8082/boot/thresholds/0`, null, { params: { value: newWeights.discharge }}),
-        axios.put(`http://localhost:8082/boot/thresholds/1`, null, { params: { value: newWeights.ward }}),
-        axios.put(`http://localhost:8082/boot/thresholds/2`, null, { params: { value: newWeights.icu }})
-      ]);
-
-      // 로컬 상태 업데이트
+      const response = await axios.get(`${BASE_URL}/admin/thresholds`);
+      const thresholds = response.data;
+      const newWeights = {
+        level0: thresholds['0'] || 0.7,
+        level1: thresholds['1'] || 0.4,
+        level2: thresholds['2'] || 0.2,
+      };
+      console.log('Fetched weights from server:', newWeights);
       setWeights(newWeights);
-      localStorage.setItem('placementWeights', JSON.stringify(newWeights));
-      
-      return { success: true };
     } catch (error) {
-      console.error('가중치 업데이트 실패:', error);
-      throw error;
+      console.error('Error fetching weights:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchWeights();
+  }, []);
+
+  const updateWeights = useCallback(async (newWeights) => {
+    setIsLoading(true);
+    try {
+        console.log('Updating weights:', newWeights);
+        await Promise.all([
+            axios.put(`${BASE_URL}/admin/thresholds/0?value=${newWeights.level0}`),
+            axios.put(`${BASE_URL}/admin/thresholds/1?value=${newWeights.level1}`),
+            axios.put(`${BASE_URL}/admin/thresholds/2?value=${newWeights.level2}`),
+        ]);
+        setWeights(newWeights);
+        console.log('Weights updated successfully:', newWeights);
+    } catch (error) {
+        console.error('Error updating weights:', error);
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
+}, []);
+
   return (
-    <ScoreContext.Provider value={{ 
-      weights, 
-      updateWeights, 
-      DEFAULT_WEIGHTS 
-    }}>
+    <ScoreContext.Provider value={{ weights, updateWeights, isLoading, fetchWeights }}>
       {children}
     </ScoreContext.Provider>
   );
 };
 
-// 커스텀 훅
 export const useScores = () => {
   const context = useContext(ScoreContext);
   if (!context) {
