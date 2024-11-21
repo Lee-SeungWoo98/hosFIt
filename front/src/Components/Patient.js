@@ -1433,25 +1433,26 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
    // 날짜 클릭 핸들러
    const handleDateClick = async (date, stay_id) => {
     try {
+      // 선택된 방문 데이터 찾기
       const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
       
+      // 생체징후 데이터 없는 경우 예외처리
       if (!selectedVisit?.vitalSigns?.length) {
         console.error("선택한 방문에 대한 생체징후 데이터가 없습니다.");
         return;
       }
-  
-      // chartNum을 기준으로 안전하게 정렬
+   
+      // vitalSigns을 chartNum 기준으로 정렬
       const sortedVitalSigns = [...selectedVisit.vitalSigns].sort((a, b) => {
         const getChartNumber = (vitalSign) => {
           if (!vitalSign?.chartNum) return 0;
           const match = vitalSign.chartNum.match(/\d+/);
           return match ? parseInt(match[0]) : 0;
         };
-  
         return getChartNumber(a) - getChartNumber(b);
       });
-  
-      // 생체 데이터 업데이트
+   
+      // 생체 데이터 포맷팅 및 업데이트
       const formattedVitalSigns = sortedVitalSigns.map(sign => ({
         chartTime: Array.isArray(sign.chartTime) 
           ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
@@ -1467,20 +1468,22 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
         respirationRate: sign.resprate,
         temperature: parseFloat(sign.temperature)
       }));
-  
+   
       setVitalSignsData(formattedVitalSigns);
-  
-      // 예측 데이터 업데이트
+   
+      // 마지막 생체징후의 예측값으로 도넛차트 업데이트
       const lastVitalSign = sortedVitalSigns[sortedVitalSigns.length - 1];
       const newPrediction = {
         discharge: parseFloat(lastVitalSign.level1) || 0,
         ward: parseFloat(lastVitalSign.level2) || 0,
         icu: parseFloat(lastVitalSign.level3) || 0
       };
-  
+   
       setCurrentLatestPrediction(newPrediction);
-      setSelectedTimePoint(null);
-  
+      // 도넛차트를 선택된 방문의 마지막 예측값으로 업데이트
+      setSelectedTimePoint(newPrediction);
+   
+      // 시계열 그래프 데이터 포맷팅 및 업데이트
       const predictionData = sortedVitalSigns.map(vitalSign => ({
         chartNum: vitalSign.chartNum,
         chartTime: Array.isArray(vitalSign.chartTime)
@@ -1490,35 +1493,36 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
         ward: parseFloat(vitalSign.level2) || 0,
         icu: parseFloat(vitalSign.level3) || 0
       }));
-  
+   
       setCurrentPredictionData(predictionData);
-
-    // 기본 정보 업데이트
-    setPatientInfo(prev => ({
-      ...prev,
-      emergencyLevel: `Level ${selectedVisit.tas}`,
-      stayDuration: `${selectedVisit.losHours}시간`,
-    }));
-
-    // 피검사 데이터 업데이트
-    const labTestsResponse = await fetchLabTests(stay_id);
-    if (labTestsResponse) {
-      const formattedLabTests = formatLabTests(labTestsResponse);
+   
+      // 환자 기본 정보 업데이트 (KTAS, 체류시간)
       setPatientInfo(prev => ({
         ...prev,
-        bloodTestData: formattedLabTests
+        emergencyLevel: `Level ${selectedVisit.tas}`,
+        stayDuration: `${selectedVisit.losHours}시간`,
       }));
-    } else {
-      setPatientInfo(prev => ({
-        ...prev,
-        bloodTestData: null
-      }));
+   
+      // 피검사 데이터 가져오기 및 업데이트
+      const labTestsResponse = await fetchLabTests(stay_id);
+      if (labTestsResponse) {
+        const formattedLabTests = formatLabTests(labTestsResponse);
+        setPatientInfo(prev => ({
+          ...prev,
+          bloodTestData: formattedLabTests
+        }));
+      } else {
+        // 피검사 데이터가 없는 경우 null로 설정
+        setPatientInfo(prev => ({
+          ...prev,
+          bloodTestData: null
+        }));
+      }
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+      setError("데이터 로드에 실패했습니다.");
     }
-  } catch (error) {
-    console.error("데이터 로드 실패:", error);
-    setError("데이터 로드에 실패했습니다.");
-  }
-};
+   };
 
   // 코멘트 클릭 핸들러
   const handleCommentClick = (comment) => {
@@ -1696,9 +1700,9 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
     stay_id: visit.stayId,
     ktas: visit.tas,
     stayDuration: `${visit.losHours}시간`,
-    placement: visit.staystatus === 0 ? '퇴원' : '입원',
+    placement: visit.statstatus === 0 ? '퇴원' : '입원',
     vitalSigns: visit.vitalSigns || []
-  })).sort((a, b) => new Date(b.originalDate) - new Date(a.originalDate)) || [];
+   })).sort((a, b) => b.stay_id - a.stay_id) || [];
 
 // 알림 모달 닫기 핸들러
 const handleAlertClose = () => {
@@ -1852,7 +1856,7 @@ const handleAlertClose = () => {
                         </td>
                         <td>{record.ktas}</td>
                         <td>{record.stayDuration}</td>
-                        <td>{getAIRecommendationText(visit?.wardAssignment)}</td>
+                        <td>{getHistoryAITasText(record.vitalSigns)}</td>
                         <td>
                           {visit?.comment ? (
                             <button
