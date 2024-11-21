@@ -973,37 +973,32 @@ const BloodTestResults = ({ labTests, gender }) => {
  const PlacementModal = ({ isOpen, onClose, onConfirm, aiRecommendation }) => {
   const [doctorNote, setDoctorNote] = useState('');
   const [selectedPlacement, setSelectedPlacement] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConfirm = () => {
     // 선택된 배치에 따라 label 값 설정
     let label;
     switch(selectedPlacement) {
-      case '중증':
+      case '중증 병동':
         label = 2;
         break;
-      case '일반':
+      case '일반 병동':
         label = 1;
         break;
       case '퇴원':
         label = 0;
         break;
       default:
-        label = null;
+        console.error("Invalid placement selection");
+        return;
     }
   
-    if (label === null) {
-      console.error("Invalid placement selection");
-      return;
-    }
-  
-    // label 값을 포함하여 onConfirm 호출
     const data = {
-      doctorNote,
-      placement: selectedPlacement,
-      label: label
+      label: label,
+      comment: doctorNote || ''
     };
   
-    console.log("Confirming placement with data:", data); // 데이터 확인
+    console.log("Sending data:", data);
     onConfirm(data);
     onClose();
   };
@@ -1012,7 +1007,7 @@ const BloodTestResults = ({ labTests, gender }) => {
     <div className="modal-backdrop">
       <div className="placement-modal">
         <div className="modal-content">
-          <div className="modal-title">
+        <div className="modal-title">
             <h2>환자 배치 결정</h2>
             <button className="close-button" onClick={onClose}>&times;</button>
           </div>
@@ -1036,16 +1031,16 @@ const BloodTestResults = ({ labTests, gender }) => {
           </div>
           
           <div className="modal-section">
-          <h3>배치 결정</h3>
+            <h3>배치 결정</h3>
             <select
               value={selectedPlacement}
               onChange={(e) => setSelectedPlacement(e.target.value)}
               className="placement-select"
             >
-               <option value="">배치를 선택하세요</option>
-            <option value="중증">중증 병동</option>
-            <option value="일반">일반 병동</option>
-            <option value="퇴원">퇴원</option>
+              <option value="">배치를 선택하세요</option>
+              <option value="중증 병동">중증 병동</option>
+              <option value="일반 병동">일반 병동</option>
+              <option value="퇴원">퇴원</option>
             </select>
           </div>
 
@@ -1053,9 +1048,9 @@ const BloodTestResults = ({ labTests, gender }) => {
             <button 
               className="confirm-button"
               onClick={handleConfirm}
-              disabled={!selectedPlacement || !doctorNote}
+              disabled={!selectedPlacement || !doctorNote || isSubmitting}
             >
-              확인
+              {isSubmitting ? '처리중...' : '확인'}
             </button>
           </div>
         </div>
@@ -1534,14 +1529,20 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
   // 배치 처리 함수
   const handlePlacementConfirm = async (placementData) => {
     try {
-      console.log("Sending data:", placementData); // 디버깅용
+      console.log("Sending placement data:", placementData);
   
-      // 백엔드 요청 형식에 맞게 데이터 구조화
+      if (!latestVisit?.stayId) {
+        throw new Error("환자 방문 정보가 없습니다.");
+      }
+  
       const requestData = {
-        label: placementData.label  // 백엔드는 "label" 필드만 사용
+        label: Number(placementData.label), // 반드시 숫자로 변환
+        comment: String(placementData.comment || '') // 반드시 문자열로 변환
       };
   
-      const labelResponse = await axios({
+      console.log("Request data:", requestData); // 디버깅용
+  
+      const response = await axios({
         method: 'put',
         url: `/api/patient/label/${latestVisit.stayId}`,
         data: requestData,
@@ -1550,46 +1551,32 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
         }
       });
   
-      console.log("Server response:", labelResponse); // 디버깅용
+      if (response.data) {
+        const updatedVisits = patientData.visits.map(visit => {
+          if (visit.stayId === latestVisit.stayId) {
+            return {
+              ...visit,
+              label: Number(placementData.label),
+              comment: String(placementData.comment || ''),
+              statstatus: Number(placementData.label)
+            };
+          }
+          return visit;
+        });
   
-      if (!labelResponse.data) {
-        throw new Error('서버 응답이 올바르지 않습니다.');
-      }
+        const updatedPatientData = {
+          ...patientData,
+          visits: updatedVisits
+        };
   
-      // 백엔드 응답을 사용하여 상태 업데이트
-      const updatedVisits = patientData.visits.map(visit => {
-        if (visit.stayId === labelResponse.data.stayId) {
-          return {
-            ...visit,
-            label: labelResponse.data.label,
-            comment: placementData.doctorNote,
-            visitDate: labelResponse.data.visitDate
-          };
-        }
-        return visit;
-      });
-  
-      const updatedPatientData = {
-        ...patientData,
-        visits: updatedVisits
-      };
-  
-      if (onPatientDataUpdate) {
         onPatientDataUpdate(updatedPatientData);
+        setAlertMessage("배치가 완료되었습니다.");
+        setShowAlert(true);
       }
-  
-      setAlertMessage("배치가 완료되었습니다.");
-      setShowAlert(true);
-  
     } catch (error) {
-      console.error('배치 결정 처리 중 에러 발생:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
+      console.error('배치 결정 처리 중 에러 발생:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
                           '서버 통신 중 오류가 발생했습니다.';
       setAlertMessage(errorMessage);
       setShowAlert(true);

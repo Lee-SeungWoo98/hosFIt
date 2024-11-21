@@ -161,6 +161,15 @@ function MainPage({
           onBack={handleBack}
           fetchLabTests={fetchLabTests}
           fetchVisitInfo={fetchVisitInfo}
+          onPatientDataUpdate={(updatedPatientData) => {
+            // 로컬 상태 업데이트
+            setSelectedPatient(prev => ({
+              ...prev,
+              patientData: updatedPatientData
+            }));
+            // 상위 컴포넌트에 변경 알림
+            onPatientDataUpdate(updatedPatientData);
+          }}
         />
       );
     }

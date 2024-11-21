@@ -27,8 +27,8 @@ const FILTER_OPTIONS = {
     label: "성별",
     options: [
       { value: "", label: "All" },
-      { value: 1, label: "남자" },
-      { value: 0, label: "여자" },
+      { value: "1", label: "남자" },
+      { value: "0", label: "여자" },
     ],
   },
   tas: {
@@ -361,7 +361,8 @@ function List({
   const handleFilterSelect = useCallback(async (type, value) => {
     setIsUpdating(true);
     try {
-      const processedValue = value === "" ? "" : Number(value);
+      // gender의 경우 문자열로 처리, 나머지는 숫자로 변환
+      const processedValue = type === 'gender' ? value : (value === "" ? "" : Number(value));
       const newFilters = {
         ...selectedFilters,
         [type]: processedValue,
@@ -518,9 +519,12 @@ function List({
     }
   
     // chartNum 문자열 비교로 정렬
-    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
-      b.chartNum.localeCompare(a.chartNum)
-    );
+    const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => {
+      if (!a.chartNum && !b.chartNum) return 0;
+      if (!a.chartNum) return 1;
+      if (!b.chartNum) return -1;
+      return b.chartNum.localeCompare(a.chartNum);
+    });
   
     // 가장 큰 chartNum을 가진 기록 사용
     const lastVitalSign = sortedVitalSigns[0];
@@ -566,53 +570,65 @@ function List({
       return patients;
     }, [patients, activeTab]);
 
+    // 성별 변환 함수 추가
+  const getGenderText = useCallback((gender) => {
+    if (gender === 1 || gender === "1") return "남자";
+    if (gender === 0 || gender === "0") return "여자";
+    return "-";
+  }, []);
+
   // =========== 렌더링 함수 ===========
   /**
    * 환자 행 렌더링
    */
   const renderPatientRow = useCallback((patient) => {
+    // 가장 최근 방문 데이터와 성별 텍스트 가져오기
     const latestVisit = patient.visits?.[patient.visits.length - 1];
+    const genderText = getGenderText(patient.gender);
     
+    // AI TAS 라벨 초기값 설정
     let aiTasLabel = "-";
     
+    // vital signs 데이터가 존재하는 경우에만 처리
     if (latestVisit?.vitalSigns?.length > 0) {
-      // chartNum 기준으로 정렬
-      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => 
-        b.chartNum.localeCompare(a.chartNum)
-      );
+      // chartNum을 기준으로 안전하게 정렬
+      // undefined나 null 값에 대한 처리를 포함
+      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => {
+        // 두 chartNum이 모두 없으면 순서 유지
+        if (!a.chartNum && !b.chartNum) return 0;
+        // chartNum이 없는 항목은 뒤로 정렬
+        if (!a.chartNum) return 1;
+        if (!b.chartNum) return -1;
+        // 정상적인 경우 내림차순 정렬 (최신 기록이 앞으로)
+        return b.chartNum.localeCompare(a.chartNum);
+      });
   
+      // 가장 최근의 vital sign 기록 가져오기
       const lastVitalSign = sortedVitalSigns[0];
       
-      if (typeof lastVitalSign.level1 === 'number' && 
-          typeof lastVitalSign.level2 === 'number' && 
-          typeof lastVitalSign.level3 === 'number') {
+      // level 값들이 모두 숫자인 경우에만 처리
+      if (typeof lastVitalSign?.level1 === 'number' && 
+          typeof lastVitalSign?.level2 === 'number' && 
+          typeof lastVitalSign?.level3 === 'number') {
         
-        // console.log(`Patient ${patient.subjectId} Last VitalSign:`, {
-        //   chartNum: lastVitalSign.chartNum,
-        //   level1: lastVitalSign.level1,
-        //   level2: lastVitalSign.level2,
-        //   level3: lastVitalSign.level3
-        // });
-  
+        // 각 level에 대한 배치 옵션 정의
         const levels = [
           { value: lastVitalSign.level1, label: "퇴원" },
           { value: lastVitalSign.level2, label: "일반 병동" },
           { value: lastVitalSign.level3, label: "중증 병동" }
         ];
   
+        // 가장 높은 확률을 가진 배치 옵션 선택
         const highest = levels.reduce((prev, current) => 
           current.value > prev.value ? current : prev
         );
         
+        // 선택된 배치 옵션의 라벨을 AI TAS 라벨로 설정
         aiTasLabel = highest.label;
-        
-        // console.log(`Patient ${patient.subjectId} AI_TAS determined:`, {
-        //   label: highest.label,
-        //   value: highest.value
-        // });
       }
     }
   
+    // 환자 정보 행 렌더링
     return (
       <tr
         key={patient.subjectId}
@@ -625,7 +641,7 @@ function List({
         <td>{patient.subjectId}</td>
         <td>{patient.icd || '-'}</td>
         <td>{patient.name}</td>
-        <td>{patient.gender}</td>
+        <td>{genderText}</td>
         <td>{patient.age}</td>
         <td>
           {latestVisit?.visitDate ? (
@@ -655,7 +671,7 @@ function List({
         </td>
       </tr>
     );
-  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts]);
+  }, [isUpdating, loadingDetails, formatDate, formatTime, showPatientDetails, abnormalCounts, getGenderText]);
 
   /**
    * 필터 드롭다운 렌더링
@@ -735,36 +751,36 @@ function List({
 
               {/* 필터 드롭다운 */}
               {Object.entries(FILTER_OPTIONS).map(([filterType, { label, options }]) => (
-                <div key={filterType} className="dropdown-container">
-                  <button
-                    className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
-                    onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
-                  >
-                    {selectedFilters[filterType]
-                      ? options.find(opt => opt.value === selectedFilters[filterType])?.label
-                      : label}
-                    <ChevronDown
-                      size={16}
-                      className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
-                    />
-                  </button>
-                  {openDropdown === filterType && (
-                    <div className="dropdown-content">
-                      {options.map((option) => (
-                        <div
-                          key={option.value}
-                          className={`dropdown-item ${
-                            selectedFilters[filterType] === option.value ? "selected" : ""
-                          }`}
-                          onClick={() => handleFilterSelect(filterType, option.value)}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
+            <div key={filterType} className="dropdown-container">
+              <button
+                className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
+                onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
+              >
+                {selectedFilters[filterType] !== "" && selectedFilters[filterType] !== undefined
+                  ? options.find(opt => String(opt.value) === String(selectedFilters[filterType]))?.label || label
+                  : label}
+                <ChevronDown
+                  size={16}
+                  className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
+                />
+              </button>
+              {openDropdown === filterType && (
+                <div className="dropdown-content">
+                  {options.map((option) => (
+                    <div
+                      key={option.value}
+                      className={`dropdown-item ${
+                        String(selectedFilters[filterType]) === String(option.value) ? "selected" : ""
+                      }`}
+                      onClick={() => handleFilterSelect(filterType, option.value)}
+                    >
+                      {option.label}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
+            </div>
+          ))}
 
               {/* 필터 초기화 버튼 */}
               <button

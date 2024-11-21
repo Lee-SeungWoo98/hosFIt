@@ -492,20 +492,55 @@ function App() {
     try {
       // 환자 목록 데이터 갱신
       const updatedPatients = patients.map(patient => 
-        patient.subjectId === updatedPatientData.subjectId ? updatedPatientData : patient
+        patient.subjectId === updatedPatientData.subjectId 
+          ? {
+              ...patient,
+              visits: updatedPatientData.visits.map(visit => ({
+                ...visit,
+                label: visit.label,
+                comment: visit.comment,
+                statstatus: visit.label // label 값을 statstatus에도 반영
+              }))
+            }
+          : patient
       );
+      
       setPatients(updatedPatients);
       setFilteredPatients(updatedPatients);
   
-      // KTAS 데이터와 예측 데이터도 새로고침
+      // 탭 카운트, KTAS 데이터, 예측 데이터 모두 새로고침
       await Promise.all([
+        fetchAllTabCounts(), // 탭 카운트 업데이트 추가
         fetchKtasData(),
         fetchPredictionData()
       ]);
+  
+      // 현재 활성 탭에 따라 데이터 다시 필터링
+      const currentFilters = { ...filters };
+      if (activeTab !== 'all') {
+        const maxLevelMapping = {
+          'icu': 'level3',
+          'ward': 'level2',
+          'discharge': 'level1'
+        };
+        currentFilters.maxLevel = maxLevelMapping[activeTab];
+      }
+      
+      await fetchFilteredData(currentPage, currentFilters);
+  
     } catch (error) {
       console.error("환자 데이터 업데이트 실패:", error);
     }
-  }, [patients, fetchKtasData, fetchPredictionData]);
+  }, [
+    patients, 
+    fetchKtasData, 
+    fetchPredictionData, 
+    fetchAllTabCounts,
+    fetchFilteredData,
+    filters,
+    activeTab,
+    currentPage
+  ]);
 
   // =========== Effect Hooks ===========
   useEffect(() => {
