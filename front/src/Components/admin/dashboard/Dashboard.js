@@ -95,16 +95,16 @@ const MismatchCase = ({ doctor, ai, percentage }) => {
       </div>
       <div className="p-4 space-y-4">
         <div>
-          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1.5">
+          <span className="text-[12px] text-gray-400 font-medium uppercase tracking-wider block mb-1.5">
             실제 배치
           </span>
-          <div className="text-sm font-bold text-gray-900">{doctor}</div>
+          <div className="text-base font-bold text-gray-900">{doctor}</div>
         </div>
         <div>
-          <span className="text-[10px] text-blue-500 font-medium uppercase tracking-wider block mb-1.5">
+          <span className="text-[12px] text-blue-500 font-medium uppercase tracking-wider block mb-1.5">
             AI 추천 배치
           </span>
-          <div className="text-sm font-bold text-blue-800">{ai}</div>
+          <div className="text-base font-bold text-blue-800">{ai}</div>
         </div>
       </div>
     </div>
