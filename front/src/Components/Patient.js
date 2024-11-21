@@ -1318,62 +1318,69 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
     if (patientData?.visits?.[0]?.vitalSigns) {
       const latestVisit = patientData?.visits?.[patientData.visits.length - 1] || null;
       
-      const predictionData = latestVisit.vitalSigns.map(vitalSign => {
-        console.log("Raw vitalSign data:", {
-          chartNum: vitalSign.chartNum,
-          chartTime: vitalSign.chartTime,
-          levels: {
-            level1: vitalSign.level1,
-            level2: vitalSign.level2,
-            level3: vitalSign.level3
-          }
+      if (latestVisit?.vitalSigns) {
+        // chartNum을 기준으로 정렬
+        const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => {
+          // chartNum이 없는 경우를 대비
+          const getChartNumber = (vitalSign) => {
+            if (!vitalSign?.chartNum) return 0;
+            const match = vitalSign.chartNum.match(/\d+/);
+            return match ? parseInt(match[0]) : 0;
+          };
+  
+          return getChartNumber(a) - getChartNumber(b);
         });
   
-        const timeString = Array.isArray(vitalSign.chartTime) 
-          ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
-          : new Date(vitalSign.chartTime).toLocaleTimeString('ko-KR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            });
+        const predictionData = sortedVitalSigns.map(vitalSign => {
+          console.log("Raw vitalSign data:", {
+            chartNum: vitalSign.chartNum,
+            chartTime: vitalSign.chartTime,
+            levels: {
+              level1: vitalSign.level1,
+              level2: vitalSign.level2,
+              level3: vitalSign.level3
+            }
+          });
   
-        // chartTime을 추가하고 time은 정렬용으로만 사용
-        const dataPoint = {
-          chartTime: timeString,  // X축에 표시될 시간
-          time: timeString,       // 정렬용
-          discharge: parseFloat(vitalSign.level1),  // 퇴원
-          ward: parseFloat(vitalSign.level2),       // 일반 병동
-          icu: parseFloat(vitalSign.level3)         // 중증 병동
-        };
+          const timeString = Array.isArray(vitalSign.chartTime) 
+            ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
+            : new Date(vitalSign.chartTime).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
   
-        console.log(`Data point for ${timeString}:`, dataPoint);
-        return dataPoint;
-      }).sort((a, b) => {
-        const timeA = a.time.split(':').map(Number);
-        const timeB = b.time.split(':').map(Number);
-        return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-      });
+          return {
+            chartNum: vitalSign.chartNum,
+            chartTime: timeString,
+            time: timeString,
+            discharge: parseFloat(vitalSign.level1) || 0,
+            ward: parseFloat(vitalSign.level2) || 0,
+            icu: parseFloat(vitalSign.level3) || 0
+          };
+        });
   
-      console.log("Final sorted prediction data:", predictionData);
+        console.log("Final sorted prediction data:", predictionData);
   
-      // 실제 데이터가 있는 경우만 설정
-      if (predictionData.some(point => 
-        !isNaN(point.discharge) && 
-        !isNaN(point.ward) && 
-        !isNaN(point.icu)
-      )) {
-        setCurrentPredictionData(predictionData);
-      } else {
-        console.error("No valid prediction data found");
-      }
+        // 실제 데이터가 있는 경우만 설정
+        if (predictionData.some(point => 
+          !isNaN(point.discharge) && 
+          !isNaN(point.ward) && 
+          !isNaN(point.icu)
+        )) {
+          setCurrentPredictionData(predictionData);
+        } else {
+          console.error("No valid prediction data found");
+        }
   
-      if (latestVisit.wardAssignment) {
-        const latestPrediction = {
-          discharge: parseFloat(latestVisit.wardAssignment.level1),
-          ward: parseFloat(latestVisit.wardAssignment.level2),
-          icu: parseFloat(latestVisit.wardAssignment.level3)
-        };
-        setCurrentLatestPrediction(latestPrediction);
+        if (latestVisit.wardAssignment) {
+          const latestPrediction = {
+            discharge: parseFloat(latestVisit.wardAssignment.level1) || 0,
+            ward: parseFloat(latestVisit.wardAssignment.level2) || 0,
+            icu: parseFloat(latestVisit.wardAssignment.level3) || 0
+          };
+          setCurrentLatestPrediction(latestPrediction);
+        }
       }
     }
   }, [patientData]);
@@ -1430,62 +1437,66 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
 
    // 날짜 클릭 핸들러
    const handleDateClick = async (date, stay_id) => {
-  try {
-    const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
-    
-    if (!selectedVisit?.vitalSigns?.length) {
-      console.error("선택한 방문에 대한 생체징후 데이터가 없습니다.");
-      return;
-    }
-
-    // 생체 데이터 업데이트
-    const formattedVitalSigns = selectedVisit.vitalSigns.map(sign => ({
-      chartTime: Array.isArray(sign.chartTime) 
-        ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
-        : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }),
-      heartRate: sign.heartrate,
-      bloodPressure: sign.sbp,
-      bloodPressureDiastolic: sign.dbp,
-      oxygenSaturation: parseFloat(sign.o2sat),
-      respirationRate: sign.resprate,
-      temperature: parseFloat(sign.temperature)
-    })).sort((a, b) => {
-      const [hoursA, minutesA] = a.chartTime.split(':').map(Number);
-      const [hoursB, minutesB] = b.chartTime.split(':').map(Number);
-      return (hoursA * 60 + minutesA) - (hoursB * 60 + minutesB);
-    });
-
-    setVitalSignsData(formattedVitalSigns);
-
-    // 예측 데이터 업데이트
-    const lastVitalSign = selectedVisit.vitalSigns[selectedVisit.vitalSigns.length - 1];
-    const newPrediction = {
-      discharge: parseFloat(lastVitalSign.level1) || 0,
-      ward: parseFloat(lastVitalSign.level2) || 0,
-      icu: parseFloat(lastVitalSign.level3) || 0
-    };
-
-    setCurrentLatestPrediction(newPrediction);
-    setSelectedTimePoint(null);
-
-    const predictionData = selectedVisit.vitalSigns.map(vitalSign => ({
-      chartTime: Array.isArray(vitalSign.chartTime)
-        ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
-        : '00:00',
-      discharge: parseFloat(vitalSign.level1) || 0,
-      ward: parseFloat(vitalSign.level2) || 0,
-      icu: parseFloat(vitalSign.level3) || 0
-    })).sort((a, b) => {
-      const timeA = a.chartTime.split(':').map(Number);
-      const timeB = b.chartTime.split(':').map(Number);
-      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-    });
-
-    setCurrentPredictionData(predictionData);
+    try {
+      const selectedVisit = patientData.visits.find(visit => visit.stayId === stay_id);
+      
+      if (!selectedVisit?.vitalSigns?.length) {
+        console.error("선택한 방문에 대한 생체징후 데이터가 없습니다.");
+        return;
+      }
+  
+      // chartNum을 기준으로 안전하게 정렬
+      const sortedVitalSigns = [...selectedVisit.vitalSigns].sort((a, b) => {
+        const getChartNumber = (vitalSign) => {
+          if (!vitalSign?.chartNum) return 0;
+          const match = vitalSign.chartNum.match(/\d+/);
+          return match ? parseInt(match[0]) : 0;
+        };
+  
+        return getChartNumber(a) - getChartNumber(b);
+      });
+  
+      // 생체 데이터 업데이트
+      const formattedVitalSigns = sortedVitalSigns.map(sign => ({
+        chartTime: Array.isArray(sign.chartTime) 
+          ? `${String(sign.chartTime[3]).padStart(2, '0')}:${String(sign.chartTime[4]).padStart(2, '0')}`
+          : new Date(sign.chartTime).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            }),
+        heartRate: sign.heartrate,
+        bloodPressure: sign.sbp,
+        bloodPressureDiastolic: sign.dbp,
+        oxygenSaturation: parseFloat(sign.o2sat),
+        respirationRate: sign.resprate,
+        temperature: parseFloat(sign.temperature)
+      }));
+  
+      setVitalSignsData(formattedVitalSigns);
+  
+      // 예측 데이터 업데이트
+      const lastVitalSign = sortedVitalSigns[sortedVitalSigns.length - 1];
+      const newPrediction = {
+        discharge: parseFloat(lastVitalSign.level1) || 0,
+        ward: parseFloat(lastVitalSign.level2) || 0,
+        icu: parseFloat(lastVitalSign.level3) || 0
+      };
+  
+      setCurrentLatestPrediction(newPrediction);
+      setSelectedTimePoint(null);
+  
+      const predictionData = sortedVitalSigns.map(vitalSign => ({
+        chartNum: vitalSign.chartNum,
+        chartTime: Array.isArray(vitalSign.chartTime)
+          ? `${String(vitalSign.chartTime[3]).padStart(2, '0')}:${String(vitalSign.chartTime[4]).padStart(2, '0')}`
+          : '00:00',
+        discharge: parseFloat(vitalSign.level1) || 0,
+        ward: parseFloat(vitalSign.level2) || 0,
+        icu: parseFloat(vitalSign.level3) || 0
+      }));
+  
+      setCurrentPredictionData(predictionData);
 
     // 기본 정보 업데이트
     setPatientInfo(prev => ({
