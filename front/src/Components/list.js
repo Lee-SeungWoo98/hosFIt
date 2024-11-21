@@ -149,6 +149,10 @@ function List({
   totalPages,
   totalElements,
   onPageChange,
+  activeTab,
+  tabCounts,
+  onTabChange,
+  onTASClick  
 }) {
   // =========== 상태 관리 ===========
   const [searchInputValue, setSearchInputValue] = useState("");
@@ -161,90 +165,43 @@ function List({
     searchTerm: "",
   });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
-  const [tabCounts, setTabCounts] = useState({
-    all: 0,
-    icu: 0,
-    ward: 0,
-    discharge: 0
-  });
-
-  // 컴포넌트 초기 마운트 시 각 탭의 카운트를 가져오는 함수
-  const fetchAllTabCounts = useCallback(async () => {
-    try {
-      setIsUpdating(true);
-      
-      // 각 탭별 요청
-      const requests = [
-        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level3`),  // 중증 병동
-        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level2`),  // 일반 병동
-        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level1`),  // 퇴원
-        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}`)  // 전체
-      ];
-  
-      try {
-        const [icuRes, wardRes, dischargeRes, allRes] = await Promise.all(requests);
-  
-        setTabCounts({
-          icu: icuRes.data.totalElements || 0,
-          ward: wardRes.data.totalElements || 0,
-          discharge: dischargeRes.data.totalElements || 0,
-          all: allRes.data.totalElements || 0
-        });
-      } catch (error) {
-        console.error('특정 탭 카운트 로드 실패:', error);
-        // 에러 발생 시에도 기본값 설정
-        setTabCounts(prev => ({
-          ...prev,
-          icu: 0,
-          ward: 0,
-          discharge: 0,
-          all: 0
-        }));
-      }
-  
-    } catch (error) {
-      console.error('탭 카운트 로드 실패:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  }, []);
-
-// 컴포넌트 마운트 시 초기 데이터 로드
-useEffect(() => {
-  fetchAllTabCounts();
-}, []); // 컴포넌트 마운트 시에만 실행
 
   // handleTabChange 수정
-  const handleTabChange = useCallback(async (tabId) => {
+  const handleTabChange = useCallback(async (tabId, fromKtas = false) => {
+    localStorage.setItem('activeTab', tabId);
+    
     try {
       setIsUpdating(true);
-      setActiveTab(tabId);
-  
-      let url;
+      let newFilters;
+
       if (tabId === 'all') {
-        url = `${API_ENDPOINTS.PATIENTS.LIST}?page=0`;
+        newFilters = {
+          ...selectedFilters,
+          maxLevel: undefined
+        };
       } else {
         const tab = LOCATION_TABS.find(t => t.id === tabId);
-        url = `${API_ENDPOINTS.PATIENTS.LIST}?page=0&maxLevel=${tab.maxLevel}`;
-      }
-  
-      const response = await axios.get(url);
-      if (response?.data) {
-        await onFilteredPatientsUpdate(0, {
+        newFilters = {
           ...selectedFilters,
-          maxLevel: tabId === 'all' ? undefined : LOCATION_TABS.find(t => t.id === tabId)?.maxLevel
-        });
+          maxLevel: tab.maxLevel
+        };
       }
-  
-      // 모든 탭의 카운트 업데이트
-      await fetchAllTabCounts();
+      
+      await onFilteredPatientsUpdate(0, newFilters);
+      if (!fromKtas) {
+        onTASClick({ id: tabId });
+      }
     } catch (error) {
       console.error('탭 변경 중 에러:', error);
     } finally {
       setIsUpdating(false);
     }
-  }, [selectedFilters, onFilteredPatientsUpdate, fetchAllTabCounts]);
+  }, [selectedFilters, onFilteredPatientsUpdate, onTASClick]); 
+  
+  // 탭 클릭 핸들러
+  const handleTabClick = useCallback((tabId) => {
+    handleTabChange(tabId, false);
+  }, [handleTabChange]);
 
   const [abnormalCounts, setAbnormalCounts] = useState({});
   const labTestsCacheRef = useRef(new Map());
@@ -730,12 +687,12 @@ useEffect(() => {
             <button
               key={tab.id}
               className={`location-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => handleTabChange(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               disabled={isUpdating}
             >
               {tab.label}
               <span className="tab-count">
-                ({tabCounts[tab.id] || 0})
+                ({tabCounts?.[tab.id] || 0})
               </span>
             </button>
           ))}
@@ -819,7 +776,7 @@ useEffect(() => {
               </button>
             </div>
             <div className="total-count-filter">
-              (총 {activeTab === 'all' ? tabCounts.all : totalElements}명)
+              (총 {activeTab === 'all' ? tabCounts?.all || 0 : totalElements}명)
             </div>
           </div>
 

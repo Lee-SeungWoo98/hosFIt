@@ -31,7 +31,9 @@ function MainPage({
   totalElements,
   onPageChange,
   userName,
-  onPatientDataUpdate
+  onPatientDataUpdate,
+  activeTab,
+  tabCounts
 }) {
   // =========== 상태 관리 ===========
   // const location = useLocation();
@@ -182,6 +184,9 @@ function MainPage({
         onPageChange={onPageChange}
         loading={loading}
         onPatientDataUpdate={onPatientDataUpdate}
+        onTASClick={onTASClick}
+        activeTab={activeTab}
+        tabCounts={tabCounts}
       />
     );
   };
@@ -197,6 +202,7 @@ function MainPage({
         logout={logout}
         ktasFilter={ktasFilter}
         predictionData={predictionData}
+        tabCounts={tabCounts}
       />
       <div className="main-content">
         {error ? (
