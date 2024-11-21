@@ -582,53 +582,39 @@ function List({
    * 환자 행 렌더링
    */
   const renderPatientRow = useCallback((patient) => {
-    // 가장 최근 방문 데이터와 성별 텍스트 가져오기
+    // 최신 방문 기록 및 기본 정보 추출
     const latestVisit = patient.visits?.[patient.visits.length - 1];
     const genderText = getGenderText(patient.gender);
     
     // AI TAS 라벨 초기값 설정
     let aiTasLabel = "-";
     
-    // vital signs 데이터가 존재하는 경우에만 처리
+    // vitalSigns 배열이 존재하면 가장 마지막 기록의 level 값들을 사용
     if (latestVisit?.vitalSigns?.length > 0) {
-      // chartNum을 기준으로 안전하게 정렬
-      // undefined나 null 값에 대한 처리를 포함
-      const sortedVitalSigns = [...latestVisit.vitalSigns].sort((a, b) => {
-        // 두 chartNum이 모두 없으면 순서 유지
-        if (!a.chartNum && !b.chartNum) return 0;
-        // chartNum이 없는 항목은 뒤로 정렬
-        if (!a.chartNum) return 1;
-        if (!b.chartNum) return -1;
-        // 정상적인 경우 내림차순 정렬 (최신 기록이 앞으로)
-        return b.chartNum.localeCompare(a.chartNum);
-      });
-  
-      // 가장 최근의 vital sign 기록 가져오기
-      const lastVitalSign = sortedVitalSigns[0];
+      // 단순히 배열의 마지막 항목 사용
+      const lastVitalSign = latestVisit.vitalSigns[latestVisit.vitalSigns.length - 1];
       
-      // level 값들이 모두 숫자인 경우에만 처리
+      // level 값들이 모두 숫자인지 확인
       if (typeof lastVitalSign?.level1 === 'number' && 
           typeof lastVitalSign?.level2 === 'number' && 
           typeof lastVitalSign?.level3 === 'number') {
         
-        // 각 level에 대한 배치 옵션 정의
+        // 각 level별 배치 옵션 정의
         const levels = [
           { value: lastVitalSign.level1, label: "퇴원" },
           { value: lastVitalSign.level2, label: "일반 병동" },
           { value: lastVitalSign.level3, label: "중증 병동" }
         ];
   
-        // 가장 높은 확률을 가진 배치 옵션 선택
+        // 가장 높은 확률값을 가진 배치 옵션 선택
         const highest = levels.reduce((prev, current) => 
           current.value > prev.value ? current : prev
         );
-        
-        // 선택된 배치 옵션의 라벨을 AI TAS 라벨로 설정
+  
         aiTasLabel = highest.label;
       }
     }
   
-    // 환자 정보 행 렌더링
     return (
       <tr
         key={patient.subjectId}
@@ -658,7 +644,12 @@ function List({
         <td>{latestVisit?.tas || "-"}</td>
         <td>{aiTasLabel}</td>
         <td className="abnormal-count-cell">
-          {abnormalCounts[patient.subjectId] ? `${abnormalCounts[patient.subjectId]}건` : "-"}
+          {abnormalCounts[patient.subjectId] ? (
+            <span className="abnormal-count">
+              <span className="abnormal-number">{abnormalCounts[patient.subjectId]}</span>
+              <span className="abnormal-text">건</span>
+            </span>
+          ) : "-"}
         </td>
         <td>
           <button

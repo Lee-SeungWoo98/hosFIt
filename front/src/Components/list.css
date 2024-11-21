@@ -427,6 +427,44 @@ table td:nth-child(6) br {
   margin-left: 10px;
 }
 
+/* 비정상 건수 css */
+.abnormal-count-cell {
+  font-size: 16px;  /* 기본 텍스트 크기 증가 */
+  text-align: center;
+}
+
+.abnormal-count {
+  display: inline-flex;
+  align-items: baseline;  /* 텍스트 기준선 맞춤 */
+  gap: 2px;  /* 숫자와 '건' 사이 간격 */
+}
+
+.abnormal-number {
+  color: #FF0000;  /* 빨간색 */
+  font-size: 18px;  /* 숫자 크기 더 크게 */
+  font-weight: bold;
+}
+
+.abnormal-text {
+  font-size: 16px;  /* '건' 텍스트 크기 */
+}
+
+/* 테이블 행 구분선 스타일 */
+.patient-row td {
+  border-bottom: 1px solid #f0f0f0;  /* 매우 연한 회색으로 구분선 추가 */
+}
+
+/* 마우스 호버 효과도 자연스럽게 수정 */
+.patient-row:hover td {
+  background-color: #f9f9f9;
+  border-bottom-color: #e5e5e5;  /* 호버 시 구분선 약간 진하게 */
+}
+
+/* 마지막 행은 구분선 제거*/
+.patient-row:last-child td {
+  border-bottom: none;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
