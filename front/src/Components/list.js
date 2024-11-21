@@ -361,7 +361,6 @@ function List({
   const handleFilterSelect = useCallback(async (type, value) => {
     setIsUpdating(true);
     try {
-      // gender의 경우 문자열로 처리, 나머지는 숫자로 변환
       const processedValue = type === 'gender' ? value : (value === "" ? "" : Number(value));
       const newFilters = {
         ...selectedFilters,
@@ -370,7 +369,7 @@ function List({
       };
       setSelectedFilters(newFilters);
   
-      // maxLevel 유지하면서 필터 적용
+      // 기존 탭의 maxLevel 유지하면서 필터 적용
       await onFilteredPatientsUpdate(0, {
         ...newFilters,
         maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
@@ -652,10 +651,10 @@ function List({
           ) : "-"}
         </td>
         <td>
-          <button
+        <button
             onClick={() => showPatientDetails(patient)}
             className="details-button"
-            disabled={loadingDetails}
+            disabled={isUpdating || loading || loadingDetails}
           >
             {loadingDetails ? "로딩 중..." : "상세 보기"}
           </button>
@@ -716,76 +715,79 @@ function List({
           <div className="filter-dropdowns">
             <div className="filters-left">
               {/* 검색 입력 */}
-              <div className="dropdown-container search-container">
-                <div className="search-input-wrapper">
-                  <Search size={16} className="search-icon" />
-                  <input
-                    type="text"
-                    placeholder="환자이름 or PID 검색"
-                    value={searchInputValue}
-                    onChange={(e) => setSearchInputValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const newFilters = {
-                          ...selectedFilters,
-                          searchTerm: e.target.value,
-                          maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
-                        };
-                        onFilteredPatientsUpdate(0, newFilters);
-                      }
-                    }}
-                    className="patient-search-input"
-                  />
+                <div className="dropdown-container search-container">
+                  <div className="search-input-wrapper">
+                    <Search size={16} className="search-icon" />
+                    <input
+                      type="text"
+                      placeholder="환자이름 검색"
+                      value={searchInputValue}
+                      disabled={isUpdating || loading}
+                      onChange={(e) => setSearchInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const newFilters = {
+                            ...selectedFilters,
+                            searchTerm: e.target.value,
+                            maxLevel: activeTab === 'all' ? undefined : LOCATION_TABS.find(t => t.id === activeTab)?.maxLevel
+                          };
+                          onFilteredPatientsUpdate(0, newFilters);
+                        }
+                      }}
+                      className="patient-search-input"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* 필터 드롭다운 */}
-              {Object.entries(FILTER_OPTIONS).map(([filterType, { label, options }]) => (
-            <div key={filterType} className="dropdown-container">
-              <button
-                className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
-                onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
-              >
-                {selectedFilters[filterType] !== "" && selectedFilters[filterType] !== undefined
-                  ? options.find(opt => String(opt.value) === String(selectedFilters[filterType]))?.label || label
-                  : label}
-                <ChevronDown
-                  size={16}
-                  className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
-                />
-              </button>
-              {openDropdown === filterType && (
-                <div className="dropdown-content">
-                  {options.map((option) => (
-                    <div
-                      key={option.value}
-                      className={`dropdown-item ${
-                        String(selectedFilters[filterType]) === String(option.value) ? "selected" : ""
-                      }`}
-                      onClick={() => handleFilterSelect(filterType, option.value)}
+                {/* 필터 드롭다운 */}
+                {Object.entries(FILTER_OPTIONS).map(([filterType, { label, options }]) => (
+                  <div key={filterType} className="dropdown-container">
+                    <button
+                      className={`dropdown-trigger ${openDropdown === filterType ? "active" : ""}`}
+                      onClick={() => setOpenDropdown(prev => prev === filterType ? null : filterType)}
+                      disabled={isUpdating || loading}
                     >
-                      {option.label}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                      {selectedFilters[filterType] !== "" && selectedFilters[filterType] !== undefined
+                        ? options.find(opt => String(opt.value) === String(selectedFilters[filterType]))?.label || label
+                        : label}
+                      <ChevronDown
+                        size={16}
+                        className={`dropdown-arrow ${openDropdown === filterType ? "open" : ""}`}
+                      />
+                    </button>
+                    {openDropdown === filterType && (
+                      <div className="dropdown-content">
+                        {options.map((option) => (
+                          <div
+                            key={option.value}
+                            className={`dropdown-item ${
+                              String(selectedFilters[filterType]) === String(option.value) ? "selected" : ""
+                            }`}
+                            onClick={() => handleFilterSelect(filterType, option.value)}
+                          >
+                            {option.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-              {/* 필터 초기화 버튼 */}
-              <button
-                className="reset-filters-button"
-                onClick={resetAllFilters}
-                title="Reset Filters"
-              >
-                <RotateCcw size={18} />
-              </button>
-            </div>
-            <div className="total-count-filter">
-              (총 {activeTab === 'all' ? tabCounts?.all || 0 : totalElements}명)
-            </div>
-          </div>
+                {/* 필터 초기화 버튼 */}
+                <button
+                  className="reset-filters-button"
+                  onClick={resetAllFilters}
+                  disabled={isUpdating || loading}
+                  title="Reset Filters"
+                >
+                  <RotateCcw size={18} />
+                </button>
+              </div>
+              <div className="total-count-filter">
+                (총 {totalElements}명)
+              </div>
+              </div>
 
           {/* 환자 목록 테이블 */}
           <table>
