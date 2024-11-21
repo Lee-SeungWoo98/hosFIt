@@ -720,7 +720,7 @@ function List({
                     <Search size={16} className="search-icon" />
                     <input
                       type="text"
-                      placeholder="환자이름 검색"
+                      placeholder="환자 이름 검색"
                       value={searchInputValue}
                       disabled={isUpdating || loading}
                       onChange={(e) => setSearchInputValue(e.target.value)}

@@ -127,12 +127,11 @@ body {
   text-decoration: underline;
   position: relative; 
   top : -37px;
-  left : 62px;
+  left : 69px;
+  font-size: 13px;
 }
 
 .logout-text {
-
-  font-size: 9px;
   color: #000000;
   margin-top: -2px;
 }
