@@ -115,7 +115,7 @@ public class PatientMonitorService {
   
     
     @Transactional
-    public Map<String, Object> updateVisitLabel(Long stayId, Long newLabel) {
+    public Map<String, Object> updateVisitLabel(Long stayId, Long newLabel, String comment) {
         // 입력값 검증
         if (stayId == null || newLabel == null) {
             throw new IllegalArgumentException("StayId와 Label 값은 필수입니다.");
@@ -137,22 +137,21 @@ public class PatientMonitorService {
         history.setChangeTime(LocalDateTime.now());
         labelChangeHistoryRepository.save(history);
 
-        // 라벨 업데이트
+        // 라벨과 코멘트 업데이트
         visit.setLabel(newLabel);
+        visit.setComment(comment);
         visit = visitRepository.save(visit);
 
         Map<String, Object> response = new HashMap<>();
         response.put("stayId", stayId);
         response.put("label", newLabel);
+        response.put("comment", comment);
         response.put("visitDate", visit.getVisitDate());
         response.put("updated", true);
 
-        // 로그 메시지 수정
-        log.info("Visit label updated successfully for stayId: {}, new label: {}", stayId, newLabel);
+        log.info("Visit label and comment updated successfully for stayId: {}, new label: {}", stayId, newLabel);
 
         return response;
-        
-       
     }
 }
 

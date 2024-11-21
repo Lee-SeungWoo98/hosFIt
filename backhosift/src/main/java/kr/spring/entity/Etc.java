@@ -7,8 +7,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
 @Table(name = "etc")
+@Getter
+@Setter
 public class Etc {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,3 +34,4 @@ public class Etc {
 
     // Getters and Setters
 }
+

@@ -36,8 +36,8 @@ public interface FlaDTO {
     Long getLipase();
     Long getMagnesium();
     Long getNtprobnp();
-    Long getPT();
-    Long getPTT();
+    String getPT();
+    String getPTT();
     Long getPlateletCount();
     Long getPotassium();
     Long getRedBloodCells();

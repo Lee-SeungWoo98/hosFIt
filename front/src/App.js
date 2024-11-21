@@ -71,6 +71,13 @@ const formatPatientData = (patient) => {
     visits: patient.visits?.map(visit => ({
       ...visit,
       visitDate: formatVisitDate(visit.visitDate),
+      vitalSigns: visit.vitalSigns?.map(sign => ({
+        ...sign,
+        level1: sign.level1,
+        level2: sign.level2,
+        level3: sign.level3,
+        wardCode: sign.wardCode
+      })) || [],
       icd: visit.icd || determineICD(patient)
     }))
   };
@@ -81,6 +88,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
+  const [activeTab, setActiveTab] = useState("all");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -101,6 +109,12 @@ function App() {
   const [totalElements, setTotalElements] = useState(0);
   const [isPageChanging, setIsPageChanging] = useState(false);
   const [userName, setUserName] = useState("");
+  const [tabCounts, setTabCounts] = useState({
+  all: 0,
+  icu: 0,
+  ward: 0,
+  discharge: 0
+});
   
   const abortControllerRef = useRef(null);
 
@@ -111,10 +125,17 @@ function App() {
       const pageNumber = typeof page === 'object' ? 0 : page;
       
       const url = new URL(API_ENDPOINTS.PATIENTS.LIST);
+      
+      // 기본 파라미터 설정
       url.searchParams.append('page', pageNumber);
-      url.searchParams.append('size', '10');
+      
+      // 전체 탭이 아닐 때만 size와 maxLevel 추가
+      if (currentFilters?.maxLevel) {
+        url.searchParams.append('size', '10');
+        url.searchParams.append('maxLevel', currentFilters.maxLevel);
+      }
   
-      // 필터 파라미터 추가
+      // 다른 필터들은 항상 적용
       if (currentFilters.searchTerm) {
         url.searchParams.append('name', currentFilters.searchTerm);
       }
@@ -127,14 +148,10 @@ function App() {
       if (currentFilters?.painScore && currentFilters.painScore !== '') {
         url.searchParams.append('pain', currentFilters.painScore);
       }
-      // maxLevel 파라미터 추가
-      if (currentFilters?.maxLevel) {
-        url.searchParams.append('maxLevel', currentFilters.maxLevel);
-      }
-   
+  
       const options = signal ? { signal } : {};
       const response = await axios.get(url.toString(), options);
-   
+  
       if (!signal?.aborted && response.data) {
         const formattedData = response.data.patients?.map(formatPatientData).filter(Boolean) || [];
         
@@ -148,8 +165,8 @@ function App() {
         setCurrentPage(newPageNumber);
         setError(null);
         
-        return response.data; // totalElements를 List 컴포넌트에서 사용하기 위해 반환
-      } else {
+        return response.data;
+      }else {
         setPatients([]);
         setFilteredPatients([]);
         setTotalPages(1);
@@ -160,6 +177,7 @@ function App() {
       if (axios.isCancel(error)) {
         console.log('Request canceled:', error.message);
       } else {
+        console.error('API Error:', error);
         setError(getErrorMessage(error));
         setPatients([]);
         setFilteredPatients([]);
@@ -169,7 +187,7 @@ function App() {
         setLoading(false);
       }
     }
-   }, [filters]);
+  }, [filters]);
 
   const fetchKtasData = useCallback(async () => {
     try {
@@ -192,6 +210,35 @@ function App() {
     }
   }, [totalBed]);
 
+  // 탭 카운트 계산 함수
+  const fetchAllTabCounts = useCallback(async () => {
+    try {
+      const requests = [
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level3`),
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level2`),
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}?maxLevel=level1`),
+        axios.get(`${API_ENDPOINTS.PATIENTS.LIST}`)
+      ];
+  
+      const [icuRes, wardRes, dischargeRes, allRes] = await Promise.all(requests);
+      
+      setTabCounts({
+        icu: icuRes.data.totalElements || 0,
+        ward: wardRes.data.totalElements || 0,
+        discharge: dischargeRes.data.totalElements || 0,
+        all: allRes.data.totalElements || 0
+      });
+    } catch (error) {
+      console.error('탭 카운트 로드 실패:', error);
+      setTabCounts({
+        icu: 0,
+        ward: 0,
+        discharge: 0,
+        all: 0
+      });
+    }
+  }, []);
+
   const fetchPredictionData = useCallback(async () => {
     try {
       const result = await axios.get(API_ENDPOINTS.PATIENTS.PREDICTION);
@@ -209,14 +256,21 @@ function App() {
   const fetchLabTests = useCallback(async (stay_id) => {
     try {
       const result = await axios.get(`${API_ENDPOINTS.LAB_TESTS}/${stay_id}`);
-      setLabTests(result.data);
+      if (result.status === 404) {
+        console.log(`No lab tests found for stay_id: ${stay_id}`);
+        return null;
+      }
       return result.data;
     } catch (error) {
+      if (error.response?.status === 404) {
+        console.log(`No lab tests found for stay_id: ${stay_id}`);
+        return null;
+      }
       console.error("Lab tests 데이터 로드 실패:", error);
-      setLabTests(null);
       return null;
     }
   }, []);
+
   // AI 배치 예측 가져오는 함수
   const fetchVisitInfo = useCallback(async (subject_id) => {
     try {
@@ -224,10 +278,6 @@ function App() {
         `${API_ENDPOINTS.DETAILS}/${subject_id}/details`
       );
       
-      // 데이터 구조 확인
-      console.log("Raw visit info:", result.data);
-      
-      // vitalSigns 데이터에 level 값들이 있는지 확인
       if (result.data?.visits?.length > 0) {
         const formattedData = {
           ...result.data,
@@ -235,15 +285,13 @@ function App() {
             ...visit,
             vitalSigns: (visit.vitalSigns || []).map(sign => ({
               ...sign,
-              // 명시적으로 level 값들을 포함
-              level1: sign.level1 || 0,
-              level2: sign.level2 || 0,
-              level3: sign.level3 || 0,
+              level1: sign.level1,
+              level2: sign.level2,
+              level3: sign.level3,
               wardCode: sign.wardCode
             }))
           }))
         };
-        console.log("Formatted visit info:", formattedData);
         setVisitInfo(formattedData);
         return formattedData;
       }
@@ -260,6 +308,61 @@ function App() {
   // =========== 이벤트 핸들러 ===========
   const handleTASClick = useCallback(async (entry) => {
     try {
+      // AI_TAS dot 클릭 처리
+      if (entry.id || entry.id === 'all') {  // 'all' 체크 추가
+        const maxLevelMapping = {
+          'icu': 'level3',
+          'ward': 'level2',
+          'discharge': 'level1'
+        };
+        
+        // 같은 탭을 다시 클릭한 경우 전체 탭으로 돌아가기
+        if (activeTab === entry.id) {
+          setActiveTab('all');
+          const newFilters = { 
+            ...filters,
+            maxLevel: undefined,
+            tas: '' 
+          };
+          setKtasFilter([]);
+          setFilters(newFilters);
+          setCurrentPage(0);
+          await fetchFilteredData(0, newFilters);
+          return;
+        }
+  
+        // 전체 탭 클릭 시
+        if (entry.id === 'all') {
+          setActiveTab('all');
+          const newFilters = {
+            ...filters,
+            maxLevel: undefined,
+            tas: ''
+          };
+          setKtasFilter([]);
+          setFilters(newFilters);
+          setCurrentPage(0);
+          await fetchFilteredData(0, newFilters);
+          return;
+        }
+  
+        const maxLevel = maxLevelMapping[entry.id];
+        if (maxLevel) {
+          setActiveTab(entry.id);
+          const newFilters = { 
+            ...filters,
+            maxLevel,
+            tas: ''
+          };
+          setKtasFilter([]);
+          setFilters(newFilters);
+          setCurrentPage(0);
+          await fetchFilteredData(0, newFilters);
+          return;
+        }
+      }
+
+      // KTAS dot 클릭 처리 (기존 로직)
       let level;
       let newFilter = [];
 
@@ -295,9 +398,9 @@ function App() {
       await fetchFilteredData(0, newFilters);
 
     } catch (error) {
-      console.error("KTAS 필터링 오류:", error);
+      console.error("TAS 필터링 오류:", error);
     }
-  }, [filters, fetchFilteredData]);
+  }, [filters, fetchFilteredData, activeTab]);
 
   const handlePageChange = useCallback(async (newPage) => {
     if (newPage >= 0 && newPage < totalPages && !isPageChanging) {
@@ -305,11 +408,11 @@ function App() {
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
         }
-
+  
         abortControllerRef.current = new AbortController();
         setIsPageChanging(true);
         setCurrentPage(newPage);
-
+  
         await fetchFilteredData(newPage, filters, abortControllerRef.current.signal);
       } finally {
         setIsPageChanging(false);
@@ -389,20 +492,55 @@ function App() {
     try {
       // 환자 목록 데이터 갱신
       const updatedPatients = patients.map(patient => 
-        patient.subjectId === updatedPatientData.subjectId ? updatedPatientData : patient
+        patient.subjectId === updatedPatientData.subjectId 
+          ? {
+              ...patient,
+              visits: updatedPatientData.visits.map(visit => ({
+                ...visit,
+                label: visit.label,
+                comment: visit.comment,
+                statstatus: visit.label // label 값을 statstatus에도 반영
+              }))
+            }
+          : patient
       );
+      
       setPatients(updatedPatients);
       setFilteredPatients(updatedPatients);
   
-      // KTAS 데이터와 예측 데이터도 새로고침
+      // 탭 카운트, KTAS 데이터, 예측 데이터 모두 새로고침
       await Promise.all([
+        fetchAllTabCounts(), // 탭 카운트 업데이트 추가
         fetchKtasData(),
         fetchPredictionData()
       ]);
+  
+      // 현재 활성 탭에 따라 데이터 다시 필터링
+      const currentFilters = { ...filters };
+      if (activeTab !== 'all') {
+        const maxLevelMapping = {
+          'icu': 'level3',
+          'ward': 'level2',
+          'discharge': 'level1'
+        };
+        currentFilters.maxLevel = maxLevelMapping[activeTab];
+      }
+      
+      await fetchFilteredData(currentPage, currentFilters);
+  
     } catch (error) {
       console.error("환자 데이터 업데이트 실패:", error);
     }
-  }, [patients, fetchKtasData, fetchPredictionData]);
+  }, [
+    patients, 
+    fetchKtasData, 
+    fetchPredictionData, 
+    fetchAllTabCounts,
+    fetchFilteredData,
+    filters,
+    activeTab,
+    currentPage
+  ]);
 
   // =========== Effect Hooks ===========
   useEffect(() => {
@@ -419,9 +557,10 @@ function App() {
       try {
         setLoading(true);
         await Promise.all([
-          fetchFilteredData(currentPage),  // 환자 데이터도 여기서 로드
+          fetchFilteredData(currentPage),
           fetchKtasData(),
-          fetchPredictionData()
+          fetchPredictionData(),
+          fetchAllTabCounts()  // 추가
         ]);
       } catch (error) {
         console.error("초기 데이터 로드 실패:", error);
@@ -448,10 +587,11 @@ function App() {
       fetchFilteredData(currentPage);
       fetchKtasData();
       fetchPredictionData();
+      fetchAllTabCounts();
     }, AUTO_REFRESH_INTERVAL);
 
     return () => clearInterval(autoRefresh);
-  }, [isAuthenticated, currentPage]);
+}, [isAuthenticated, currentPage, fetchFilteredData, fetchKtasData, fetchPredictionData, fetchAllTabCounts]);
 
   // console.log("App_labTests", labTests);
   // console.dir("App_fetchLabTests", fetchLabTests);
@@ -497,6 +637,8 @@ function App() {
                       onPageChange={handlePageChange}
                       userName={userName}
                       onPatientDataUpdate={handlePatientDataUpdate}
+                      activeTab={activeTab}
+                      tabCounts={tabCounts}
                     />
                   </React.Suspense>
                 ) : (
