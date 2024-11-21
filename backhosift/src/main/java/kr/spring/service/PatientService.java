@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -150,12 +151,11 @@ public class PatientService {
             visitDTO.setComment(visit.getComment());
             visitDTO.setVisitDate(visit.getVisitDate());
 
-            Set<VitalSignsDTO> vitalSignsDTOs = new HashSet<>();
+            Set<VitalSignsDTO> vitalSignsDTOs = new LinkedHashSet<>();
             
             // 각 방문의 VitalSigns를 시간순으로 정렬
             List<VitalSigns> sortedVitalSigns = new ArrayList<>(visit.getVitalSigns());
-            sortedVitalSigns.sort((v1, v2) -> v2.getChartTime().compareTo(v1.getChartTime()));
-
+            sortedVitalSigns.sort((v1, v2) -> v1.getChartTime().compareTo(v2.getChartTime()));
             // 모든 VitalSigns 처리
             for (VitalSigns vital : sortedVitalSigns) {
                 if (vital.getChartTime() != null) {
@@ -185,6 +185,7 @@ public class PatientService {
                     } else {
                         log.warn("No WardAssignment found for chartNum: {}", vital.getChartNum());
                     }
+
 
                     vitalSignsDTOs.add(vitalDTO);
                 }
