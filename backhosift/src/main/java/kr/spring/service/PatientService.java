@@ -151,47 +151,46 @@ public class PatientService {
             visitDTO.setVisitDate(visit.getVisitDate());
 
             Set<VitalSignsDTO> vitalSignsDTOs = new HashSet<>();
-            Map<String, Object> wardAssignment = new HashMap<>();
+            
+            // 각 방문의 VitalSigns를 시간순으로 정렬
+            List<VitalSigns> sortedVitalSigns = new ArrayList<>(visit.getVitalSigns());
+            sortedVitalSigns.sort((v1, v2) -> v2.getChartTime().compareTo(v1.getChartTime()));
 
-            // 최신 VitalSigns 찾기
-            Optional<VitalSigns> latestVital = visit.getVitalSigns().stream()
-                .filter(vs -> vs.getChartTime() != null)
-                .max(Comparator.comparing(VitalSigns::getChartTime));
+            // 모든 VitalSigns 처리
+            for (VitalSigns vital : sortedVitalSigns) {
+                if (vital.getChartTime() != null) {
+                    VitalSignsDTO vitalDTO = new VitalSignsDTO();
+                    vitalDTO.setChartNum(vital.getChartNum());
+                    vitalDTO.setChartTime(vital.getChartTime());
+                    vitalDTO.setHeartrate(vital.getHeartrate());
+                    vitalDTO.setResprate(vital.getResprate());
+                    vitalDTO.setO2sat(vital.getO2sat());
+                    vitalDTO.setSbp(vital.getSbp());
+                    vitalDTO.setDbp(vital.getDbp());
+                    vitalDTO.setTemperature(vital.getTemperature());
 
-            if (latestVital.isPresent()) {
-                VitalSigns vital = latestVital.get();
-                VitalSignsDTO vitalDTO = new VitalSignsDTO();
-                vitalDTO.setChartNum(vital.getChartNum());
-                vitalDTO.setChartTime(vital.getChartTime());
-                vitalDTO.setHeartrate(vital.getHeartrate());
-                vitalDTO.setResprate(vital.getResprate());
-                vitalDTO.setO2sat(vital.getO2sat());
-                vitalDTO.setSbp(vital.getSbp());
-                vitalDTO.setDbp(vital.getDbp());
-                vitalDTO.setTemperature(vital.getTemperature());
+                    // 각 VitalSigns의 WardAssignment 정보 설정
+                    Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
+                    if (ward.isPresent()) {
+                        WardAssignment assignment = ward.get();
+                        String wardCode = determineWardCode(
+                            assignment.getLevel1(),
+                            assignment.getLevel2(),
+                            assignment.getLevel3()
+                        );
+                        vitalDTO.setWardCode(wardCode);
+                        vitalDTO.setLevel1(assignment.getLevel1());
+                        vitalDTO.setLevel2(assignment.getLevel2());
+                        vitalDTO.setLevel3(assignment.getLevel3());
+                    } else {
+                        log.warn("No WardAssignment found for chartNum: {}", vital.getChartNum());
+                    }
 
-                // WardAssignment 정보 처리
-                Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
-                if (ward.isPresent()) {
-                    WardAssignment assignment = ward.get();
-                    wardAssignment.put("wardCode", assignment.getWardCode());
-                    wardAssignment.put("level1", assignment.getLevel1());
-                    wardAssignment.put("level2", assignment.getLevel2());
-                    wardAssignment.put("level3", assignment.getLevel3());
-
-                    vitalDTO.setWardCode(assignment.getWardCode());
-                    vitalDTO.setLevel1(assignment.getLevel1());
-                    vitalDTO.setLevel2(assignment.getLevel2());
-                    vitalDTO.setLevel3(assignment.getLevel3());
-                } else {
-                    log.warn("No WardAssignment found for chartNum: {}", vital.getChartNum());
+                    vitalSignsDTOs.add(vitalDTO);
                 }
-
-                vitalSignsDTOs.add(vitalDTO);
             }
 
             visitDTO.setVitalSigns(vitalSignsDTOs);
-            visitDTO.setWardAssignment(wardAssignment);
             visitDTOs.add(visitDTO);
         }
 
@@ -201,8 +200,6 @@ public class PatientService {
 
         return dto;
     }
-
-
     private String determineWardCode(Float level1, Float level2, Float level3) {
         if (level1 == null || level2 == null || level3 == null) return null;
         if (level1 >= level2 && level1 >= level3) return "ICU";
