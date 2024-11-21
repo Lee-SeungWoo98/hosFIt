@@ -2,6 +2,7 @@
 package kr.spring.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -313,7 +314,7 @@ public class PatientService {
     public Map<String, Object> getPatientsByStaystatus(int page, String name, String gender, Long tas, Long pain, String maxLevel) {
         PageRequest pageable = PageRequest.of(page, 10, Sort.by("subjectId").ascending());
         Page<Patient> pageResult = patientRepository.findPatientsWithFilters(name, gender, tas, pain, maxLevel, pageable);
-
+        
         List<PatientDTO> patientDTOs = pageResult.getContent().stream()
             .map(this::convertToPatientDTO)
             .collect(Collectors.toList());
@@ -325,6 +326,51 @@ public class PatientService {
         return response;
     }
 
+    private boolean matchesLatestMaxLevel(Patient patient, String maxLevel) {
+        if (maxLevel == null) {
+            return true;
+        }
+
+        // 환자의 가장 최근 방문 찾기
+        Optional<Visit> lastVisit = patient.getVisits().stream()
+            .max(Comparator.comparing(Visit::getVisitDate));
+            
+        if (!lastVisit.isPresent()) {
+            return false;
+        }
+
+        // 해당 방문의 가장 최근 vital signs 찾기
+        Optional<VitalSigns> lastVital = lastVisit.get().getVitalSigns().stream()
+            .max(Comparator.comparing(VitalSigns::getChartTime));
+            
+        if (!lastVital.isPresent()) {
+            return false;
+        }
+
+        // 최근 vital signs의 ward assignment 확인
+        Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(lastVital.get().getChartNum());
+        if (!ward.isPresent()) {
+            return false;
+        }
+
+        WardAssignment assignment = ward.get();
+        float level1 = assignment.getLevel1();
+        float level2 = assignment.getLevel2();
+        float level3 = assignment.getLevel3();
+
+        // maxLevel 조건 확인
+        switch (maxLevel.toLowerCase()) {
+            case "level1":
+                return level1 >= level2 && level1 >= level3;
+            case "level2":
+                return level2 >= level1 && level2 >= level3;
+            case "level3":
+                return level3 >= level1 && level3 >= level2;
+            default:
+                return false;
+        }
+    }
+    
 
 
     public List<Patient> getPatientsByTas(Long tas) {
