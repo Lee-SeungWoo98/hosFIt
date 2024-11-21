@@ -55,19 +55,6 @@ const DashboardCard = ({ title, value, trend, trendValue, target }) => (
   <div className="bg-white/90 rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all h-full flex flex-col">
     <div className="flex justify-between items-center mb-6">
       <h3 className="text-xl lg:text-2xl font-bold text-gray-800">{title}</h3>
-      {trend && (
-        <div
-          className={`flex items-center gap-1.5 ${
-            trend === 'up' ? 'text-green-600 bg-green-50/80' : 'text-red-600 bg-red-50/80'
-          } font-medium px-3 py-1.5 rounded-full`}
-        >
-          <TrendingUp
-            size={14}
-            className={`shrink-0 ${trend === 'down' ? 'rotate-180' : ''}`}
-          />
-          <span className="text-sm font-semibold">{trendValue}</span>
-        </div>
-      )}
     </div>
     <div className="flex-1 flex flex-col justify-center">
       <div className="text-4xl md:text-5xl font-extrabold text-gray-900 text-center mb-3">
