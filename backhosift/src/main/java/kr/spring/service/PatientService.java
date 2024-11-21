@@ -186,6 +186,7 @@ public class PatientService {
                         log.warn("No WardAssignment found for chartNum: {}", vital.getChartNum());
                     }
 
+
                     vitalSignsDTOs.add(vitalDTO);
                 }
             }
