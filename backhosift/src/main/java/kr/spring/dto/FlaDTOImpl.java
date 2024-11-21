@@ -36,8 +36,8 @@ public class FlaDTOImpl implements FlaDTO {
     private Long lipase;
     private Long magnesium;
     private Long ntprobnp;
-    private Long pt;
-    private Long ptt;
+    private String pt;
+    private String ptt;
     private Long plateletCount;
     private Long potassium;
     private Long redBloodCells;
@@ -191,12 +191,12 @@ public class FlaDTOImpl implements FlaDTO {
     public void setNtprobnp(Long ntprobnp) { this.ntprobnp = ntprobnp; }
 
     @Override
-    public Long getPT() { return pt; }
-    public void setPT(Long pt) { this.pt = pt; }
+    public String getPT() { return pt; }
+    public void setPT(String pt) { this.pt = pt; }
 
     @Override
-    public Long getPTT() { return ptt; }
-    public void setPTT(Long ptt) { this.ptt = ptt; }
+    public String getPTT() { return ptt; }
+    public void setPTT(String ptt) { this.ptt = ptt; }
 
     @Override
     public Long getPlateletCount() { return plateletCount; }

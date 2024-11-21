@@ -1,6 +1,7 @@
 package kr.spring.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import kr.spring.dto.ErrorDTO;
@@ -51,4 +52,11 @@ public class ErrorService {
     public void deleteError(Long id) {
         errorRepository.deleteById(id);
     }
+    public List<ErrorDTO> getErrorsBySeverity(String severity, int limit) {
+        return errorRepository.findBySeveritylevelOrderByCreatedatDesc(severity, PageRequest.of(0, limit))
+                .stream()
+                .map(error -> modelMapper.map(error, ErrorDTO.class))
+                .collect(Collectors.toList());
+    }
+
 }

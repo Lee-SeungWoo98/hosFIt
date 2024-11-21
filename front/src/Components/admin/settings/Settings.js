@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useScores } from "../../../context/ScoreContext";
 import {
   Save,
   Info,
@@ -10,7 +11,7 @@ import {
   Mail,
   MapPin,
 } from "lucide-react";
-// 유지보수 담당자 정보 상수
+
 const MAINTENANCE_CONTACT = {
   company: "hosFit Solutions Co., Ltd.",
   department: "의료정보시스템팀",
@@ -20,7 +21,7 @@ const MAINTENANCE_CONTACT = {
   phone: "02-1234-5678",
   address: "서울특별시 강남구 테헤란로 123 호스핏빌딩 15층",
 };
-// 카드 형식 UI 컴포넌트 (공통 컴포넌트)
+
 const SettingsCard = ({ title, icon: Icon, children }) => (
   <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
@@ -32,53 +33,32 @@ const SettingsCard = ({ title, icon: Icon, children }) => (
     <div className="px-4 py-3">{children}</div>
   </div>
 );
-// 가중치 설정 관련 컴포넌트
+
 const WeightSettings = ({ showNotification }) => {
-  const [weights, setWeights] = useState({
-    discharge: 0.5,
-    ward: 0.6,
-    icu: 0.7,
-  });
-  // 가중치 상태 관리 및 초기 값 로드
+  const { weights, updateWeights, isLoading, fetchWeights } = useScores();
+  const [localWeights, setLocalWeights] = useState(weights);
+
   useEffect(() => {
-    const fetchWeights = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:8082/boot/thresholds/display"
-        );
-        const thresholds = response.data;
-        setWeights({
-          discharge:
-            thresholds.find((t) => t.key === "DISCHARGE")?.value ?? 0.5,
-          ward: thresholds.find((t) => t.key === "WARD")?.value ?? 0.6,
-          icu: thresholds.find((t) => t.key === "ICU")?.value ?? 0.7,
-        });
-      } catch (error) {
-        console.error("가중치 로드 오류:", error);
-        showNotification("가중치 로드 중 오류가 발생했습니다.", "error");
-      }
-    };
-    fetchWeights();
-  }, [showNotification]);
-  // 가중치 유효성 검사 및 저장 로직
-  const handleWeightChange = (type, value) => {
-    const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 0.9);
-    setWeights((prev) => ({
+    setLocalWeights(weights);
+  }, [weights]);
+
+  const handleWeightChange = (level, value) => {
+    const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 1.0);
+    setLocalWeights((prev) => ({
       ...prev,
-      [type]: numValue,
+      [level]: numValue,
     }));
   };
 
   const validateWeights = () => {
-    if (weights.discharge > weights.ward || weights.ward > weights.icu) {
+    if (
+      localWeights.level2 > localWeights.level1 ||
+      localWeights.level1 > localWeights.level0
+    ) {
       showNotification(
         "가중치는 중증병동 > 일반병동 > 퇴원 순서로 설정되어야 합니다.",
         "error"
       );
-      return false;
-    }
-    if (Object.values(weights).some((w) => w > 0.9 || w < 0)) {
-      showNotification("가중치는 0.0에서 0.9 사이의 값이어야 합니다.", "error");
       return false;
     }
     return true;
@@ -86,24 +66,40 @@ const WeightSettings = ({ showNotification }) => {
 
   const handleWeightsSave = async () => {
     if (!validateWeights()) return;
+
     try {
-      await Promise.all([
-        axios.put("http://localhost:8082/boot/thresholds/DISCHARGE", {
-          value: weights.discharge,
-        }),
-        axios.put("http://localhost:8082/boot/thresholds/WARD", {
-          value: weights.ward,
-        }),
-        axios.put("http://localhost:8082/boot/thresholds/ICU", {
-          value: weights.icu,
-        }),
-      ]);
+      await updateWeights(localWeights);
+      await fetchWeights(); // 저장 후 최신 데이터 다시 가져오기
       showNotification("가중치 설정이 저장되었습니다.", "success");
     } catch (error) {
       console.error("가중치 저장 오류:", error);
       showNotification("가중치 저장 중 오류가 발생했습니다.", "error");
+      // 오류 발생시 원래 값으로 복원
+      setLocalWeights(weights);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="mx-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+                  <div className="h-10 bg-gray-200 rounded w-full"></div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-end lg:justify-end">
+              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -111,58 +107,56 @@ const WeightSettings = ({ showNotification }) => {
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors hover:text-blue-600">
-                퇴원 가중치
-              </label>
-              <input
-                type="number"
-                value={weights.discharge}
-                onChange={(e) =>
-                  handleWeightChange("discharge", e.target.value)
-                }
-                step="0.1"
-                min="0.0"
-                max="0.9"
-                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors sm:text-sm bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors hover:text-blue-600">
-                일반병동 가중치
-              </label>
-              <input
-                type="number"
-                value={weights.ward}
-                onChange={(e) => handleWeightChange("ward", e.target.value)}
-                step="0.1"
-                min="0.0"
-                max="0.9"
-                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors sm:text-sm bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors hover:text-blue-600">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 중증병동 가중치
               </label>
               <input
                 type="number"
-                value={weights.icu}
-                onChange={(e) => handleWeightChange("icu", e.target.value)}
+                value={localWeights.level0}
+                onChange={(e) => handleWeightChange("level0", e.target.value)}
                 step="0.1"
                 min="0.0"
-                max="0.9"
-                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors sm:text-sm bg-white"
+                max="1.0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                일반병동 가중치
+              </label>
+              <input
+                type="number"
+                value={localWeights.level1}
+                onChange={(e) => handleWeightChange("level1", e.target.value)}
+                step="0.1"
+                min="0.0"
+                max="1.0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                퇴원 가중치
+              </label>
+              <input
+                type="number"
+                value={localWeights.level2}
+                onChange={(e) => handleWeightChange("level2", e.target.value)}
+                step="0.1"
+                min="0.0"
+                max="1.0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
           </div>
-
           <div className="flex items-end lg:justify-end">
             <button
               onClick={handleWeightsSave}
-              className="h-10 w-[180px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="h-10 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Save className="h-4 w-4 mr-2" />
-              가중치 설정 저장
+              {isLoading ? "저장 중..." : "가중치 설정 저장"}
             </button>
           </div>
         </div>
@@ -170,22 +164,64 @@ const WeightSettings = ({ showNotification }) => {
     </div>
   );
 };
-// 병상 설정 관련 컴포넌트
+
 const BedSettings = ({ showNotification }) => {
-   // 병상 수 상태 관리 및 저장 로직
   const [bedCapacity, setBedCapacity] = useState({
-    totalBeds: 48,
+    totalBeds: 0,
+    isLoading: true,
+    error: null,
   });
+  const fetchBedCount = async () => {
+    try {
+      const response = await axios.get("http://localhost:8082/boot/beds/count");
+      setBedCapacity((prev) => ({
+        ...prev,
+        totalBeds: response.data,
+        isLoading: false,
+        error: null,
+      }));
+    } catch (error) {
+      console.error("병상 수 로드 오류:", error);
+      setBedCapacity((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: "데이터 로드 중 오류가 발생했습니다.",
+      }));
+      showNotification("병상 수 로드 중 오류가 발생했습니다.", "error");
+    }
+  };
+  useEffect(() => {
+    fetchBedCount();
+  }, []);
 
   const handleBedCapacityChange = (value) => {
     const numValue = parseInt(value) || 0;
-    setBedCapacity({ totalBeds: numValue });
+    setBedCapacity((prev) => ({
+      ...prev,
+      totalBeds: numValue,
+    }));
   };
 
   const handleBedCapacitySave = async () => {
     try {
-      await axios.put("http://localhost:8082/boot/beds/capacity", bedCapacity);
-      showNotification("병상 수 설정이 저장되었습니다.", "success");
+      if (bedCapacity.totalBeds < 1) {
+        showNotification("병상 수는 1개 이상이어야 합니다.", "error");
+        return;
+      }
+
+      const response = await axios.put(
+        "http://localhost:8082/boot/beds/update",
+        {
+          totalBeds: bedCapacity.totalBeds,
+        }
+      );
+
+      if (response.data.success) {
+        showNotification("병상 수 설정이 저장되었습니다.", "success");
+        fetchBedCount(); // 저장 후 최신 데이터 다시 로드
+      } else {
+        throw new Error(response.data.message);
+      }
     } catch (error) {
       console.error("병상 수 저장 오류:", error);
       showNotification("병상 수 저장 중 오류가 발생했습니다.", "error");
@@ -195,6 +231,11 @@ const BedSettings = ({ showNotification }) => {
   return (
     <div className="space-y-3">
       <div className="mx-6">
+        {bedCapacity.error && (
+          <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            {bedCapacity.error}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             전체 병상 수
@@ -202,16 +243,33 @@ const BedSettings = ({ showNotification }) => {
           <div className="flex gap-3">
             <input
               type="number"
-              value={bedCapacity.totalBeds}
+              value={bedCapacity.isLoading ? "" : bedCapacity.totalBeds}
               onChange={(e) => handleBedCapacityChange(e.target.value)}
-              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              disabled={bedCapacity.isLoading}
+              placeholder={
+                bedCapacity.isLoading ? "로딩 중..." : "병상 수 입력"
+              }
+              min="1"
+              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleBedCapacitySave}
-              className="h-10 w-[180px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
+              className={`h-10 w-[170px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+                ${
+                  bedCapacity.isLoading || bedCapacity.totalBeds < 1
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                }`}
             >
-              <Save className="h-4 w-4 mr-2" />
-              병상 수 저장
+              {bedCapacity.isLoading ? (
+                <span>로딩 중...</span>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  병상 수 저장
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -219,7 +277,7 @@ const BedSettings = ({ showNotification }) => {
     </div>
   );
 };
-// Settings 전체 구성 컴포넌트
+
 const Settings = ({ showNotification }) => {
   return (
     <div className="p-4 space-y-4">

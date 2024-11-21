@@ -1,27 +1,18 @@
 // PatientService.java
 package kr.spring.service;
 
-import java.awt.print.Pageable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
-
-import javax.persistence.criteria.Predicate;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +22,13 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Sort;
-import kr.spring.dto.AiDTO;
+
 import kr.spring.dto.PatientDTO;
 import kr.spring.dto.VisitDTO;
 import kr.spring.dto.VitalSignsDTO;
-import kr.spring.entity.AiTAS;
 import kr.spring.entity.Patient;
 import kr.spring.entity.Visit;
 import kr.spring.entity.VitalSigns;
@@ -51,6 +39,8 @@ import kr.spring.repository.PatientRepository;
 import kr.spring.repository.VisitRepository;
 import kr.spring.repository.VitalSignsRepository;
 import kr.spring.repository.WardAssignmentRepository;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
@@ -117,7 +107,6 @@ public class PatientService {
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
             
             return convertToPatientDTO(patient);
-            
         } catch (Exception e) {
             log.error("Error fetching patient details", e);
             throw new RuntimeException("Failed to fetch patient details", e);
@@ -126,6 +115,121 @@ public class PatientService {
 
     private PatientDTO convertToPatientDTO(Patient patient) {
         PatientDTO dto = new PatientDTO();
+
+        setBasicPatientInfo(dto, patient);
+
+        List<VisitDTO> visitDTOs = new ArrayList<>();
+        
+        for (Visit visit : patient.getVisits()) {
+            VisitDTO visitDTO = new VisitDTO();
+            setBasicVisitInfo(visitDTO, visit);
+
+
+            // Sort vital signs by chart time
+            List<VitalSigns> sortedVitalSigns = new ArrayList<>(visit.getVitalSigns());
+            sortedVitalSigns.sort((v1, v2) -> v1.getChartTime().compareTo(v2.getChartTime()));
+
+
+            Set<VitalSignsDTO> vitalSignsDTOs = new LinkedHashSet<>();
+            for (VitalSigns vital : sortedVitalSigns) {
+                if (vital.getChartTime() != null) {
+                    VitalSignsDTO vitalDTO = convertToVitalSignsDTO(vital);
+
+                    
+                    // Get ward assignment for individual vital sign
+                    Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
+                    if (ward.isPresent()) {
+                        WardAssignment assignment = ward.get();
+                        vitalDTO.setLevel1(assignment.getLevel1());
+                        vitalDTO.setLevel2(assignment.getLevel2());
+                        vitalDTO.setLevel3(assignment.getLevel3());
+                        vitalDTO.setWardCode(determineWardCode(
+                            assignment.getLevel1(),
+                            assignment.getLevel2(),
+                            assignment.getLevel3()
+                        ));
+                    }
+
+                    vitalSignsDTOs.add(vitalDTO);
+                }
+            }
+
+            visitDTO.setVitalSigns(vitalSignsDTOs);
+
+            
+            // Set ward assignment for visit based on the latest vital sign
+            Optional<VitalSigns> latestVital = sortedVitalSigns.stream()
+                .max(Comparator.comparing(VitalSigns::getChartTime));
+                
+            if (latestVital.isPresent()) {
+                Optional<WardAssignment> latestWard = wardAssignmentRepository
+                    .findByChartNum(latestVital.get().getChartNum());
+                    
+                if (latestWard.isPresent()) {
+                    Map<String, Object> wardAssignment = new HashMap<>();
+                    WardAssignment assignment = latestWard.get();
+                    wardAssignment.put("level1", assignment.getLevel1());
+                    wardAssignment.put("level2", assignment.getLevel2());
+                    wardAssignment.put("level3", assignment.getLevel3());
+                    wardAssignment.put("wardCode", determineWardCode(
+                        assignment.getLevel1(),
+                        assignment.getLevel2(),
+                        assignment.getLevel3()
+                    ));
+                    visitDTO.setWardAssignment(wardAssignment);
+                }
+            }
+            
+
+            visitDTOs.add(visitDTO);
+        }
+
+        // Sort visits by date (newest first)
+        visitDTOs.sort((v1, v2) -> v2.getVisitDate().compareTo(v1.getVisitDate()));
+        dto.setVisits(visitDTOs);
+
+        return dto;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class MaxLevelResult {
+        private final String wardCode;
+        private final float level1;
+        private final float level2;
+        private final float level3;
+    }
+
+    private MaxLevelResult calculateMaxLevel(List<VitalSigns> vitalSigns) {
+        float maxLevel1 = 0f;
+        float maxLevel2 = 0f;
+        float maxLevel3 = 0f;
+        
+        // Find maximum values for each level across all vital signs
+        for (VitalSigns vital : vitalSigns) {
+            Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
+            if (ward.isPresent()) {
+                WardAssignment assignment = ward.get();
+                maxLevel1 = Math.max(maxLevel1, assignment.getLevel1());
+                maxLevel2 = Math.max(maxLevel2, assignment.getLevel2());
+                maxLevel3 = Math.max(maxLevel3, assignment.getLevel3());
+            }
+        }
+
+        // Determine ward code based on maximum levels
+        String wardCode = determineWardCode(maxLevel1, maxLevel2, maxLevel3);
+        
+        return new MaxLevelResult(wardCode, maxLevel1, maxLevel2, maxLevel3);
+    }
+
+    private void setWardInfo(VitalSignsDTO vitalDTO, MaxLevelResult maxLevel) {
+        vitalDTO.setWardCode(maxLevel.getWardCode());
+        vitalDTO.setLevel1(maxLevel.getLevel1());
+        vitalDTO.setLevel2(maxLevel.getLevel2());
+        vitalDTO.setLevel3(maxLevel.getLevel3());
+    }
+
+    private void setBasicPatientInfo(PatientDTO dto, Patient patient) {
         dto.setSubjectId(patient.getSubjectId());
         dto.setName(patient.getName());
         dto.setGender(patient.getGender());
@@ -137,77 +241,38 @@ public class PatientService {
         dto.setPhoneNumber(patient.getPhoneNumber());
         dto.setResidentNum(patient.getResidentNum());
 
-        List<VisitDTO> visitDTOs = new ArrayList<>();
-
-        for (Visit visit : patient.getVisits()) {
-            VisitDTO visitDTO = new VisitDTO();
-            visitDTO.setStayId(visit.getStayId());
-            visitDTO.setPain(visit.getPain());
-            visitDTO.setLosHours(visit.getLosHours());
-            visitDTO.setTas(visit.getTas());
-            visitDTO.setArrivalTransport(visit.getArrivalTransport());
-            visitDTO.setLabel(visit.getLabel());
-            visitDTO.setComment(visit.getComment());
-            visitDTO.setVisitDate(visit.getVisitDate());
-
-            Set<VitalSignsDTO> vitalSignsDTOs = new HashSet<>();
-            
-            // 각 방문의 VitalSigns를 시간순으로 정렬
-            List<VitalSigns> sortedVitalSigns = new ArrayList<>(visit.getVitalSigns());
-            sortedVitalSigns.sort((v1, v2) -> v2.getChartTime().compareTo(v1.getChartTime()));
-
-            // 모든 VitalSigns 처리
-            for (VitalSigns vital : sortedVitalSigns) {
-                if (vital.getChartTime() != null) {
-                    VitalSignsDTO vitalDTO = new VitalSignsDTO();
-                    vitalDTO.setChartNum(vital.getChartNum());
-                    vitalDTO.setChartTime(vital.getChartTime());
-                    vitalDTO.setHeartrate(vital.getHeartrate());
-                    vitalDTO.setResprate(vital.getResprate());
-                    vitalDTO.setO2sat(vital.getO2sat());
-                    vitalDTO.setSbp(vital.getSbp());
-                    vitalDTO.setDbp(vital.getDbp());
-                    vitalDTO.setTemperature(vital.getTemperature());
-
-                    // 각 VitalSigns의 WardAssignment 정보 설정
-                    Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(vital.getChartNum());
-                    if (ward.isPresent()) {
-                        WardAssignment assignment = ward.get();
-                        String wardCode = determineWardCode(
-                            assignment.getLevel1(),
-                            assignment.getLevel2(),
-                            assignment.getLevel3()
-                        );
-                        vitalDTO.setWardCode(wardCode);
-                        vitalDTO.setLevel1(assignment.getLevel1());
-                        vitalDTO.setLevel2(assignment.getLevel2());
-                        vitalDTO.setLevel3(assignment.getLevel3());
-                    } else {
-                        log.warn("No WardAssignment found for chartNum: {}", vital.getChartNum());
-                    }
-
-                    vitalSignsDTOs.add(vitalDTO);
-                }
-            }
-
-            visitDTO.setVitalSigns(vitalSignsDTOs);
-            visitDTOs.add(visitDTO);
-        }
-
-        // 방문 기록 정렬 (최신순)
-        visitDTOs.sort((v1, v2) -> v2.getVisitDate().compareTo(v1.getVisitDate()));
-        dto.setVisits(visitDTOs);
-
-        return dto;
     }
+
+    private void setBasicVisitInfo(VisitDTO visitDTO, Visit visit) {
+        visitDTO.setStayId(visit.getStayId());
+        visitDTO.setPain(visit.getPain());
+        visitDTO.setLosHours(visit.getLosHours());
+        visitDTO.setTas(visit.getTas());
+        visitDTO.setArrivalTransport(visit.getArrivalTransport());
+        visitDTO.setLabel(visit.getLabel());
+        visitDTO.setComment(visit.getComment());
+        visitDTO.setVisitDate(visit.getVisitDate());
+    }
+
+    private VitalSignsDTO convertToVitalSignsDTO(VitalSigns vital) {
+        VitalSignsDTO vitalDTO = new VitalSignsDTO();
+        vitalDTO.setChartNum(vital.getChartNum());
+        vitalDTO.setChartTime(vital.getChartTime());
+        vitalDTO.setHeartrate(vital.getHeartrate());
+        vitalDTO.setResprate(vital.getResprate());
+        vitalDTO.setO2sat(vital.getO2sat());
+        vitalDTO.setSbp(vital.getSbp());
+        vitalDTO.setDbp(vital.getDbp());
+        vitalDTO.setTemperature(vital.getTemperature());
+        return vitalDTO;
+    }
+
     private String determineWardCode(Float level1, Float level2, Float level3) {
         if (level1 == null || level2 == null || level3 == null) return null;
         if (level1 >= level2 && level1 >= level3) return "ICU";
         if (level2 >= level1 && level2 >= level3) return "HDU";
         return "Ward";
     }
-
-
     private void setPatientBasicInfo(PatientDTO patientData, PatientProjection row) {
         patientData.setSubjectId(row.getSubjectId());
         patientData.setName(row.getName());
@@ -284,11 +349,10 @@ public class PatientService {
             log.warn("No WardAssignment found for chartNum: {}", chartNum);
         }
     }
-
     public Map<String, Object> getPatientsByStaystatus(int page, String name, String gender, Long tas, Long pain, String maxLevel) {
         PageRequest pageable = PageRequest.of(page, 10, Sort.by("subjectId").ascending());
         Page<Patient> pageResult = patientRepository.findPatientsWithFilters(name, gender, tas, pain, maxLevel, pageable);
-
+        
         List<PatientDTO> patientDTOs = pageResult.getContent().stream()
             .map(this::convertToPatientDTO)
             .collect(Collectors.toList());
@@ -299,7 +363,52 @@ public class PatientService {
         response.put("totalElements", pageResult.getTotalElements());
         return response;
     }
+    private boolean matchesLatestMaxLevel(Patient patient, String maxLevel) {
+        if (maxLevel == null) {
+            return true;
+        }
 
+
+        // 환자의 가장 최근 방문 찾기
+        Optional<Visit> lastVisit = patient.getVisits().stream()
+            .max(Comparator.comparing(Visit::getVisitDate));
+            
+        if (!lastVisit.isPresent()) {
+            return false;
+        }
+
+        // 해당 방문의 가장 최근 vital signs 찾기
+        Optional<VitalSigns> lastVital = lastVisit.get().getVitalSigns().stream()
+            .max(Comparator.comparing(VitalSigns::getChartTime));
+            
+        if (!lastVital.isPresent()) {
+            return false;
+        }
+
+        // 최근 vital signs의 ward assignment 확인
+        Optional<WardAssignment> ward = wardAssignmentRepository.findByChartNum(lastVital.get().getChartNum());
+        if (!ward.isPresent()) {
+            return false;
+        }
+
+        WardAssignment assignment = ward.get();
+        float level1 = assignment.getLevel1();
+        float level2 = assignment.getLevel2();
+        float level3 = assignment.getLevel3();
+
+        // maxLevel 조건 확인
+        switch (maxLevel.toLowerCase()) {
+            case "level1":
+                return level1 >= level2 && level1 >= level3;
+            case "level2":
+                return level2 >= level1 && level2 >= level3;
+            case "level3":
+                return level3 >= level1 && level3 >= level2;
+            default:
+                return false;
+        }
+    }
+    
 
 
     public List<Patient> getPatientsByTas(Long tas) {

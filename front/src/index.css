@@ -2,99 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 조선로고체 import */
+/* 색상 변수 정의 */
+@layer base {
+  :root {
+    --background: #f4f5f7;
+    --foreground: #111827;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+  }
+
+  body {
+    @apply bg-background text-foreground font-pretendard;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+/* 조선로고체 Import */
 @font-face {
   font-family: 'ChosunLo';
   src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunLo.woff') format('woff');
   font-weight: normal;
   font-style: normal;
 }
-/* 로고 폰트 클래스 추가 */
-.logo-font {
-  font-family: 'ChosunLo' !important;
-}
-/* Pretendard 폰트 적용 */
+
+/* Pretendard Import */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
-  background-color: s#f4f5f7;
-  font-weight: 400;
-}
+/* 유틸리티 클래스 */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE */
+    scrollbar-width: none; /* Firefox */
+  }
 
-/* 웨이트 유틸리티 클래스 */
-.font-light { font-weight: 300; }
-.font-regular { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-bold { font-weight: 700; }
-.font-black { font-weight: 900; }
-
-/* 나머지 스타일 유지 */
-.content-wrapper {
-  flex-grow: 1;
-  margin-left: 222px;
-  background-color: #f4f5f7;
-  min-height: calc(100vh - 70px);
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.content {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* 대시보드 스타일 */
-.dashboard-container {
-  padding: 2rem;
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.metric-card {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* 사이드바 스타일 */
-.user-sidebar {
-  width: 280px;
-  background-color: white;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: fixed;
-  height: 100vh;
-  z-index: 40;
-  border-right: 1px solid #e0e0e0;
-}
-
-/* 네비게이션 스타일 */
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: #6b7280;
-  text-decoration: none;
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.nav-link:hover {
-  background-color: #f3f4f6;
-}
-
-.nav-link.active {
-  background-color: #2563eb;
-  color: white;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
 }
