@@ -34,7 +34,7 @@ import lombok.Setter;
 public class Visit implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Id
+    @Id // stayId를 기본 키로 지정
     @Column(name = "stayid")
     private Long stayId;
     

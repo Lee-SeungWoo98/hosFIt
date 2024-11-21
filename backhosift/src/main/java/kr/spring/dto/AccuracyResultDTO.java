@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccuracyResultDTO {
-	 private double accuracy;
+    private double accuracy; // AI 일치율
 }

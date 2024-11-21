@@ -19,28 +19,27 @@ import kr.spring.entity.Visit;
 
 @Repository
 public interface VisitRepository extends JpaRepository<Visit, Long> {
-    List<Visit> findByPatient(Patient patient);
     
-    Visit findByStayId(Long stayId);
-    
-    @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
-    Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
-    
-    @Query("SELECT v FROM Visit v WHERE v.label IS NOT NULL")
-    Page<Visit> findByLabelIsNotNullWithPaging(Pageable pageable);
+    @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
+    Visit findByStayId(@Param("stayId") Long stayId);
     
     @Query("SELECT v FROM Visit v WHERE v.label IS NOT NULL")
     List<Visit> findAllWithLabel();
     
-    long countByLabelIsNotNull();
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.visitDate BETWEEN :startDate AND :endDate")
+    long countByVisitDateBetween(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+    
+    @Query("SELECT v FROM Visit v WHERE v.patient.subjectId = :subjectId")
+    Optional<Visit> findBySubjectId(@Param("subjectId") Long subjectId);
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT v FROM Visit v WHERE v.stayId = :stayId")
     Optional<Visit> findByStayIdWithLock(@Param("stayId") Long stayId);
 
-    @Query("SELECT COUNT(v) FROM Visit v WHERE v.visitDate BETWEEN :startDate AND :endDate")
-    long countByVisitDateBetween(
-        @Param("startDate") LocalDateTime startDate,
-        @Param("endDate") LocalDateTime endDate
-    );
+    List<Visit> findByLabelIsNotNull();
+    
+    long countByLabelIsNotNull();
 }
