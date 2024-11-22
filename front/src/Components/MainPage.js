@@ -31,7 +31,9 @@ function MainPage({
   totalElements,
   onPageChange,
   userName,
-  onPatientDataUpdate
+  onPatientDataUpdate,
+  activeTab,
+  tabCounts
 }) {
   // =========== 상태 관리 ===========
   // const location = useLocation();
@@ -159,6 +161,15 @@ function MainPage({
           onBack={handleBack}
           fetchLabTests={fetchLabTests}
           fetchVisitInfo={fetchVisitInfo}
+          onPatientDataUpdate={(updatedPatientData) => {
+            // 로컬 상태 업데이트
+            setSelectedPatient(prev => ({
+              ...prev,
+              patientData: updatedPatientData
+            }));
+            // 상위 컴포넌트에 변경 알림
+            onPatientDataUpdate(updatedPatientData);
+          }}
         />
       );
     }
@@ -182,6 +193,9 @@ function MainPage({
         onPageChange={onPageChange}
         loading={loading}
         onPatientDataUpdate={onPatientDataUpdate}
+        onTASClick={onTASClick}
+        activeTab={activeTab}
+        tabCounts={tabCounts}
       />
     );
   };
@@ -197,6 +211,7 @@ function MainPage({
         logout={logout}
         ktasFilter={ktasFilter}
         predictionData={predictionData}
+        tabCounts={tabCounts}
       />
       <div className="main-content">
         {error ? (

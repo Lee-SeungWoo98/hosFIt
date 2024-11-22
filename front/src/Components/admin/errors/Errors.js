@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Search, Download } from "lucide-react";
 import axios from "axios";
 import ErrorCard from "./ErrorCard";
-import errorEmailService from "./ErrorEmailService"; // 파일명과 정확히 일치하게 수정
 
 const FilterButton = ({ active, onClick, children, type }) => {
   const buttonStyles = {
@@ -51,20 +50,52 @@ const Errors = () => {
     };
 
     fetchLogs();
-
-    const refreshInterval = setInterval(() => {
-      console.log("Refreshing logs...");
-      fetchLogs();
-    }, 300000); // 5분
-
+    const refreshInterval = setInterval(fetchLogs, 300000);
     return () => clearInterval(refreshInterval);
   }, []);
+
+  const formatDate = (dateArr) => {
+    if (!Array.isArray(dateArr) || dateArr.length < 6) return "Invalid Date";
+    const [year, month, day, hour, minute, second] = dateArr;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
+  };
+
+  const handleSendToSupport = async (logId) => {
+    try {
+      const logToSend = [...logs.errors, ...logs.warnings].find(log => log.id === logId);
+      if (!logToSend) {
+        throw new Error("해당 로그를 찾을 수 없습니다.");
+      }
+
+      const response = await axios.post("http://localhost:8082/boot/errors/send-email", {
+        id: logToSend.id,
+        errorname: logToSend.errorname,
+        errormessage: logToSend.errormessage,
+        errorstack: logToSend.errorstack,
+        errortype: logToSend.errortype,
+        severitylevel: logToSend.severitylevel,
+        url: logToSend.url,
+        userid: logToSend.userid || "미로그인",
+        browser: logToSend.browser,
+        createdat: logToSend.createdat
+      });
+
+      if (response.data.success) {
+        alert("에러 로그가 성공적으로 전송되었습니다.");
+      } else {
+        throw new Error(response.data.message || "이메일 전송에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to send error log:", error);
+      alert(error.message || "이메일 전송 중 오류가 발생했습니다.");
+    }
+  };
 
   const handleExportLogs = async () => {
     try {
       setIsExporting(true);
 
-      const exportData = filteredLogs.map((log) => ({
+      const exportData = filteredLogs.map(log => ({
         "Log No.": log.id,
         "에러명": log.errorname,
         "메시지": log.errormessage,
@@ -73,24 +104,18 @@ const Errors = () => {
         "URL": log.url,
         "사용자": log.userid || "미로그인",
         "브라우저": log.browser,
-        "발생시각": formatDate(log.createdat),
+        "발생시각": formatDate(log.createdat)
       }));
 
-      const BOM = "\uFEFF"; // UTF-8 BOM 추가
+      const BOM = "\uFEFF";
       const headers = Object.keys(exportData[0]);
-      const csvContent =
-        BOM +
-        headers.join(",") +
-        "\n" +
-        exportData
-          .map((row) =>
-            headers
-              .map((header) =>
-                `"${row[header]?.toString().replace(/"/g, '""') || ""}"`
-              )
-              .join(",")
-          )
-          .join("\n");
+      const csvContent = BOM +
+        headers.join(",") + "\n" +
+        exportData.map(row =>
+          headers.map(header =>
+            `"${(row[header]?.toString() || "").replace(/"/g, '""')}"`
+          ).join(",")
+        ).join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
@@ -109,36 +134,20 @@ const Errors = () => {
     }
   };
 
-  const formatDate = (dateArr) => {
-    if (!Array.isArray(dateArr) || dateArr.length < 6) return "Invalid Date";
-    const [year, month, day, hour, minute, second] = dateArr;
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
-      2,
-      "0"
-    )} ${String(hour).padStart(2, "0")}:${String(minute).padStart(
-      2,
-      "0"
-    )}:${String(second).padStart(2, "0")}`;
-  };
-
   const filteredLogs = [
     ...(selectedLevel === "all" || selectedLevel === "warning" ? logs.warnings : []),
-    ...(selectedLevel === "all" || selectedLevel === "error" ? logs.errors : []),
-  ]
-    .filter((log) => {
-      const matchesSearch =
-        log.errormessage?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.errorname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.errortype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(log.id).includes(searchTerm);
-
-      return matchesSearch;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(...a.createdat);
-      const dateB = new Date(...b.createdat);
-      return dateB - dateA;
-    });
+    ...(selectedLevel === "all" || selectedLevel === "error" ? logs.errors : [])
+  ].filter(log => {
+    const searchFields = ["errormessage", "errorname", "errortype", "id"];
+    return searchTerm === "" ||
+      searchFields.some(field =>
+        String(log[field]).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }).sort((a, b) => {
+    const dateA = new Date(...a.createdat);
+    const dateB = new Date(...b.createdat);
+    return dateB - dateA;
+  });
 
   if (loading) {
     return (
@@ -176,6 +185,7 @@ const Errors = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
           <div className="flex gap-2 flex-wrap">
             <FilterButton
               active={selectedLevel === "all"}
@@ -200,6 +210,7 @@ const Errors = () => {
             </FilterButton>
           </div>
         </div>
+
         <button
           onClick={handleExportLogs}
           disabled={isExporting || filteredLogs.length === 0}
@@ -215,6 +226,7 @@ const Errors = () => {
           {isExporting ? "내보내는 중..." : "로그 내보내기"}
         </button>
       </div>
+
       <div className="space-y-4">
         {filteredLogs.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -230,7 +242,7 @@ const Errors = () => {
             <ErrorCard
               key={log.id}
               log={log}
-              onSendToSupport={(logId) => console.log(`Log ${logId} 전송`)}
+              onSendToSupport={handleSendToSupport}
             />
           ))
         )}

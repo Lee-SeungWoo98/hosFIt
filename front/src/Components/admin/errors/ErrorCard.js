@@ -1,10 +1,9 @@
-// ErrorCard.js 
 import React from 'react';
 import { Search } from 'lucide-react';
 
 /**
  * 에러 로그 카드 컴포넌트
- * 각 에러 로그의 세부 정보를 표시하는 카드형  UI
+ * 각 에러 로그의 세부 정보를 표시하는 카드형 UI
  * 
  * @param {Object} log - 에러 로그 데이터
  * @param {Function} onSendToSupport - 이메일 전송 핸들러 함수
@@ -23,20 +22,13 @@ const ErrorCard = ({ log, onSendToSupport }) => {
       bg: "bg-yellow-50",
       text: "text-yellow-800",
       badge: "bg-yellow-100"
-    },
-    info: {
-      border: "border-blue-200",
-      bg: "bg-blue-50",
-      text: "text-blue-800",
-      badge: "bg-blue-100"
     }
   };
 
   // 로그 레벨 한글 매핑
   const levelText = {
     error: "에러",
-    warning: "경고",
-    info: "정보"
+    warning: "경고"
   };
 
   const colors = typeColors[log.severitylevel];
@@ -56,10 +48,14 @@ const ErrorCard = ({ log, onSendToSupport }) => {
    * 아이콘과 함께 레이블-값 쌍을 표시
    */
   const InfoRow = ({ icon: Icon, label, value }) => (
-    <div className="flex items-center gap-2 text-sm text-gray-600">
-      <Icon className="w-4 h-4" />
-      <span className="font-medium">{label}:</span>
-      <span>{value}</span>
+    <div className="flex items-start gap-2 text-sm text-gray-600">
+      <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0 flex-1">
+        <span className="font-medium">{label}:</span>
+        <span className="ml-1 block truncate">
+          {value}
+        </span>
+      </div>
     </div>
   );
 
@@ -75,7 +71,6 @@ const ErrorCard = ({ log, onSendToSupport }) => {
             <h3 className="text-lg font-semibold text-gray-900">{log.errorname}</h3>
           </div>
         </div>
-        {/* 기본 정보 그리드 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <InfoRow icon={Search} label="Log No." value={log.id} />
           <InfoRow icon={Search} label="발생시각" value={formatDate(log.createdat)} />

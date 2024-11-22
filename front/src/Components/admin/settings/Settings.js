@@ -12,6 +12,26 @@ import {
   MapPin,
 } from "lucide-react";
 
+// 스타일 상수
+const styles = {
+  card: "bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all",
+  cardHeader: "flex items-center gap-2 mb-6",
+  cardTitle: "text-lg font-semibold text-gray-900",
+  input: "w-full h-11 px-4 pl-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors", // 왼쪽 여백 추가
+  button: "h-11 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2",
+  buttonPrimary: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400",
+  buttonSecondary: "border border-gray-200 text-gray-700 hover:bg-gray-50",
+  infoBox: "mt-3 p-3 bg-yellow-50 rounded-lg flex items-start gap-3",
+  infoText: "text-sm text-gray-600",
+  icon: "w-5 h-5 flex-shrink-0",
+  grid: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+  contactSection: "space-y-4 bg-gray-50/50 p-6 rounded-lg",
+  contactItem: "flex items-start gap-3",
+  contactTitle: "font-medium text-gray-900",
+  contactSubtitle: "text-sm text-gray-500",
+};
+
+// 유지보수 담당자 정보
 const MAINTENANCE_CONTACT = {
   company: "hosFit Solutions Co., Ltd.",
   department: "의료정보시스템팀",
@@ -22,20 +42,57 @@ const MAINTENANCE_CONTACT = {
   address: "서울특별시 강남구 테헤란로 123 호스핏빌딩 15층",
 };
 
+// 공통 컴포넌트: 카드 섹션
 const SettingsCard = ({ title, icon: Icon, children }) => (
-  <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-      <div className="flex">
-        <Icon className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
-        <h3 className="ml-3 text-lg font-medium text-gray-900">{title}</h3>
-      </div>
+  <section className={styles.card}>
+    <div className={styles.cardHeader}>
+      <Icon className={`${styles.icon} text-blue-600`} />
+      <h2 className={styles.cardTitle}>{title}</h2>
     </div>
-    <div className="px-4 py-3">{children}</div>
+    {children}
+  </section>
+);
+
+// 공통 컴포넌트: 입력 필드
+const InputField = ({ label, value, onChange, disabled, ...props }) => (
+  <div className="space-y-2">
+    <label className="block text-sm font-medium text-gray-600 pl-4">{label}</label> {/* 왼쪽 여백 추가 */}
+    <input
+      type="number"
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className={`${styles.input} ${disabled ? "bg-gray-50 cursor-not-allowed" : ""}`}
+      {...props}
+    />
   </div>
 );
 
+// 공통 컴포넌트: 버튼
+const Button = ({ onClick, icon: Icon, children, primary = true, disabled = false }) => (
+  <div className="flex justify-center"> {/* 가운데 정렬 */}
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${styles.button} ${primary ? styles.buttonPrimary : styles.buttonSecondary}`}
+    >
+      {Icon && <Icon className={styles.icon} />}
+      {children}
+    </button>
+  </div>
+);
+
+// 공통 컴포넌트: 정보 메시지
+const InfoMessage = ({ children }) => (
+  <div className={`${styles.infoBox} pl-4`}> {/* 왼쪽 여백 추가 */}
+    <Info className={`${styles.icon} text-yellow-500`} />
+    <p className={styles.infoText}>{children}</p>
+  </div>
+);
+
+// 가중치 설정 컴포넌트
 const WeightSettings = ({ showNotification }) => {
-  const { weights, updateWeights, isLoading, fetchWeights } = useScores();
+  const { weights, updateWeights, isLoading } = useScores();
   const [localWeights, setLocalWeights] = useState(weights);
 
   useEffect(() => {
@@ -44,17 +101,11 @@ const WeightSettings = ({ showNotification }) => {
 
   const handleWeightChange = (level, value) => {
     const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 1.0);
-    setLocalWeights((prev) => ({
-      ...prev,
-      [level]: numValue,
-    }));
+    setLocalWeights((prev) => ({ ...prev, [level]: numValue }));
   };
 
   const validateWeights = () => {
-    if (
-      localWeights.level2 > localWeights.level1 ||
-      localWeights.level1 > localWeights.level0
-    ) {
+    if (localWeights.level2 > localWeights.level1 || localWeights.level1 > localWeights.level0) {
       showNotification(
         "가중치는 중증병동 > 일반병동 > 퇴원 순서로 설정되어야 합니다.",
         "error"
@@ -64,113 +115,68 @@ const WeightSettings = ({ showNotification }) => {
     return true;
   };
 
-  const handleWeightsSave = async () => {
+  const handleSave = async () => {
     if (!validateWeights()) return;
 
     try {
       await updateWeights(localWeights);
-      await fetchWeights(); // 저장 후 최신 데이터 다시 가져오기
       showNotification("가중치 설정이 저장되었습니다.", "success");
     } catch (error) {
       console.error("가중치 저장 오류:", error);
       showNotification("가중치 저장 중 오류가 발생했습니다.", "error");
-      // 오류 발생시 원래 값으로 복원
       setLocalWeights(weights);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <div className="mx-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
-                  <div className="h-10 bg-gray-200 rounded w-full"></div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-end lg:justify-end">
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="mx-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                중증병동 가중치
-              </label>
-              <input
-                type="number"
-                value={localWeights.level0}
-                onChange={(e) => handleWeightChange("level0", e.target.value)}
-                step="0.1"
-                min="0.0"
-                max="1.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                일반병동 가중치
-              </label>
-              <input
-                type="number"
-                value={localWeights.level1}
-                onChange={(e) => handleWeightChange("level1", e.target.value)}
-                step="0.1"
-                min="0.0"
-                max="1.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                퇴원 가중치
-              </label>
-              <input
-                type="number"
-                value={localWeights.level2}
-                onChange={(e) => handleWeightChange("level2", e.target.value)}
-                step="0.1"
-                min="0.0"
-                max="1.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-          <div className="flex items-end lg:justify-end">
-            <button
-              onClick={handleWeightsSave}
-              disabled={isLoading}
-              className="h-10 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isLoading ? "저장 중..." : "가중치 설정 저장"}
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        <InputField
+          label="중증병동 가중치"
+          value={localWeights.level0}
+          onChange={(e) => handleWeightChange("level0", e.target.value)}
+          min={0}
+          max={1}
+          step={0.1}
+          disabled={isLoading}
+        />
+        <InputField
+          label="일반병동 가중치"
+          value={localWeights.level1}
+          onChange={(e) => handleWeightChange("level1", e.target.value)}
+          min={0}
+          max={1}
+          step={0.1}
+          disabled={isLoading}
+        />
+        <InputField
+          label="퇴원 가중치"
+          value={localWeights.level2}
+          onChange={(e) => handleWeightChange("level2", e.target.value)}
+          min={0}
+          max={1}
+          step={0.1}
+          disabled={isLoading}
+        />
       </div>
+      <Button onClick={handleSave} disabled={isLoading} icon={Save}>
+        {isLoading ? "저장 중..." : "가중치 설정 저장"}
+      </Button>
+      <InfoMessage>
+        가중치는 중증병동 &gt; 일반병동 &gt; 퇴원 순서로 설정되어야 합니다.
+      </InfoMessage>
     </div>
   );
 };
 
+// 병상 설정 컴포넌트
 const BedSettings = ({ showNotification }) => {
   const [bedCapacity, setBedCapacity] = useState({
     totalBeds: 0,
     isLoading: true,
     error: null,
   });
+
   const fetchBedCount = async () => {
     try {
       const response = await axios.get("http://localhost:8082/boot/beds/count");
@@ -178,7 +184,6 @@ const BedSettings = ({ showNotification }) => {
         ...prev,
         totalBeds: response.data,
         isLoading: false,
-        error: null,
       }));
     } catch (error) {
       console.error("병상 수 로드 오류:", error);
@@ -190,6 +195,7 @@ const BedSettings = ({ showNotification }) => {
       showNotification("병상 수 로드 중 오류가 발생했습니다.", "error");
     }
   };
+
   useEffect(() => {
     fetchBedCount();
   }, []);
@@ -202,25 +208,20 @@ const BedSettings = ({ showNotification }) => {
     }));
   };
 
-  const handleBedCapacitySave = async () => {
+  const handleSave = async () => {
     try {
       if (bedCapacity.totalBeds < 1) {
         showNotification("병상 수는 1개 이상이어야 합니다.", "error");
         return;
       }
 
-      const response = await axios.put(
-        "http://localhost:8082/boot/beds/update",
-        {
-          totalBeds: bedCapacity.totalBeds,
-        }
-      );
+      const response = await axios.put("http://localhost:8082/boot/beds/update", {
+        totalBeds: bedCapacity.totalBeds,
+      });
 
       if (response.data.success) {
         showNotification("병상 수 설정이 저장되었습니다.", "success");
-        fetchBedCount(); // 저장 후 최신 데이터 다시 로드
-      } else {
-        throw new Error(response.data.message);
+        fetchBedCount();
       }
     } catch (error) {
       console.error("병상 수 저장 오류:", error);
@@ -229,117 +230,84 @@ const BedSettings = ({ showNotification }) => {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="mx-6">
-        {bedCapacity.error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-            {bedCapacity.error}
-          </div>
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            전체 병상 수
-          </label>
-          <div className="flex gap-3">
-            <input
-              type="number"
-              value={bedCapacity.isLoading ? "" : bedCapacity.totalBeds}
-              onChange={(e) => handleBedCapacityChange(e.target.value)}
-              disabled={bedCapacity.isLoading}
-              placeholder={
-                bedCapacity.isLoading ? "로딩 중..." : "병상 수 입력"
-              }
-              min="1"
-              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-            <button
-              onClick={handleBedCapacitySave}
-              disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
-              className={`h-10 w-[170px] inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                ${
-                  bedCapacity.isLoading || bedCapacity.totalBeds < 1
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                }`}
-            >
-              {bedCapacity.isLoading ? (
-                <span>로딩 중...</span>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  병상 수 저장
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="w-full">
+        <InputField
+          label="전체 병상 수"
+          value={bedCapacity.totalBeds}
+          onChange={(e) => handleBedCapacityChange(e.target.value)}
+          min={1}
+          disabled={bedCapacity.isLoading}
+          placeholder={bedCapacity.isLoading ? "로딩 중..." : "병상 수 입력"}
+        />
       </div>
+      <Button
+        onClick={handleSave}
+        disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
+        icon={Hospital}
+      >
+        병상 수 저장
+      </Button>
+      <InfoMessage>
+        병상 수는 1개 이상이어야 하며, 저장 후 시스템 정보를 확인해 주세요.
+      </InfoMessage>
     </div>
   );
 };
 
+// 메인 Settings 컴포넌트
 const Settings = ({ showNotification }) => {
   return (
-    <div className="p-4 space-y-4">
-      <SettingsCard title="가중치 설정" icon={Save}>
-        <WeightSettings showNotification={showNotification} />
-      </SettingsCard>
+    <div className="p-6 space-y-6">
+      <div className={styles.grid}>
+        <SettingsCard title="가중치 설정" icon={Save}>
+          <WeightSettings showNotification={showNotification} />
+        </SettingsCard>
 
-      <SettingsCard title="병상 설정" icon={Hospital}>
-        <BedSettings showNotification={showNotification} />
-      </SettingsCard>
+        <SettingsCard title="병상 설정" icon={Hospital}>
+          <BedSettings showNotification={showNotification} />
+        </SettingsCard>
+      </div>
 
       <SettingsCard title="유지보수 담당자 정보" icon={Bell}>
-        <div className="mx-6">
-          <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-            <div className="flex">
-              <Building className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">
-                  {MAINTENANCE_CONTACT.company}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {MAINTENANCE_CONTACT.department}
-                </p>
-              </div>
-            </div>
-            <div className="flex">
-              <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 mt-1">
-                👤
-              </span>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">
-                  {MAINTENANCE_CONTACT.name}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {MAINTENANCE_CONTACT.position}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <Phone className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
-              <p className="ml-3 text-gray-600">{MAINTENANCE_CONTACT.phone}</p>
-            </div>
-            <div className="flex items-start">
-              <Mail className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
-              <p className="ml-3 text-gray-600">{MAINTENANCE_CONTACT.email}</p>
-            </div>
-            <div className="flex items-start">
-              <MapPin className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
-              <p className="ml-3 text-gray-600">
-                {MAINTENANCE_CONTACT.address}
-              </p>
+        <div className={styles.contactSection}>
+          <div className={styles.contactItem}>
+            <Building className={`${styles.icon} text-gray-400`} />
+            <div>
+              <p className={styles.contactTitle}>{MAINTENANCE_CONTACT.company}</p>
+              <p className={styles.contactSubtitle}>{MAINTENANCE_CONTACT.department}</p>
             </div>
           </div>
-          <div className="mt-4 text-sm text-gray-500 bg-yellow-50 p-3 rounded-md flex items-start">
-            <Info className="h-5 w-5 text-yellow-400 mt-1 flex-shrink-0" />
-            <p className="ml-2">
-              유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다.
-              <br />
-              정보 수정이 필요한 경우 시스템 관리자에게 문의해 주세요.
-            </p>
+
+          <div className={styles.contactItem}>
+            <div className="w-5 h-5 flex items-center justify-center text-gray-400">
+              👤
+            </div>
+            <div>
+              <p className={styles.contactTitle}>{MAINTENANCE_CONTACT.name}</p>
+              <p className={styles.contactSubtitle}>{MAINTENANCE_CONTACT.position}</p>
+            </div>
+          </div>
+
+          <div className={styles.contactItem}>
+            <Phone className={`${styles.icon} text-gray-400`} />
+            <p className={styles.infoText}>{MAINTENANCE_CONTACT.phone}</p>
+          </div>
+
+          <div className={styles.contactItem}>
+            <Mail className={`${styles.icon} text-gray-400`} />
+            <p className={styles.infoText}>{MAINTENANCE_CONTACT.email}</p>
+          </div>
+
+          <div className={styles.contactItem}>
+            <MapPin className={`${styles.icon} text-gray-400`} />
+            <p className={styles.infoText}>{MAINTENANCE_CONTACT.address}</p>
           </div>
         </div>
+        <InfoMessage>
+          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다. 정보 수정이 필요한 경우
+          시스템 관리자에게 문의해 주세요.
+        </InfoMessage>
       </SettingsCard>
     </div>
   );

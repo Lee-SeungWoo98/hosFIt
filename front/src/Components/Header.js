@@ -2,7 +2,7 @@ import React from "react";
 import Ktas from "../Components/Ktas";
 import LoginImg from './assets/images/doctor.png';
 
-function Header({ onSearch, ktasData, predictionData, userName, onTASClick, logout, ktasFilter }) {
+function Header({ onSearch, ktasData, predictionData, userName, onTASClick, logout, ktasFilter, tabCounts  }) {
   return (
     <div className="user-layout">
       <div className="user-sidebar">
@@ -30,6 +30,7 @@ function Header({ onSearch, ktasData, predictionData, userName, onTASClick, logo
             predictionData={predictionData}
             onTASClick={onTASClick}
             ktasFilter={ktasFilter}
+            tabCounts={tabCounts}
           />
         </div>
       </div>

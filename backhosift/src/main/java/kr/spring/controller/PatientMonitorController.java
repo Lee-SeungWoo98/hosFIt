@@ -156,10 +156,23 @@ public class PatientMonitorController {
     @PutMapping("/patient/label/{stayId}")
     public ResponseEntity<Map<String, Object>> updateVisitLabel(
             @PathVariable("stayId") Long stayId,
-            @RequestBody Map<String, Long> requestBody) {
+            @RequestBody Map<String, Object> requestBody) {  // Long에서 Object로 변경
         try {
-            Long newLabel = requestBody.get("label");
-            Map<String, Object> result = patientMonitorService.updateVisitLabel(stayId, newLabel);
+            // label은 Long으로 변환
+            Long newLabel = null;
+            if (requestBody.get("label") instanceof Number) {
+                newLabel = ((Number) requestBody.get("label")).longValue();
+            } else {
+                throw new IllegalArgumentException("label은 숫자여야 합니다");
+            }
+
+            // comment는 String으로 처리
+            String comment = requestBody.get("comment") != null 
+                ? String.valueOf(requestBody.get("comment")) 
+                : "";
+
+            // 서비스 메서드 호출 시 comment도 전달
+            Map<String, Object> result = patientMonitorService.updateVisitLabel(stayId, newLabel, comment);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             log.warn("Invalid input for stayId: {}", stayId, e);
