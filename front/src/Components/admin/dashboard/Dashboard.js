@@ -23,7 +23,7 @@ const SEVERITY_STYLES = {
     bg: 'bg-[#FEE2E2]/50',
     text: 'text-[#DC2626]',
     border: 'border-[#FECACA]',
-    label: '중증병동',
+    label: '중환자실',
   },
   WARD: {
     bg: 'bg-[#FEF3C7]/50',
@@ -76,7 +76,7 @@ const DashboardCard = React.memo(({ title, value, trend, trendValue, target }) =
 
 const MismatchCase = React.memo(({ doctor, ai, percentage }) => {
   const getBorderStyle = (type) => {
-    if (type.includes('중증')) return 'border-l-4 border-l-[#DC2626] bg-[#FEE2E2]/50';
+    if (type.includes('중환자실')) return 'border-l-4 border-l-[#DC2626] bg-[#FEE2E2]/50';
     if (type.includes('일반')) return 'border-l-4 border-l-[#D97706] bg-[#FEF3C7]/50';
     return 'border-l-4 border-l-[#059669] bg-[#DCFCE7]/50';
   };
@@ -148,9 +148,9 @@ const Dashboard = ({ onTabChange }) => {
   }, [fetchData]);
 
   const mismatchCases = useMemo(() => [
-    { doctor: '중증병동', ai: '퇴원', percentage: stats.mismatchPercentages['label0:level2'] || 0 },
-    { doctor: '중증병동', ai: '일반병동', percentage: stats.mismatchPercentages['label0:level1'] || 0 },
-    { doctor: '일반병동', ai: '중증병동', percentage: stats.mismatchPercentages['label1:level0'] || 0 },
+    { doctor: '중환자실', ai: '퇴원', percentage: stats.mismatchPercentages['label0:level2'] || 0 },
+    { doctor: '중환자실', ai: '일반병동', percentage: stats.mismatchPercentages['label0:level1'] || 0 },
+    { doctor: '일반병동', ai: '중환자실', percentage: stats.mismatchPercentages['label1:level0'] || 0 },
     { doctor: '일반병동', ai: '퇴원', percentage: stats.mismatchPercentages['label1:level2'] || 0 },
     { doctor: '퇴원', ai: '중증병동', percentage: stats.mismatchPercentages['label2:level0'] || 0 },
     { doctor: '퇴원', ai: '일반병동', percentage: stats.mismatchPercentages['label2:level1'] || 0 }

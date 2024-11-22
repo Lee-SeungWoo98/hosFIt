@@ -14,17 +14,16 @@ const KTAS_COLORS = [
   "#fde047",    // Level 3 - 더 밝은 노란색 (수정됨)
   "#22c55e",    // Level 4 - 선명한 초록색
   "#e7e7e7",    // Level 5 - 회색 같은 하얀색 같은 무언가
-  "#bbbbbb"     // 기타 - 더 회색
 ];
 
 const PREDICTION_COLORS = {
-  ICU: "#22c55e",       // 중증 병동
+  ICU: "#22c55e",       // 중환자실
   WARD: "#3b82f6",      // 일반 병동
   DISCHARGE: "#ef4444"  // 퇴원
 };
 
 const WARD_NAMES = {
-  ICU: "중증 병동",
+  ICU: "중환자실",
   WARD: "일반 병동",
   DISCHARGE: "퇴원"
 };
@@ -137,7 +136,7 @@ const ktasChartData = useMemo(() => {
 const defaultChartData = [
   { 
     id: "icu",
-    name: "중증 병동", 
+    name: "중환자실", 
     value: 33.33, 
     color: PREDICTION_COLORS.ICU 
   },
@@ -166,7 +165,7 @@ const predictionChartData = useMemo(() => {
   return [
     { 
       id: "icu",
-      name: "중증 병동", 
+      name: "중환자실", 
       value: (tabCounts.icu / total) * 100, 
       color: PREDICTION_COLORS.ICU 
     },
@@ -188,7 +187,7 @@ const predictionChartData = useMemo(() => {
 // AI_TAS dot 클릭 핸들러
 const handlePredictionClick = useCallback((entry) => {
   const tabMapping = {
-    "중증 병동": "icu",
+    "중환자실": "icu",
     "일반 병동": "ward",
     "퇴원": "discharge"
   };
