@@ -784,9 +784,9 @@ function List({
                   <RotateCcw size={18} />
                 </button>
               </div>
-              <div className="total-count-filter">
+              {/* <div className="total-count-filter">
                 (총 {totalElements}명)
-              </div>
+              </div> */}
               </div>
 
           {/* 환자 목록 테이블 */}
