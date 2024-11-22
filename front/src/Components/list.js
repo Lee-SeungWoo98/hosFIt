@@ -172,8 +172,9 @@ function List({
     
     try {
       setIsUpdating(true);
+      setLoadingDetails(false); // 탭 변경 시 loadingDetails 초기화 추가
       let newFilters;
-
+  
       if (tabId === 'all') {
         newFilters = {
           ...selectedFilters,
@@ -195,8 +196,9 @@ function List({
       console.error('탭 변경 중 에러:', error);
     } finally {
       setIsUpdating(false);
+      loadingPatientsRef.current.clear(); // 로딩 중인 환자 목록 초기화 추가
     }
-  }, [selectedFilters, onFilteredPatientsUpdate, onTASClick]); 
+  }, [selectedFilters, onFilteredPatientsUpdate, onTASClick]);
   
   // 탭 클릭 핸들러
   const handleTabClick = useCallback((tabId) => {
@@ -652,12 +654,12 @@ function List({
         </td>
         <td>
         <button
-            onClick={() => showPatientDetails(patient)}
-            className="details-button"
-            disabled={isUpdating || loading || loadingDetails}
-          >
-            {loadingDetails ? "로딩 중..." : "상세 보기"}
-          </button>
+          onClick={() => showPatientDetails(patient)}
+          className="details-button"
+          disabled={isUpdating || loadingPatientsRef.current.has(patient.subjectId)}
+        >
+          {loadingPatientsRef.current.has(patient.subjectId) ? "로딩 중..." : "상세 보기"}
+        </button>
         </td>
       </tr>
     );
