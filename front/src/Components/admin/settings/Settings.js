@@ -15,15 +15,15 @@ import {
 // 스타일 상수
 const styles = {
   card: "bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all",
-  cardHeader: "flex items-center gap-3 mb-6",
+  cardHeader: "flex items-center gap-2 mb-6",
   cardTitle: "text-lg font-semibold text-gray-900",
-  input: "w-full h-11 px-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors",
+  input: "w-full h-11 px-4 pl-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors", // 왼쪽 여백 추가
   button: "h-11 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2",
   buttonPrimary: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400",
   buttonSecondary: "border border-gray-200 text-gray-700 hover:bg-gray-50",
-  infoBox: "mt-3 p-3 bg-yellow-50 rounded-lg flex items-start gap-3",  // 여백 조정
+  infoBox: "mt-3 p-3 bg-yellow-50 rounded-lg flex items-start gap-3",
   infoText: "text-sm text-gray-600",
-  icon: "w-5 h-5 flex-shrink-0",  // flex-shrink-0 추가
+  icon: "w-5 h-5 flex-shrink-0",
   grid: "grid grid-cols-1 lg:grid-cols-2 gap-6",
   contactSection: "space-y-4 bg-gray-50/50 p-6 rounded-lg",
   contactItem: "flex items-start gap-3",
@@ -56,13 +56,13 @@ const SettingsCard = ({ title, icon: Icon, children }) => (
 // 공통 컴포넌트: 입력 필드
 const InputField = ({ label, value, onChange, disabled, ...props }) => (
   <div className="space-y-2">
-    <label className="block text-sm font-medium text-gray-600">{label}</label>
+    <label className="block text-sm font-medium text-gray-600 pl-4">{label}</label> {/* 왼쪽 여백 추가 */}
     <input
       type="number"
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className={`${styles.input} ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+      className={`${styles.input} ${disabled ? "bg-gray-50 cursor-not-allowed" : ""}`}
       {...props}
     />
   </div>
@@ -70,19 +70,21 @@ const InputField = ({ label, value, onChange, disabled, ...props }) => (
 
 // 공통 컴포넌트: 버튼
 const Button = ({ onClick, icon: Icon, children, primary = true, disabled = false }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`${styles.button} ${primary ? styles.buttonPrimary : styles.buttonSecondary}`}
-  >
-    {Icon && <Icon className={styles.icon} />}
-    {children}
-  </button>
+  <div className="flex justify-center"> {/* 가운데 정렬 */}
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${styles.button} ${primary ? styles.buttonPrimary : styles.buttonSecondary}`}
+    >
+      {Icon && <Icon className={styles.icon} />}
+      {children}
+    </button>
+  </div>
 );
 
 // 공통 컴포넌트: 정보 메시지
 const InfoMessage = ({ children }) => (
-  <div className={styles.infoBox}>
+  <div className={`${styles.infoBox} pl-4`}> {/* 왼쪽 여백 추가 */}
     <Info className={`${styles.icon} text-yellow-500`} />
     <p className={styles.infoText}>{children}</p>
   </div>
@@ -99,14 +101,11 @@ const WeightSettings = ({ showNotification }) => {
 
   const handleWeightChange = (level, value) => {
     const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 1.0);
-    setLocalWeights(prev => ({ ...prev, [level]: numValue }));
+    setLocalWeights((prev) => ({ ...prev, [level]: numValue }));
   };
 
   const validateWeights = () => {
-    if (
-      localWeights.level2 > localWeights.level1 ||
-      localWeights.level1 > localWeights.level0
-    ) {
+    if (localWeights.level2 > localWeights.level1 || localWeights.level1 > localWeights.level0) {
       showNotification(
         "가중치는 중증병동 > 일반병동 > 퇴원 순서로 설정되어야 합니다.",
         "error"
@@ -135,7 +134,7 @@ const WeightSettings = ({ showNotification }) => {
         <InputField
           label="중증병동 가중치"
           value={localWeights.level0}
-          onChange={e => handleWeightChange("level0", e.target.value)}
+          onChange={(e) => handleWeightChange("level0", e.target.value)}
           min={0}
           max={1}
           step={0.1}
@@ -144,7 +143,7 @@ const WeightSettings = ({ showNotification }) => {
         <InputField
           label="일반병동 가중치"
           value={localWeights.level1}
-          onChange={e => handleWeightChange("level1", e.target.value)}
+          onChange={(e) => handleWeightChange("level1", e.target.value)}
           min={0}
           max={1}
           step={0.1}
@@ -153,22 +152,16 @@ const WeightSettings = ({ showNotification }) => {
         <InputField
           label="퇴원 가중치"
           value={localWeights.level2}
-          onChange={e => handleWeightChange("level2", e.target.value)}
+          onChange={(e) => handleWeightChange("level2", e.target.value)}
           min={0}
           max={1}
           step={0.1}
           disabled={isLoading}
         />
       </div>
-      <div className="flex justify-center">
-        <Button
-          onClick={handleSave}
-          disabled={isLoading}
-          icon={Save}
-        >
-          {isLoading ? "저장 중..." : "가중치 설정 저장"}
-        </Button>
-      </div>
+      <Button onClick={handleSave} disabled={isLoading} icon={Save}>
+        {isLoading ? "저장 중..." : "가중치 설정 저장"}
+      </Button>
       <InfoMessage>
         가중치는 중증병동 &gt; 일반병동 &gt; 퇴원 순서로 설정되어야 합니다.
       </InfoMessage>
@@ -187,14 +180,14 @@ const BedSettings = ({ showNotification }) => {
   const fetchBedCount = async () => {
     try {
       const response = await axios.get("http://localhost:8082/boot/beds/count");
-      setBedCapacity(prev => ({
+      setBedCapacity((prev) => ({
         ...prev,
         totalBeds: response.data,
         isLoading: false,
       }));
     } catch (error) {
       console.error("병상 수 로드 오류:", error);
-      setBedCapacity(prev => ({
+      setBedCapacity((prev) => ({
         ...prev,
         isLoading: false,
         error: "데이터 로드 중 오류가 발생했습니다.",
@@ -207,9 +200,9 @@ const BedSettings = ({ showNotification }) => {
     fetchBedCount();
   }, []);
 
-  const handleBedCapacityChange = value => {
+  const handleBedCapacityChange = (value) => {
     const numValue = parseInt(value) || 0;
-    setBedCapacity(prev => ({
+    setBedCapacity((prev) => ({
       ...prev,
       totalBeds: numValue,
     }));
@@ -222,10 +215,9 @@ const BedSettings = ({ showNotification }) => {
         return;
       }
 
-      const response = await axios.put(
-        "http://localhost:8082/boot/beds/update",
-        { totalBeds: bedCapacity.totalBeds }
-      );
+      const response = await axios.put("http://localhost:8082/boot/beds/update", {
+        totalBeds: bedCapacity.totalBeds,
+      });
 
       if (response.data.success) {
         showNotification("병상 수 설정이 저장되었습니다.", "success");
@@ -243,21 +235,19 @@ const BedSettings = ({ showNotification }) => {
         <InputField
           label="전체 병상 수"
           value={bedCapacity.totalBeds}
-          onChange={e => handleBedCapacityChange(e.target.value)}
+          onChange={(e) => handleBedCapacityChange(e.target.value)}
           min={1}
           disabled={bedCapacity.isLoading}
           placeholder={bedCapacity.isLoading ? "로딩 중..." : "병상 수 입력"}
         />
       </div>
-      <div className="flex justify-center">
-        <Button
-          onClick={handleSave}
-          disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
-          icon={Hospital}
-        >
-          병상 수 저장
-        </Button>
-      </div>
+      <Button
+        onClick={handleSave}
+        disabled={bedCapacity.isLoading || bedCapacity.totalBeds < 1}
+        icon={Hospital}
+      >
+        병상 수 저장
+      </Button>
       <InfoMessage>
         병상 수는 1개 이상이어야 하며, 저장 후 시스템 정보를 확인해 주세요.
       </InfoMessage>
@@ -285,9 +275,7 @@ const Settings = ({ showNotification }) => {
             <Building className={`${styles.icon} text-gray-400`} />
             <div>
               <p className={styles.contactTitle}>{MAINTENANCE_CONTACT.company}</p>
-              <p className={styles.contactSubtitle}>
-                {MAINTENANCE_CONTACT.department}
-              </p>
+              <p className={styles.contactSubtitle}>{MAINTENANCE_CONTACT.department}</p>
             </div>
           </div>
 
@@ -317,8 +305,8 @@ const Settings = ({ showNotification }) => {
           </div>
         </div>
         <InfoMessage>
-          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다.
-          정보 수정이 필요한 경우 시스템 관리자에게 문의해 주세요.
+          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다. 정보 수정이 필요한 경우
+          시스템 관리자에게 문의해 주세요.
         </InfoMessage>
       </SettingsCard>
     </div>

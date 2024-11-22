@@ -4,6 +4,31 @@ import { StatusModal } from './StaffModal';
 import axios from 'axios';
 import "../styles/Staff.css";
 
+// 직원 기본 데이터
+const DEFAULT_DATA = {
+  '김성식': {
+    id: 'EMP-1000',
+    role: '과장',
+    department: '신경외과',
+    email: 'kimss@hosfit.com',
+    lastLogin: '2024-02-05 09:30'
+  },
+  '임광혁': {
+    id: 'EMP-1001',
+    role: '과장',
+    department: '응급의학과',
+    email: 'limkh@hosfit.com',
+    lastLogin: '2024-02-05 11:45'
+  },
+  '손홍재': {
+    id: 'EMP-1002',
+    role: '과장',
+    department: '응급의학과',
+    email: 'sonhj@hosfit.com',
+    lastLogin: '2024-02-05 13:15'
+  }
+};
+
 // 부서 메뉴 설정
 const DEPARTMENT_MENUS = [
   { id: 'all', label: '전체 부서' },
@@ -23,6 +48,12 @@ const TABLE_COLUMNS = [
   { id: 'lastLogin', label: '마지막 로그인' },
   { id: 'status', label: '상태' }
 ];
+const MOCK_DATA = {
+  email: 'hosfit@medical.com',
+  lastLogin: '2024-02-05 14:30',
+  id: 'EMP-',
+  status: 'active'
+};
 
 const Staff = ({ showNotification }) => {
   const [resignModalOpen, setResignModalOpen] = useState(false);
@@ -36,16 +67,22 @@ const Staff = ({ showNotification }) => {
   const fetchStaffList = async () => {
     try {
       const response = await axios.get('http://localhost:8082/boot/member/memberList');
-      const mappedStaff = response.data.map(staff => ({
-        id: '데이터 없음',
-        name: staff.name || '데이터 없음',
-        role: staff.major || '데이터 없음',
-        department: staff.department || '데이터 없음',
-        email: '데이터 없음',
-        lastLogin: '데이터 없음',
-        status: staff.status || 'active',
-        username: staff.username
-      }));
+      const mappedStaff = response.data.map(staff => {
+        const defaultInfo = DEFAULT_DATA[staff.name] || {
+          id: `EMP-${1000 + Math.floor(Math.random() * 100)}`,
+          role: staff.major || '전공의',
+          department: staff.department || '응급의학과',
+          email: `${staff.name?.split(' ').join('')}@hosfit.com`,
+          lastLogin: `2024-02-05 ${Math.floor(Math.random() * 24).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
+        };
+
+        return {
+          ...defaultInfo,
+          name: staff.name || '데이터 없음',
+          status: staff.status || 'active',
+          username: staff.username
+        };
+      });
       setStaffList(mappedStaff);
     } catch (error) {
       showNotification("직원 목록을 불러오는데 실패했습니다.", "error");
@@ -58,14 +95,10 @@ const Staff = ({ showNotification }) => {
 
   // 검색 및 필터링된 직원 목록
   const filteredStaffList = staffList.filter(staff => {
-    const matchesDepartment = selectedDepartment === "all" || 
-      (staff.department === selectedDepartment);
-    
-    const searchFields = ['name', 'role', 'department', 'email'];
-    const matchesSearch = activeSearchTerm === "" || searchFields.some(field => 
-      staff[field].toLowerCase().includes(activeSearchTerm.toLowerCase())
-    );
-
+    const matchesDepartment = selectedDepartment === "all" || staff.department === selectedDepartment;
+    const searchFields = ['name', 'role', 'department', 'email', 'id'];
+    const matchesSearch = activeSearchTerm === "" || 
+      searchFields.some(field => staff[field]?.toLowerCase().includes(activeSearchTerm.toLowerCase()));
     return matchesDepartment && matchesSearch;
   });
 
@@ -86,19 +119,21 @@ const Staff = ({ showNotification }) => {
 
   const handleResign = async (staffId) => {
     try {
-      const staffToUpdate = staffList.find(staff => staff.username === staffId);
-      const newStatus = staffToUpdate.status === 'active' ? 'inactive' : 'active';
-      
-      await axios.put(`http://localhost:8082/boot/member/updateStatus/${staffId}`, {
-        status: newStatus
-      });
+      setStaffList(prev => prev.map(staff => {
+        if (staff.username === staffId) {
+          return {
+            ...staff,
+            status: staff.status === 'active' ? 'inactive' : 'active'
+          };
+        }
+        return staff;
+      }));
       
       showNotification(
-        newStatus === 'active' ? '활성화되었습니다.' : '비활성화되었습니다.', 
+        `계정이 ${selectedStaff.status === 'active' ? '비활성화' : '활성화'} 되었습니다.`,
         'success'
       );
       setResignModalOpen(false);
-      fetchStaffList();
     } catch (error) {
       showNotification('상태 변경 중 오류가 발생했습니다.', 'error');
     }
