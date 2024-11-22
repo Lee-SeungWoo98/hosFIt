@@ -17,7 +17,7 @@ import { API_ENDPOINTS } from '../constants/api';
 // =========== 상수 정의 ===========
 const LOCATION_TABS = [
   { id: "all", label: "전체", maxLevel: null },
-  { id: "icu", label: "중증 병동", maxLevel: "level3" },
+  { id: "icu", label: "중환자실", maxLevel: "level3" },
   { id: "ward", label: "일반 병동", maxLevel: "level2" },
   { id: "discharge", label: "퇴원", maxLevel: "level1" },
 ];
@@ -547,7 +547,7 @@ function List({
     const levels = [
       { value: lastVitalSign.level1, label: "퇴원", tabId: "discharge" },
       { value: lastVitalSign.level2, label: "일반 병동", tabId: "ward" },
-      { value: lastVitalSign.level3, label: "중증 병동", tabId: "icu" }
+      { value: lastVitalSign.level3, label: "중환자실", tabId: "icu" }
     ];
   
     const highest = levels.reduce((prev, current) => 
@@ -604,7 +604,7 @@ function List({
         const levels = [
           { value: lastVitalSign.level1, label: "퇴원" },
           { value: lastVitalSign.level2, label: "일반 병동" },
-          { value: lastVitalSign.level3, label: "중증 병동" }
+          { value: lastVitalSign.level3, label: "중환자실" }
         ];
   
         // 가장 높은 확률값을 가진 배치 옵션 선택

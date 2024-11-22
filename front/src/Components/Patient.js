@@ -151,7 +151,7 @@ const getWardInfo = (visit) => {
   const levels = [
     { value: Number(lastVitalSign.level1) || 0, label: "퇴원" },
     { value: Number(lastVitalSign.level2) || 0, label: "일반 병동" },
-    { value: Number(lastVitalSign.level3) || 0, label: "중증 병동" }
+    { value: Number(lastVitalSign.level3) || 0, label: "중환자실" }
   ];
 
   const highest = levels.reduce((prev, current) => 
@@ -484,7 +484,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
                 const percentage = (value * 100).toFixed(1);
                 const label = name === 'discharge' ? '퇴원' :
                             name === 'ward' ? '일반 병동' :
-                            name === 'icu' ? '중증 병동' : name;
+                            name === 'icu' ? '중환자실' : name;
                 return [`${percentage}%`, label];
               }}
               labelFormatter={formatTime}
@@ -504,7 +504,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
             <Line
             type="monotone"
             dataKey="icu"
-            name="중증 병동"
+            name="중환자실"
             stroke="#ef4444"
             strokeWidth={2}
             dot={{
@@ -556,7 +556,7 @@ const TimeSeriesChart = ({ data, onTimePointClick }) => {
 // 도넛 차트 컴포넌트
 const DonutChart = ({ data, title }) => {
   const chartData = [
-    { name: '중증 병동', value: data.icu || 0 },
+    { name: '중환자실', value: data.icu || 0 },
     { name: '일반 병동', value: data.ward || 0 },
     { name: '퇴원', value: data.discharge || 0 }
   ];
@@ -979,7 +979,7 @@ const BloodTestResults = ({ labTests, gender }) => {
     // 선택된 배치에 따라 label 값 설정
     let label;
     switch(selectedPlacement) {
-      case '중증 병동':
+      case '중환자실':
         label = 2;
         break;
       case '일반 병동':
@@ -1038,7 +1038,7 @@ const BloodTestResults = ({ labTests, gender }) => {
               className="placement-select"
             >
               <option value="">배치를 선택하세요</option>
-              <option value="중증 병동">중증 병동</option>
+              <option value="중환자실">중환자실</option>
               <option value="일반 병동">일반 병동</option>
               <option value="퇴원">퇴원</option>
             </select>
@@ -1094,7 +1094,7 @@ const PlacementForm = ({ onSubmit, initialLabel, initialNote }) => {
           required
         >
           <option value="">배치를 선택하세요</option>
-          <option value="2">중증 병동</option>
+          <option value="2">중환자실</option>
           <option value="1">일반 병동</option>
           <option value="0">퇴원</option>
         </select>
@@ -1546,14 +1546,13 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
   
       console.log("Request data:", requestData); // 디버깅용
   
-      const response = await axios({
-        method: 'put',
-        url: `/api/patient/label/${latestVisit.stayId}`,
-        data: requestData,
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await axios.put(
+        `http://localhost:8082/boot/patient/label/${latestVisit.stayId}`, 
+        {
+          label: Number(placementData.label),
+          comment: placementData.comment || ''
         }
-      });
+      );
   
       if (response.data) {
         const updatedVisits = patientData.visits.map(visit => {
@@ -1561,7 +1560,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
             return {
               ...visit,
               label: Number(placementData.label),
-              comment: String(placementData.comment || ''),
+              comment: placementData.comment || '',
               statstatus: Number(placementData.label)
             };
           }
@@ -1683,7 +1682,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
     const levels = [
       { value: Number(latestVitalSign.level1) || 0, label: "퇴원" },
       { value: Number(latestVitalSign.level2) || 0, label: "일반 병동" },
-      { value: Number(latestVitalSign.level3) || 0, label: "중증 병동" }
+      { value: Number(latestVitalSign.level3) || 0, label: "중환자실" }
     ];
 
     const highest = levels.reduce((prev, current) => 

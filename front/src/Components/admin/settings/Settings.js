@@ -100,14 +100,20 @@ const WeightSettings = ({ showNotification }) => {
   }, [weights]);
 
   const handleWeightChange = (level, value) => {
-    const numValue = Math.min(Math.max(parseFloat(value) || 0, 0.0), 1.0);
+    // 최소값 0.1, 최대값 1.0으로 설정
+    const numValue = Math.min(Math.max(parseFloat(value) || 0.1, 0.1), 1.0);
     setLocalWeights((prev) => ({ ...prev, [level]: numValue }));
   };
 
   const validateWeights = () => {
-    if (localWeights.level2 > localWeights.level1 || localWeights.level1 > localWeights.level0) {
+    // 가중치 값이 0~1 사이인지만 확인
+    const isValidWeight = (weight) => weight >= 0.1 && weight <= 1;
+    
+    if (!isValidWeight(localWeights.level0) || 
+        !isValidWeight(localWeights.level1) || 
+        !isValidWeight(localWeights.level2)) {
       showNotification(
-        "가중치는 중증병동 > 일반병동 > 퇴원 순서로 설정되어야 합니다.",
+        "가중치는 0과 1 사이의 값이어야 합니다.",
         "error"
       );
       return false;
@@ -132,7 +138,7 @@ const WeightSettings = ({ showNotification }) => {
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
         <InputField
-          label="중증병동 가중치"
+          label="중환자실 가중치"
           value={localWeights.level0}
           onChange={(e) => handleWeightChange("level0", e.target.value)}
           min={0}
@@ -163,7 +169,7 @@ const WeightSettings = ({ showNotification }) => {
         {isLoading ? "저장 중..." : "가중치 설정 저장"}
       </Button>
       <InfoMessage>
-        가중치는 중증병동 &gt; 일반병동 &gt; 퇴원 순서로 설정되어야 합니다.
+      가중치는 0과 1 사이의 값으로 설정해야 합니다. <br/>가중치 설정 후 저장 버튼을 누르면 시스템에 반영됩니다.
       </InfoMessage>
     </div>
   );
@@ -249,7 +255,8 @@ const BedSettings = ({ showNotification }) => {
         병상 수 저장
       </Button>
       <InfoMessage>
-        병상 수는 1개 이상이어야 하며, 저장 후 시스템 정보를 확인해 주세요.
+        병상 수는 1개 이상이어야 합니다.<br></br> 
+        저장 후 시스템 정보를 확인해 주세요.
       </InfoMessage>
     </div>
   );
@@ -305,8 +312,8 @@ const Settings = ({ showNotification }) => {
           </div>
         </div>
         <InfoMessage>
-          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다. 정보 수정이 필요한 경우
-          시스템 관리자에게 문의해 주세요.
+          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다. <br></br>
+          정보 수정이 필요한 경우 시스템 관리자에게 문의해 주세요.
         </InfoMessage>
       </SettingsCard>
     </div>
