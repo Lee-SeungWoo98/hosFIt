@@ -7,6 +7,7 @@ body {
   background-color: #f4f5f7;
   font-weight: 400;
 }
+
 .content {
   margin-top: 0;
 }
@@ -55,6 +56,7 @@ body {
   color: #666;
   border-radius: 6px;
   transition: all 0.2s;
+  position: relative;
 }
 
 .location-tab.active {
@@ -62,9 +64,44 @@ body {
   color: white;
 }
 
-.location-tab:hover:not(.active) {
+/* 탭 구분선*/
+.location-tab::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 20%;
+  height: 60%;
+  width: 1px;
   background-color: #e5e7eb;
-}
+ }
+ 
+ .location-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+ }
+
+ /* 드롭다운 트리거 버튼 비활성화 스타일 */
+.dropdown-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: #f5f5f5;
+ }
+ 
+ /* 필터 초기화 버튼 비활성화 스타일 */
+ .reset-filters-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: #f5f5f5;
+ }
+ 
+ /* 총 환자 수 표시 스타일 수정 */
+ .total-count-filter {
+  color: #585757;
+  font-size: 14px;
+  white-space: nowrap;
+  margin-right: 2vh;
+  font-weight: 500;
+ }
 
 /* 드롭다운 필터 스타일 */
 .filter-dropdowns {
@@ -463,6 +500,18 @@ table td:nth-child(6) br {
 /* 마지막 행은 구분선 제거*/
 .patient-row:last-child td {
   border-bottom: none;
+}
+
+/* 탭 변경 시 환자 이름 검색창 비활성화 스타일 */
+.patient-search-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: #f5f5f5;
+}
+
+.search-input-wrapper:has(input:disabled) {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
 }
 
 @keyframes spin {

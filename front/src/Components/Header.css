@@ -126,13 +126,12 @@ body {
   margin-right: 1px;
   text-decoration: underline;
   position: relative; 
-  top : -37px;
-  left : 62px;
+  top : -37.3px;
+  left : 71px;
+  font-size: 13px;
 }
 
 .logout-text {
-
-  font-size: 9px;
   color: #000000;
   margin-top: -2px;
 }
