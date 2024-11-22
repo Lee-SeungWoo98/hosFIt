@@ -17,7 +17,7 @@ const styles = {
   card: "bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all",
   cardHeader: "flex items-center gap-2 mb-6",
   cardTitle: "text-lg font-semibold text-gray-900",
-  input: "w-full h-11 px-4 pl-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors", // 왼쪽 여백 추가
+  input: "w-full h-11 pl-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors",
   button: "h-11 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2",
   buttonPrimary: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400",
   buttonSecondary: "border border-gray-200 text-gray-700 hover:bg-gray-50",
@@ -29,6 +29,7 @@ const styles = {
   contactItem: "flex items-start gap-3",
   contactTitle: "font-medium text-gray-900",
   contactSubtitle: "text-sm text-gray-500",
+  inputContainer: "space-y-2 pl-2",
 };
 
 // 유지보수 담당자 정보
@@ -55,8 +56,8 @@ const SettingsCard = ({ title, icon: Icon, children }) => (
 
 // 공통 컴포넌트: 입력 필드
 const InputField = ({ label, value, onChange, disabled, ...props }) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-gray-600 pl-4">{label}</label> {/* 왼쪽 여백 추가 */}
+  <div className={styles.inputContainer}>
+    <label className="block text-sm font-medium text-gray-600">{label}</label>
     <input
       type="number"
       value={value}
@@ -70,7 +71,7 @@ const InputField = ({ label, value, onChange, disabled, ...props }) => (
 
 // 공통 컴포넌트: 버튼
 const Button = ({ onClick, icon: Icon, children, primary = true, disabled = false }) => (
-  <div className="flex justify-center"> {/* 가운데 정렬 */}
+  <div className="flex justify-center mt-6">
     <button
       onClick={onClick}
       disabled={disabled}
@@ -84,7 +85,7 @@ const Button = ({ onClick, icon: Icon, children, primary = true, disabled = fals
 
 // 공통 컴포넌트: 정보 메시지
 const InfoMessage = ({ children }) => (
-  <div className={`${styles.infoBox} pl-4`}> {/* 왼쪽 여백 추가 */}
+  <div className={styles.infoBox}>
     <Info className={`${styles.icon} text-yellow-500`} />
     <p className={styles.infoText}>{children}</p>
   </div>
@@ -100,20 +101,18 @@ const WeightSettings = ({ showNotification }) => {
   }, [weights]);
 
   const handleWeightChange = (level, value) => {
-    // 최소값 0.1, 최대값 1.0으로 설정
     const numValue = Math.min(Math.max(parseFloat(value) || 0.1, 0.1), 1.0);
     setLocalWeights((prev) => ({ ...prev, [level]: numValue }));
   };
 
   const validateWeights = () => {
-    // 가중치 값이 0~1 사이인지만 확인
     const isValidWeight = (weight) => weight >= 0.1 && weight <= 1;
     
     if (!isValidWeight(localWeights.level0) || 
         !isValidWeight(localWeights.level1) || 
         !isValidWeight(localWeights.level2)) {
       showNotification(
-        "가중치는 0과 1 사이의 값이어야 합니다.",
+        "가중치는 0.1과 1 사이의 값이어야 합니다.",
         "error"
       );
       return false;
@@ -141,7 +140,7 @@ const WeightSettings = ({ showNotification }) => {
           label="중환자실 가중치"
           value={localWeights.level0}
           onChange={(e) => handleWeightChange("level0", e.target.value)}
-          min={0}
+          min={0.1}
           max={1}
           step={0.1}
           disabled={isLoading}
@@ -150,7 +149,7 @@ const WeightSettings = ({ showNotification }) => {
           label="일반병동 가중치"
           value={localWeights.level1}
           onChange={(e) => handleWeightChange("level1", e.target.value)}
-          min={0}
+          min={0.1}
           max={1}
           step={0.1}
           disabled={isLoading}
@@ -159,7 +158,7 @@ const WeightSettings = ({ showNotification }) => {
           label="퇴원 가중치"
           value={localWeights.level2}
           onChange={(e) => handleWeightChange("level2", e.target.value)}
-          min={0}
+          min={0.1}
           max={1}
           step={0.1}
           disabled={isLoading}
@@ -169,7 +168,7 @@ const WeightSettings = ({ showNotification }) => {
         {isLoading ? "저장 중..." : "가중치 설정 저장"}
       </Button>
       <InfoMessage>
-      가중치는 0과 1 사이의 값으로 설정해야 합니다. <br/>가중치 설정 후 저장 버튼을 누르면 시스템에 반영됩니다.
+        가중치는 0.1과 1 사이의 값으로 설정해야 합니다.
       </InfoMessage>
     </div>
   );
@@ -255,8 +254,7 @@ const BedSettings = ({ showNotification }) => {
         병상 수 저장
       </Button>
       <InfoMessage>
-        병상 수는 1개 이상이어야 합니다.<br></br> 
-        저장 후 시스템 정보를 확인해 주세요.
+        병상 수는 1개 이상이어야 합니다.
       </InfoMessage>
     </div>
   );
@@ -312,8 +310,7 @@ const Settings = ({ showNotification }) => {
           </div>
         </div>
         <InfoMessage>
-          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다. <br></br>
-          정보 수정이 필요한 경우 시스템 관리자에게 문의해 주세요.
+          유지보수 담당자 정보는 시스템 관리자만 수정할 수 있습니다.
         </InfoMessage>
       </SettingsCard>
     </div>
