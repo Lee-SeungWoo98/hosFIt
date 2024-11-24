@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../../../../constants/api';
 
 class ErrorEmailService {
   constructor() {
-    this.baseURL = 'http://localhost:8082/boot/errors';
+    this.baseURL = API_ENDPOINTS.ADMIN.ERRORS.SEND_EMAIL;
   }
 
   async sendErrorLog(log) {

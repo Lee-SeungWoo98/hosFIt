@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useScores } from '../../../context/ScoreContext';
+import { API_ENDPOINTS } from '../../../../constants/api';
 import axios from 'axios';
 
 const INITIAL_STATS = {
@@ -121,9 +122,9 @@ const Dashboard = ({ onTabChange }) => {
   const fetchData = useCallback(async () => {
     try {
       const [statsResponse, mismatchResponse, predictionResponse] = await Promise.all([
-        axios.get('http://localhost:8082/boot/admin/dashboard/stats'),
-        axios.get('http://localhost:8082/boot/admin/mismatch'),
-        axios.get('http://localhost:8082/boot/admin/patients/prediction')
+        axios.get(API_ENDPOINTS.ADMIN.DASHBOARD.STATS),
+        axios.get(API_ENDPOINTS.ADMIN.DASHBOARD.MISMATCH),
+        axios.get(API_ENDPOINTS.ADMIN.DASHBOARD.PREDICTION)
       ]);
 
       setStats(prev => ({
