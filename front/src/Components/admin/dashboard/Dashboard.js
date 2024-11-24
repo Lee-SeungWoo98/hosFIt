@@ -153,7 +153,7 @@ const Dashboard = ({ onTabChange }) => {
     { doctor: '중환자실', ai: '일반병동', percentage: stats.mismatchPercentages['label0:level1'] || 0 },
     { doctor: '일반병동', ai: '중환자실', percentage: stats.mismatchPercentages['label1:level0'] || 0 },
     { doctor: '일반병동', ai: '퇴원', percentage: stats.mismatchPercentages['label1:level2'] || 0 },
-    { doctor: '퇴원', ai: '중증병동', percentage: stats.mismatchPercentages['label2:level0'] || 0 },
+    { doctor: '퇴원', ai: '중환자실', percentage: stats.mismatchPercentages['label2:level0'] || 0 },
     { doctor: '퇴원', ai: '일반병동', percentage: stats.mismatchPercentages['label2:level1'] || 0 }
   ], [stats.mismatchPercentages]);
 
