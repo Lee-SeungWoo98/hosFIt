@@ -15,14 +15,33 @@ export const API_ENDPOINTS = {
     },
     PREDICTION: `${BASE_URL}/patients/prediction`,
     LABEL: {
-      UPDATE: (stayId) => `${BASE_URL}/patient/label/latest/${stayId}`,
+      UPDATE: (stayId) => `${BASE_URL}/patient/label/${stayId}`,
     }
   },
   LAB_TESTS: `${BASE_URL}/labtests`,
   DETAILS: `${BASE_URL}/patients`,
   ERROR: {
-    LOG: `${BASE_URL}/errors/log`,  
-    LIST: `${BASE_URL}/errors`      
+    LOG: `${BASE_URL}/errors/log`,
+    LIST: `${BASE_URL}/errors`,
+    STATS: `${BASE_URL}/error/stats`
+  },
+  ADMIN: {
+    DASHBOARD: {
+      STATS: `${BASE_URL}/admin/dashboard/stats`,
+      MISMATCH: `${BASE_URL}/admin/mismatch`,
+      PREDICTION: `${BASE_URL}/admin/patients/prediction`
+    },
+    STAFF: {
+      LIST: `${BASE_URL}/member/memberList`
+    },
+    ERRORS: {
+      LIST: `${BASE_URL}/errors/limited`,
+      SEND_EMAIL: `${BASE_URL}/errors/send-email`
+    },
+    BEDS: {
+      COUNT: `${BASE_URL}/beds/count`,
+      UPDATE: `${BASE_URL}/beds/update`
+    }
   }
 };
 

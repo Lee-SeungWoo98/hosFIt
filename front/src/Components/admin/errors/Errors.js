@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Download } from "lucide-react";
+import { API_ENDPOINTS } from '../../../../constants/api';
 import axios from "axios";
 import ErrorCard from "./ErrorCard";
 
@@ -36,7 +37,7 @@ const Errors = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const response = await axios.get("http://localhost:8082/boot/errors/limited");
+        const response = await axios.get(API_ENDPOINTS.ADMIN.ERRORS.LIST);
         setLogs({
           warnings: response.data.warnings || [],
           errors: response.data.errors || []
@@ -67,7 +68,7 @@ const Errors = () => {
         throw new Error("해당 로그를 찾을 수 없습니다.");
       }
 
-      const response = await axios.post("http://localhost:8082/boot/errors/send-email", {
+      const response = await axios.post(API_ENDPOINTS.ADMIN.ERRORS.SEND_EMAIL, {
         id: logToSend.id,
         errorname: logToSend.errorname,
         errormessage: logToSend.errormessage,

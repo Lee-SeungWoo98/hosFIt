@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, UserX, RotateCcw } from "lucide-react";
+import { API_ENDPOINTS } from '../../../../constants/api';
 import { StatusModal } from './StaffModal';
 import axios from 'axios';
 import "../styles/Staff.css";
@@ -66,7 +67,7 @@ const Staff = ({ showNotification }) => {
   // 직원 목록 가져오기
   const fetchStaffList = async () => {
     try {
-      const response = await axios.get('http://localhost:8082/boot/member/memberList');
+      const response = await axios.get(API_ENDPOINTS.ADMIN.STAFF.LIST);
       const mappedStaff = response.data.map(staff => {
         const defaultInfo = DEFAULT_DATA[staff.name] || {
           id: `EMP-${1000 + Math.floor(Math.random() * 100)}`,

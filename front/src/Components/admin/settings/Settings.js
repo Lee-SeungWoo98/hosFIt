@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useScores } from "../../../context/ScoreContext";
+import { API_ENDPOINTS } from '../../../../constants/api';
 import {
   Save,
   Info,
@@ -184,7 +185,7 @@ const BedSettings = ({ showNotification }) => {
 
   const fetchBedCount = async () => {
     try {
-      const response = await axios.get("http://localhost:8082/boot/beds/count");
+      const response = await axios.get(API_ENDPOINTS.ADMIN.BEDS.COUNT);
       setBedCapacity((prev) => ({
         ...prev,
         totalBeds: response.data,
@@ -220,7 +221,7 @@ const BedSettings = ({ showNotification }) => {
         return;
       }
 
-      const response = await axios.put("http://localhost:8082/boot/beds/update", {
+      const response = await axios.put(API_ENDPOINTS.ADMIN.BEDS.UPDATE, {
         totalBeds: bedCapacity.totalBeds,
       });
 
