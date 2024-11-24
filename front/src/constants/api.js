@@ -1,7 +1,8 @@
-const BASE_URL = "http://localhost:8082/boot";
+const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8082/boot";
 
 export const API_ENDPOINTS = {
   AUTH: {
+    LOGIN: `${BASE_URL}/member/login`,
     CHECK_SESSION: `${BASE_URL}/member/checkSession`,
     LOGOUT: `${BASE_URL}/member/logout`,
   },
