@@ -1547,7 +1547,7 @@ function Patient({ patientData, labTests, visitInfo, onBack, fetchLabTests, onPa
       console.log("Request data:", requestData); // 디버깅용
   
       const response = await axios.put(
-        `http://localhost:8082/boot/patient/label/${latestVisit.stayId}`, 
+        `${API_ENDPOINTS.PATIENTS.LABEL.UPDATE(latestVisit.stayId)}`, 
         {
           label: Number(placementData.label),
           comment: placementData.comment || ''

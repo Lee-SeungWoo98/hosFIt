@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../constants/api';
 import axios from 'axios';
 import './Login.css';
 
@@ -11,13 +12,12 @@ function Login({ onLogin }) {
 
   const handleLogin = async () => {
     try {
-      await axios.post('http://localhost:8082/boot/member/login', {
+      await axios.post(`${API_ENDPOINTS.AUTH.LOGIN}`, {
         username,
         password,
       }, { withCredentials: true });
 
       await onLogin();
-      
     } catch (err) {
       setError('로그인 실패: 아이디 또는 비밀번호가 잘못되었습니다.');
     }
