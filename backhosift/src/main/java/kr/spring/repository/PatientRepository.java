@@ -38,42 +38,60 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
 
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
     // 필터 조건(name, gender, tas, pain)을 통해 환자 목록 검색 (페이지네이션)
-    @Query("SELECT DISTINCT p FROM Patient p " +
-    	       "JOIN p.visits v " +
-    	       "LEFT JOIN v.vitalSigns vs " +
-    	       "LEFT JOIN WardAssignment w ON vs.chartNum = w.chartNum " +
-    	       "WHERE v.staystatus = 1 AND v.label IS NULL " +
-    	       "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-    	       "AND (:gender IS NULL OR p.gender = :gender) " +
-    	       "AND (:tas IS NULL OR v.tas = :tas) " +
-    	       "AND (:pain IS NULL OR v.pain = :pain) " +
-    	       "AND (" +
-    	       "    :maxLevel IS NULL OR " +
-    	       "    EXISTS (" +
-    	       "        SELECT 1 " +
-    	       "        FROM VitalSigns vs2 " +
-    	       "        JOIN WardAssignment w2 ON vs2.chartNum = w2.chartNum " +
-    	       "        WHERE vs2.visit = v " +
-    	       "        AND vs2.chartTime = (" +
-    	       "            SELECT MAX(vs3.chartTime) " +
-    	       "            FROM VitalSigns vs3 " +
-    	       "            WHERE vs3.visit = v" +
-    	       "        ) " +
-    	       "        AND (" +
-    	       "            (:maxLevel = 'level1' AND w2.level1 >= w2.level2 AND w2.level1 >= w2.level3) OR " +
-    	       "            (:maxLevel = 'level2' AND w2.level2 >= w2.level1 AND w2.level2 >= w2.level3) OR " +
-    	       "            (:maxLevel = 'level3' AND w2.level3 >= w2.level1 AND w2.level3 >= w2.level2)" +
-    	       "        )" +
-    	       "    )" +
-    	       ") " +
-    	       "ORDER BY p.subjectId")
-    	Page<Patient> findPatientsWithFilters(
-    	    @Param("name") String name,
-    	    @Param("gender") String gender,
-    	    @Param("tas") Long tas,
-    	    @Param("pain") Long pain,
-    	    @Param("maxLevel") String maxLevel,
-    	    Pageable pageable);
+    @Query(value = "SELECT DISTINCT p FROM Patient p " +
+            "LEFT JOIN p.visits v " +
+            "LEFT JOIN v.vitalSigns vs " +
+            "LEFT JOIN WardAssignment w ON vs.chartNum = w.chartNum " +
+            "WHERE v.staystatus = 1 AND v.label IS NULL " +
+            "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:gender IS NULL OR p.gender = :gender) " +
+            "AND (:tas IS NULL OR v.tas = :tas) " +
+            "AND (:pain IS NULL OR v.pain = :pain) " +
+            "AND (:maxLevel IS NULL OR EXISTS ( " +
+            "    SELECT 1 FROM VitalSigns vs2 " +
+            "    JOIN WardAssignment w2 ON vs2.chartNum = w2.chartNum " +
+            "    WHERE vs2.visit = v " +
+            "    AND vs2.chartTime = ( " +
+            "        SELECT MAX(vs3.chartTime) " +
+            "        FROM VitalSigns vs3 " +
+            "        WHERE vs3.visit = v " +
+            "    ) " +
+            "    AND ( " +
+            "        (:maxLevel = 'level1' AND w2.level1 >= w2.level2 AND w2.level1 >= w2.level3) OR " +
+            "        (:maxLevel = 'level2' AND w2.level2 >= w2.level1 AND w2.level2 >= w2.level3) OR " +
+            "        (:maxLevel = 'level3' AND w2.level3 >= w2.level1 AND w2.level3 >= w2.level2) " +
+            "    ) " +
+            ")) ",
+            countQuery = "SELECT COUNT(DISTINCT p) FROM Patient p " +
+            "JOIN p.visits v " +
+            "WHERE v.staystatus = 1 AND v.label IS NULL " +
+            "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:gender IS NULL OR p.gender = :gender) " +
+            "AND (:tas IS NULL OR v.tas = :tas) " +
+            "AND (:pain IS NULL OR v.pain = :pain) " +
+            "AND (:maxLevel IS NULL OR EXISTS ( " +
+            "    SELECT 1 FROM VitalSigns vs2 " +
+            "    JOIN WardAssignment w2 ON vs2.chartNum = w2.chartNum " +
+            "    WHERE vs2.visit = v " +
+            "    AND vs2.chartTime = ( " +
+            "        SELECT MAX(vs3.chartTime) " +
+            "        FROM VitalSigns vs3 " +
+            "        WHERE vs3.visit = v " +
+            "    ) " +
+            "    AND ( " +
+            "        (:maxLevel = 'level1' AND w2.level1 >= w2.level2 AND w2.level1 >= w2.level3) OR " +
+            "        (:maxLevel = 'level2' AND w2.level2 >= w2.level1 AND w2.level2 >= w2.level3) OR " +
+            "        (:maxLevel = 'level3' AND w2.level3 >= w2.level1 AND w2.level3 >= w2.level2) " +
+            "    ) " +
+            ")) ")
+     Page<Patient> findPatientsWithFilters(
+         @Param("name") String name,
+         @Param("gender") String gender,
+         @Param("tas") Long tas,
+         @Param("pain") Long pain,
+         @Param("maxLevel") String maxLevel,
+         Pageable pageable
+     );
 
     @Query(value = 
             "SELECT v.stayid, v.pain, v.loshours, v.tas, v.arrivaltransport, " +
@@ -93,7 +111,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long>,JpaSpeci
             "WHERE v.subjectid = :subjectId " +
             "ORDER BY v.visitdate DESC", 
             nativeQuery = true)
-        List<PatientProjection> findPatientDataBySubjectId(@Param("subjectId") Long subjectId);
+    List<PatientProjection> findPatientDataBySubjectId(@Param("subjectId") Long subjectId);
     //오름차순 
     @Query(value = "SELECT p.subjectid AS subjectId, p.name, p.gender, p.birthdate AS birthdate, p.age, p.address, " +
             "p.pregnancystatus, p.phonenumber, p.residentnum, " +
